@@ -1,0 +1,101 @@
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #f5f7fa;
+    }
+    .content {
+      flex: 1;
+      padding: 3rem 0;
+    }
+    .footer-rental {
+      background-color: #0b2b4a;
+      color: #e2e8f0;
+      padding: 3rem 0 1.5rem;
+      margin-top: auto;
+    }
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: white;
+      margin-bottom: 0.5rem;
+    }
+    .footer-brand i {
+      font-size: 2rem;
+      color: #60a5fa;
+    }
+    .footer-desc {
+      color: #cbd5e1;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .footer-title {
+      color: white;
+      font-weight: 600;
+      margin-bottom: 1.2rem;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .footer-links {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .footer-links li {
+      margin-bottom: 0.6rem;
+    }
+    .footer-links a {
+      color: #cbd5e1;
+      text-decoration: none;
+      transition: color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-links a:hover {
+      color: white;
+    }
+    .whatsapp-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: #25D366;
+      color: white !important;
+      padding: 0.5rem 1.2rem;
+      border-radius: 40px;
+      font-weight: 600;
+      text-decoration: none;
+      margin-top: 0.8rem;
+      transition: background 0.2s;
+    }
+    .whatsapp-link:hover {
+      background-color: #1da851;
+    }
+    .footer-bottom {
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+    .footer-bottom i {
+      color: #ef4444;
+      margin: 0 4px;
+    }
+
+    @media (max-width: 768px) {
+      .footer-rental {
+        padding: 2.5rem 0 1rem;
+      }
+      .footer-brand {
+        font-size: 1.5rem;
+      }
+    }
