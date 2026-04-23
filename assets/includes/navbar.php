@@ -3,17 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RentalKu · Navbar dengan Dropdown Profil</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="../css/navbar.css">
+  <link rel="stylesheet" href="assets/css/navbar.css">
 </head>
 <body>
 
 <nav class="navbar navbar-rental">
   <div class="container">
 
-    <a href="#" class="brand-wrapper">
+    <a href="../../../rental-mobil/" class="brand-wrapper">
       <i class="bi bi-car-front-fill brand-icon"></i>
       <span class="brand-text">RentalKu</span>
     </a>
@@ -44,7 +43,7 @@
           <li><hr class="dropdown-divider my-1"></li>
           <li>
             <a class="dropdown-item dropdown-item-custom" href="#">
-              <i class="bi bi-speedometer2"></i> Dashboard Saya
+              <i class="bi bi-grid-fill"></i> Dashboard
             </a>
           </li>
           <li>
