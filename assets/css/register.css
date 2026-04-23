@@ -1,0 +1,77 @@
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e9edf5 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+    .rental-card {
+      border: none;
+      border-radius: 28px;
+      box-shadow: 0 20px 40px -8px rgba(0, 20, 60, 0.12), 0 8px 16px -6px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(2px);
+      background: rgba(255, 255, 255, 0.98);
+      transition: transform 0.2s ease;
+    }
+    .rental-brand {
+      font-weight: 700;
+      font-size: 2.2rem;
+      letter-spacing: -0.5px;
+      color: #0b2b4a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .rental-brand i {
+      color: #2563eb;
+      font-size: 2rem;
+    }
+    .form-control, .input-group-text {
+      border-radius: 16px;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid #e2e8f0;
+      background-color: #fafbfc;
+      transition: all 0.15s;
+    }
+    .form-control:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+      background-color: #ffffff;
+    }
+    .input-group .form-control {
+      border-left: none;
+    }
+    .input-group-text {
+      background-color: #fafbfc;
+      border-right: none;
+      color: #5e718d;
+    }
+    .btn-register {
+      border-radius: 40px;
+      padding: 0.8rem 1.5rem;
+      font-weight: 600;
+      background: #0b2b4a;
+      border: none;
+      box-shadow: 0 6px 14px rgba(11, 43, 74, 0.2);
+      transition: all 0.2s;
+    }
+    .btn-register:hover {
+      background: #1e3a6f;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px -8px rgba(11, 43, 74, 0.3);
+    }
+    .login-link {
+      color: #4b6589;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    .login-link:hover {
+      color: #1e3a6f;
+      text-decoration: underline;
+    }
+    .form-control[type="number"]::-webkit-inner-spin-button,
+    .form-control[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
