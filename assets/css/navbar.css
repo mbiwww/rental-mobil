@@ -102,6 +102,10 @@
       transform: scale(1.02);
     }
 
+    .dropdown-menu {
+      width: 200px;
+    }
+
     .dropdown-menu-profile {
       margin-top: 12px !important;
       border: none;
