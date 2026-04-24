@@ -43,7 +43,7 @@
           <li><hr class="dropdown-divider my-1"></li>
           <li>
             <a class="dropdown-item dropdown-item-custom" href="#">
-              <i class="bi bi-grid-fill"></i> Dashboard
+              <i class="bi bi-grid-fill"></i> Dashboard Saya
             </a>
           </li>
           <li>
