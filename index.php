@@ -39,7 +39,7 @@
       </div>
 
       <div class="col-lg-6">
-        <div class="car-img-placeholder">
+        <div class="car-img-placeholder d-none d-lg-flex">
         <img src="https://4kwallpapers.com/images/walls/thumbs_3t/24397.jpg" class="custom-image" alt="Mobil">
         </div>
       </div>
