@@ -131,3 +131,8 @@
       height: auto;
       border-radius: 20px;
     }
+    @media (max-witdh: 991.98px) {
+      .hero-section .col-lg-6:last-child {
+        display: none;
+      }
+    }
