@@ -47,7 +47,7 @@
             </a>
           </li>
           <li>
-            <a class="dropdown-item dropdown-item-custom" href="../login.php">
+            <a class="dropdown-item dropdown-item-custom" href="../../rental-mobil/login.php">
               <i class="bi bi-box-arrow-right"></i> Logout
             </a>
           </li>
