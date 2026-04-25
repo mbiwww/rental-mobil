@@ -32,9 +32,11 @@
               <option value="mpv">MPV</option>
             </select>
           </div>
-          <button class="btn btn-search w-100" id="searchBtn">
-            <i class="bi bi-search me-2"></i>Cari Mobil
-          </button>
+          <a href="#">
+            <button class="btn btn-search w-100" id="searchBtn">
+              <i class="bi bi-search me-2"></i>Cari Mobil
+            </button>
+          </a>
         </div>
       </div>
 
@@ -61,11 +63,13 @@
           <img src="https://thumb.katadata.co.id/frontend/thumbnail/2024/06/29/zigi-668026c50bcd0-toyota-fortuner-bekas_910_512.jpg" class="custom-image" alt="Mobil">
         </div>
         <h5 class="fw-bold">Toyota Fortuner 2023</h5>
-        <div class="spec-item"><i class="bi bi-gear-fill"></i> Automatic</div>
-        <div class="spec-item"><i class="bi bi-people-fill"></i> 7 Kursi</div>
+        <div class="car-detail-item"><i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> Automatic </div>
+        <div class="car-detail-item"><i class="bi bi-people-fill"></i> <strong>Kursi:</strong> 7 Penumpang </div>
+        <div class="car-detail-item"><i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> 3 Koper</div>
+        <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 500.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <button class="btn btn-sewa btn-sm">Sewa</button>
+          <a href="#" class="btn btn-sewa btn-sm">Sewa</a>
         </div>
       </div>
     </div>
@@ -75,12 +79,14 @@
         <div class="car-img-placeholder rounded-4 mb-3">
           <img src="https://static1.hotcarsimages.com/wordpress/wp-content/uploads/2024/02/2023-honda-civic-si.jpg" class="custom-image" alt="Mobil">
         </div>
-        <h5 class="fw-bold">Honda Civic 2024</h5>
-        <div class="spec-item"><i class="bi bi-gear-fill"></i> Automatic</div>
-        <div class="spec-item"><i class="bi bi-people-fill"></i> 5 Kursi</div>
+        <h5 class="fw-bold">Honda Civic Tahun 2024</h5>
+        <div class="car-detail-item"><i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> Automatic </div>
+        <div class="car-detail-item"><i class="bi bi-people-fill"></i> <strong>Kursi:</strong> 5 Penumpang </div>
+        <div class="car-detail-item"><i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> 3 Koper</div>
+        <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2024</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 400.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <button class="btn btn-sewa btn-sm">Sewa</button>
+          <a href="#" class="btn btn-sewa btn-sm">Sewa</a>
         </div>
       </div>
     </div>
@@ -91,11 +97,13 @@
           <img src="https://wallpapercave.com/wp/wp12186590.jpg" class="custom-image" alt="Mobil">
         </div>
         <h5 class="fw-bold">Toyota Avanza 2023</h5>
-        <div class="spec-item"><i class="bi bi-gear-fill"></i> Manual</div>
-        <div class="spec-item"><i class="bi bi-people-fill"></i> 5 Kursi</div>
+        <div class="car-detail-item"><i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> Manual </div>
+        <div class="car-detail-item"><i class="bi bi-people-fill"></i> <strong>Kursi:</strong> 5 Penumpang </div>
+        <div class="car-detail-item"><i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> 3 Koper</div>
+        <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 300.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <button class="btn btn-sewa btn-sm">Sewa</button>
+          <a href="#" class="btn btn-sewa btn-sm">Sewa</a>
         </div>
       </div>
     </div>
@@ -158,17 +166,7 @@
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-  document.getElementById('searchBtn').addEventListener('click', function() {
-    const category = document.getElementById('carCategory').value;
-    if (category) {
-      alert('Anda memilih kategori: ' + category.toUpperCase() + '\nFitur pencarian akan mengarah ke halaman katalog.');
-    } else {
-      alert('Silakan pilih kategori mobil terlebih dahulu.');
-    }
-  });
-</script>
+
 <?php include 'assets/includes/footer.php'; ?>
 </body>
 </html>
-
