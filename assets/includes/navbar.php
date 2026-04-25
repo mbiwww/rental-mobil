@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="assets/css/navbar.css">
+
 </head>
 <body>
 
@@ -18,7 +18,7 @@
     </a>
 
     <div class="nav-right">
-      <a href="../../rental-mobil/katalog.php" class="catalog-link">
+      <a href="../../rental-mobil/pages/katalog.php" class="catalog-link">
         <i class="bi bi-grid-3x3-gap-fill me-1"></i> 
         <span>Katalog Mobil</span>
       </a>
@@ -47,7 +47,7 @@
             </a>
           </li>
           <li>
-            <a class="dropdown-item dropdown-item-custom" href="login.php">
+            <a class="dropdown-item dropdown-item-custom" href="../login.php">
               <i class="bi bi-box-arrow-right"></i> Logout
             </a>
           </li>
