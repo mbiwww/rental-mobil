@@ -47,7 +47,7 @@
             </a>
           </li>
           <li>
-            <a class="dropdown-item dropdown-item-custom" href="navbar before login.php">
+            <a class="dropdown-item dropdown-item-custom" href="#">
               <i class="bi bi-box-arrow-right"></i> Logout
             </a>
           </li>
