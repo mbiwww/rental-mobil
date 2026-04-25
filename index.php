@@ -111,7 +111,7 @@
     </div>
   </div>
   <div class="text-center mt-5">
-    <a href="#" class="btn btn-seeall btn-lg px-5">
+    <a href="pages/katalog.php" class="btn btn-seeall btn-lg px-5">
       <i class="bi bi-grid-3x3-gap-fill me-2"></i>Lihat Semua Mobil
     </a>
   </div>
