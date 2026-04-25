@@ -12,13 +12,13 @@
 <nav class="navbar navbar-rental">
   <div class="container">
 
-    <a href="../../../rental-mobil/" class="brand-wrapper">
+    <a href="../../rental-mobil/" class="brand-wrapper">
       <i class="bi bi-car-front-fill brand-icon"></i>
       <span class="brand-text">RentalKu</span>
     </a>
 
     <div class="nav-right">
-      <a href="#" class="catalog-link">
+      <a href="../../rental-mobil/katalog.php" class="catalog-link">
         <i class="bi bi-grid-3x3-gap-fill me-1"></i> 
         <span>Katalog Mobil</span>
       </a>
@@ -47,7 +47,7 @@
             </a>
           </li>
           <li>
-            <a class="dropdown-item dropdown-item-custom" href="#">
+            <a class="dropdown-item dropdown-item-custom" href="login.php">
               <i class="bi bi-box-arrow-right"></i> Logout
             </a>
           </li>
