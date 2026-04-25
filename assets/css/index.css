@@ -94,13 +94,18 @@
       font-size: 4rem;
       color: #2563eb;
     }
-    .spec-item {
+    .car-detail-item {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       font-size: 0.9rem;
       color: #475569;
       margin-bottom: 0.3rem;
+    }
+    .car-detail-item i {
+      color: #2563eb;
+      width: 20px;
+      text-align: center;
     }
     .price {
       font-weight: 700;
