@@ -23,7 +23,7 @@
         <span>Katalog Mobil</span>
       </a>
 
-      <a href="#" class="cart-icon" title="Keranjang Sewa">
+      <a href="../../rental-mobil/pages/keranjang.php" class="cart-icon" title="Keranjang Sewa">
         <i class="bi bi-cart3"></i>
       </a>
 
