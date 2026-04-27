@@ -84,7 +84,7 @@
         <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 500.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <button class="btn btn-sewa btn-sm">Sewa</button>
+          <a href="detail.php"><button class="btn btn-sewa btn-sm">Sewa</button></a>
         </div>
         <span class="status-badge status-tersedia mt-2 d-inline-block">Tersedia</span>
       </div>
