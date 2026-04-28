@@ -42,7 +42,7 @@
           </li>
           <li><hr class="dropdown-divider my-1"></li>
           <li>
-            <a class="dropdown-item dropdown-item-custom" href="#">
+            <a class="dropdown-item dropdown-item-custom" href="../../rental-mobil/pages/dashboard.php">
               <i class="bi bi-grid-fill"></i> Dashboard Saya
             </a>
           </li>
