@@ -1,0 +1,209 @@
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f5f7fa;
+  margin: 0;
+  padding: 0;
+}
+
+/* Container */
+.dashboard-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Header */
+.dashboard-header h1 {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: #0b2b4a;
+  padding-top: 1.5rem;
+}
+
+/* Tabs */
+.nav-tabs-custom {
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+}
+
+.nav-tabs-custom .nav-link {
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0;
+  color: #64748b;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.nav-tabs-custom .nav-link.active {
+  color: #2563eb;
+  background: transparent;
+}
+
+.nav-tabs-custom .nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #2563eb;
+  border-radius: 3px 3px 0 0;
+}
+
+/* Card */
+.card-custom {
+  background: white;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border: none;
+  border-radius: 28px;
+  box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.06);
+}
+
+/* Rental Item */
+.rental-item {
+  background: #fafbfc;
+  padding: 1rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  border-left: 5px solid #e2e8f0;
+}
+
+/* Status Colors */
+.rental-item.status-menunggu-verifikasi {
+  border-left-color: #f59e0b;
+}
+
+.rental-item.status-terkonfirmasi {
+  border-left-color: #3b82f6;
+}
+
+.rental-item.status-disewa {
+  border-left-color: #6366f1;
+}
+
+.rental-item.status-selesai {
+  border-left-color: #10b981;
+}
+
+.rental-item.status-dibatalkan {
+  border-left-color: #9ca3af;
+}
+
+.rental-item.status-refund-diproses {
+  border-left-color: #f97316;
+}
+
+.rental-item.status-refund-berhasil {
+  border-left-color: #8b5cf6;
+}
+
+/* Buttons */
+.btn-rental-outline {
+  padding: 0.4rem 1.2rem;
+  border-radius: 40px;
+  border: none;
+  background: #0b2b4a;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 6px 14px rgba(11, 43, 74, 0.2);
+  transition: 0.2s;
+}
+
+.btn-rental-outline:hover {
+  background: #1e3a6f;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -8px rgba(11, 43, 74, 0.3);
+}
+
+.btn-rental-outline:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.btn-rental {
+  padding: 0.6rem 1.5rem;
+  border-radius: 40px;
+  border: none;
+  background: #0b2b4a;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 6px 14px rgba(11, 43, 74, 0.2);
+  transition: 0.2s;
+}
+
+.btn-rental:hover {
+  background: #1e3a6f;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -8px rgba(11, 43, 74, 0.3);
+}
+
+/* Form */
+.form-control {
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  border: 1.5px solid #e2e8f0;
+  background-color: #fafbfc;
+  font-weight: 500;
+}
+
+.form-control:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #cbd5e1;
+}
+
+/* Info */
+.info-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  font-weight: 600;
+  color: #0b2b4a;
+}
+
+/* Badge */
+.verified-badge {
+  padding: 0.25rem 0.8rem;
+  border-radius: 20px;
+  background: #dcfce7;
+  color: #16a34a;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-status {
+  font-size: 0.75rem;
+}
+
+/* Modal */
+.modal-body .nav-pills .nav-link {
+  border-radius: 12px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.modal-body .nav-pills .nav-link.active {
+  background: #0b2b4a;
+  color: white;
+}
