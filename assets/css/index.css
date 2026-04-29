@@ -34,6 +34,10 @@
       box-shadow: 0 20px 40px -8px rgba(0,0,0,0.15);
       color: #1e293b;
     }
+    .search-card a {
+      text-decoration: none;
+      color: inherit;
+    }
     .form-select, .form-control {
       border-radius: 16px;
       padding: 0.75rem 1rem;
@@ -41,7 +45,6 @@
       background-color: #fafbfc;
       font-weight: 500;
     }
-    .btn-sewa,
     .btn-search,
     .btn-seeall {
       border-radius: 40px;
@@ -53,7 +56,6 @@
       transition: all 0.2s;
       color: white;
     }
-    .btn-sewa:hover,
     .btn-search:hover,
     .btn-seeall:hover {
       background: #1e3a6f;
@@ -83,16 +85,16 @@
       transform: translateY(-6px);
       box-shadow: 0 25px 35px -12px rgba(0,0,0,0.15);
     }
+    .car-card a {
+      text-decoration: none;
+      color: inherit;
+    }
     .car-img-placeholder {
       height: 200px;
       background: #f1f5f9;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-    .car-img-placeholder i {
-      font-size: 4rem;
-      color: #2563eb;
     }
     .car-detail-item {
       display: flex;
