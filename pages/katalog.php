@@ -73,8 +73,9 @@
     <!-- Mobil 1: Toyota Fortuner 2023 (SUV, Automatic, Tersedia) -->
     <div class="col-md-6 col-lg-4 car-item" data-type="suv" data-transmisi="automatic" data-status="tersedia" data-name="Toyota Fortuner 2023">
       <div class="car-card p-3">
+        <a href="detail.php">
         <div class="car-img-placeholder rounded-4 mb-3">
-          <i class="bi bi-truck-front"></i>
+          <img src="https://thumb.katadata.co.id/frontend/thumbnail/2024/06/29/zigi-668026c50bcd0-toyota-fortuner-bekas_910_512.jpg" class="custom-image" alt="Mobil">
           <span class="car-type-badge">SUV</span>
         </div>
         <h5 class="fw-bold">Toyota Fortuner 2023</h5>
@@ -84,17 +85,18 @@
         <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 500.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <a href="detail.php"><button class="btn btn-sewa btn-sm">Sewa</button></a>
         </div>
         <span class="status-badge status-tersedia mt-2 d-inline-block">Tersedia</span>
       </div>
+      </a>
     </div>
 
     <!-- Mobil 2: Honda Civic 2024 (Sedan, Automatic, Disewa) -->
     <div class="col-md-6 col-lg-4 car-item" data-type="sedan" data-transmisi="automatic" data-status="disewa" data-name="Honda Civic 2024">
       <div class="car-card p-3">
+        <a href="#">
         <div class="car-img-placeholder rounded-4 mb-3">
-          <i class="bi bi-car-front-fill"></i>
+          <img src="#" class="custom-image" alt="Mobil">
           <span class="car-type-badge">Sedan</span>
         </div>
         <h5 class="fw-bold">Honda Civic 2024</h5>
@@ -104,17 +106,18 @@
         <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2024</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 400.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <button class="btn btn-sewa btn-sm" disabled>Sewa</button>
         </div>
         <span class="status-badge status-disewa mt-2 d-inline-block">Disewa</span>
       </div>
+      </a>
     </div>
 
     <!-- Mobil 3: Toyota Avanza 2023 (MPV, Manual, Tersedia) -->
     <div class="col-md-6 col-lg-4 car-item" data-type="mpv" data-transmisi="manual" data-status="tersedia" data-name="Toyota Avanza 2023">
       <div class="car-card p-3">
+        <a href="#">
         <div class="car-img-placeholder rounded-4 mb-3">
-          <i class="bi bi-van"></i>
+          <img src="#" class="custom-image" alt="Mobil">
           <span class="car-type-badge">MPV</span>
         </div>
         <h5 class="fw-bold">Toyota Avanza 2023</h5>
@@ -124,17 +127,18 @@
         <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 300.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <button class="btn btn-sewa btn-sm">Sewa</button>
         </div>
         <span class="status-badge status-tersedia mt-2 d-inline-block">Tersedia</span>
       </div>
+      </a>
     </div>
 
     <!-- Mobil 4: Honda Brio 2024 (Hatchback, Automatic, Maintenance) -->
     <div class="col-md-6 col-lg-4 car-item" data-type="hatchback" data-transmisi="automatic" data-status="maintenance" data-name="Honda Brio 2024">
       <div class="car-card p-3">
+        <a href="#">
         <div class="car-img-placeholder rounded-4 mb-3">
-          <i class="bi bi-car-front"></i>
+          <img src="#" class="custom-image" alt="Mobil">
           <span class="car-type-badge">Hatchback</span>
         </div>
         <h5 class="fw-bold">Honda Brio 2024</h5>
@@ -144,17 +148,18 @@
         <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2024</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 250.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <button class="btn btn-sewa btn-sm" disabled>Sewa</button>
         </div>
         <span class="status-badge status-maintenance mt-2 d-inline-block">Maintenance</span>
       </div>
+      </a>
     </div>
 
     <!-- Mobil 5: Mitsubishi Pajero Sport 2023 (SUV, Automatic, Tersedia) -->
     <div class="col-md-6 col-lg-4 car-item" data-type="suv" data-transmisi="automatic" data-status="tersedia" data-name="Mitsubishi Pajero Sport">
       <div class="car-card p-3">
+        <a href="#">
         <div class="car-img-placeholder rounded-4 mb-3">
-          <i class="bi bi-truck"></i>
+          <img src="#" class="custom-image" alt="Mobil">
           <span class="car-type-badge">SUV</span>
         </div>
         <h5 class="fw-bold">Mitsubishi Pajero Sport</h5>
@@ -164,17 +169,18 @@
         <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 550.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <button class="btn btn-sewa btn-sm">Sewa</button>
         </div>
         <span class="status-badge status-tersedia mt-2 d-inline-block">Tersedia</span>
       </div>
+      </a>
     </div>
 
     <!-- Mobil 6: Toyota Camry 2024 (Sedan, Automatic, Disewa) -->
     <div class="col-md-6 col-lg-4 car-item" data-type="sedan" data-transmisi="automatic" data-status="disewa" data-name="Toyota Camry 2024">
       <div class="car-card p-3">
+        <a href="#">
         <div class="car-img-placeholder rounded-4 mb-3">
-          <i class="bi bi-car-front-fill"></i>
+          <img src="#" class="custom-image" alt="Mobil">
           <span class="car-type-badge">Sedan</span>
         </div>
         <h5 class="fw-bold">Toyota Camry 2024</h5>
@@ -184,10 +190,10 @@
         <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2024</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 600.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <button class="btn btn-sewa btn-sm" disabled>Sewa</button>
         </div>
         <span class="status-badge status-disewa mt-2 d-inline-block">Disewa</span>
       </div>
+      </a>
     </div>
   </div>
 </div>
