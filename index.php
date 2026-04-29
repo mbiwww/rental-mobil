@@ -61,6 +61,7 @@
     <!-- Card 1: -->
     <div class="col-md-4">
       <div class="car-card p-3">
+        <a href="pages/detail.php">
         <div class="car-img-placeholder rounded-4 mb-3">
           <img src="https://thumb.katadata.co.id/frontend/thumbnail/2024/06/29/zigi-668026c50bcd0-toyota-fortuner-bekas_910_512.jpg" class="custom-image" alt="Mobil">
         </div>
@@ -71,13 +72,14 @@
         <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 500.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <a href="#" class="btn btn-sewa btn-sm">Sewa</a>
         </div>
+        </a>
       </div>
     </div>
     <!-- Card 2: -->
     <div class="col-md-4">
       <div class="car-card p-3">
+        <a href="#">
         <div class="car-img-placeholder rounded-4 mb-3">
           <img src="https://static1.hotcarsimages.com/wordpress/wp-content/uploads/2024/02/2023-honda-civic-si.jpg" class="custom-image" alt="Mobil">
         </div>
@@ -88,13 +90,14 @@
         <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2024</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 400.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <a href="#" class="btn btn-sewa btn-sm">Sewa</a>
         </div>
+        </a>
       </div>
     </div>
     <!-- Card 3 -->
     <div class="col-md-4">
       <div class="car-card p-3">
+        <a href="#">
         <div class="car-img-placeholder rounded-4 mb-3">
           <img src="https://wallpapercave.com/wp/wp12186590.jpg" class="custom-image" alt="Mobil">
         </div>
@@ -105,8 +108,8 @@
         <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
         <div class="d-flex justify-content-between align-items-center mt-3">
           <span class="price">Rp 300.000 <small class="text-secondary fw-normal">/hari</small></span>
-          <a href="#" class="btn btn-sewa btn-sm">Sewa</a>
         </div>
+        </a>
       </div>
     </div>
   </div>
