@@ -1,157 +1,231 @@
-<?php
-session_start();
-include '../config/database.php';
-include '../config/functions.php';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentalKu Admin - Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Inter', sans-serif; }
+        
+        /* Sidebar Styling */
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: white;
+            position: fixed;
+            border-right: 1px solid #eee;
+            padding: 20px;
+        }
+        .nav-link {
+            color: #6c757d;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+        .nav-link i { margin-right: 12px; font-size: 1.2rem; }
+        .nav-link:hover, .nav-link.active {
+            background: #eef4ff;
+            color: #0d6efd;
+            font-weight: 500;
+        }
 
-// Proteksi halaman admin
-// cekLoginAdmin(); 
+        /* Main Content */
+        .main-content { margin-left: 250px; }
+        
+        /* Header */
+        .top-header {
+            background: white;
+            padding: 15px 30px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-// Hitung Statistik Asli dari Database
-$query_mobil  = mysqli_query($conn, "SELECT COUNT(*) as total FROM mobil");
-$data_mobil   = mysqli_fetch_assoc($query_mobil);
+        /* Dashboard Cards */
+        .stat-card {
+            border: none;
+            border-radius: 15px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            height: 100%;
+        }
+        .icon-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
 
-$query_sewa   = mysqli_query($conn, "SELECT COUNT(*) as total FROM transaksi WHERE status_pembayaran='Terverifikasi'");
-$data_sewa    = mysqli_fetch_assoc($query_sewa);
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="d-flex align-items-center mb-4 ps-2">
+            <i class="bi bi-car-front-fill text-primary fs-3 me-2"></i>
+            <h5 class="fw-bold mb-0">RentalKu Admin</h5>
+        </div>
+        
+        <nav class="nav flex-column">
+            <a class="nav-link active" href="#"><i class="bi bi-grid"></i> Dashboard</a>
+            <a class="nav-link" href="#"><i class="bi bi-list-ul"></i> Kategori</a>
+            <a class="nav-link" href="#"><i class="bi bi-car-front"></i> Armada Mobil</a>
+            <a class="nav-link" href="#"><i class="bi bi-cash-stack"></i> Transaksi</a>
+            <a class="nav-link" href="#"><i class="bi bi-people"></i> Data Customer</a>
+            <a class="nav-link" href="#"><i class="bi bi-arrow-left-right"></i> Pengembalian</a>
+            <a class="nav-link" href="#"><i class="bi bi-file-earmark-text"></i> Laporan</a>
+        </nav>
+    </div>
 
-$query_income = mysqli_query($conn, "SELECT SUM(total_biaya) as total FROM transaksi WHERE status_pembayaran='Selesai'");
-$data_income  = mysqli_fetch_assoc($query_income);
-?>
-
-<h3 class="fw-bold mb-0"><?= $data_mobil['total']; ?></h3>  
-<h3 class="fw-bold mb-0"><?= formatRupiah($data_income['total'] ?? 0); ?></h3>
-
-<div class="d-flex">
-    <?php include '../includes/sidebar_admin.php'; ?>
-
-    <div class="content-main p-4 w-100 bg-light">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h4 class="fw-bold mb-0">Dashboard</h4>
-                <p class="text-muted small">Selamat datang di panel admin RentalKu</p>
-            </div>
-            <div class="user-admin d-flex align-items-center">
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="top-header">
+            <div></div> <!-- Spacer -->
+            <div class="d-flex align-items-center">
                 <div class="text-end me-3">
-                    <p class="mb-0 fw-bold">Admin User</p>
-                    <small class="text-muted">Administrator</small>
+                    <p class="mb-0 fw-bold small">Admin User</p>
+                    <p class="text-muted mb-0" style="font-size: 11px;">Administrator</p>
                 </div>
-                <img src="../assets/img/admin-avatar.png" class="rounded-circle" width="40" alt="Admin">
+                <i class="bi bi-box-arrow-right fs-4 text-muted cursor-pointer"></i>
             </div>
-        </div>
+        </header>
 
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm p-3">
-                    <small class="text-muted fw-bold">Total Mobil</small>
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <h3 class="fw-bold mb-0">6</h3>
-                        <div class="text-primary bg-primary bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-car-front"></i>
-                        </div>
-                    </div>
-                    <small class="text-muted mt-2">5 tersedia</small>
-                </div>
+        <!-- Dashboard Content -->
+        <div class="p-4">
+            <div class="mb-4">
+                <h2 class="fw-bold">Dashboard</h2>
+                <p class="text-muted">Selamat datang di panel admin RentalKu</p>
             </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm p-3">
-                    <small class="text-muted fw-bold">Orderan Aktif</small>
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <h3 class="fw-bold mb-0">0</h3>
-                        <div class="text-success bg-success bg-opacity-10 p-2 rounded">
-                            <i class="bi bi- megaphone"></i>
-                        </div>
-                    </div>
-                    <small class="text-muted mt-2">Sedang berjalan</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm p-3">
-                    <small class="text-muted fw-bold">Pendapatan Bulan Ini</small>
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <h3 class="fw-bold mb-0">Rp 1.5jt</h3>
-                        <div class="text-warning bg-warning bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-currency-dollar"></i>
-                        </div>
-                    </div>
-                    <small class="text-muted mt-2">2 transaksi</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm p-3">
-                    <small class="text-muted fw-bold">Pertumbuhan</small>
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <h3 class="fw-bold mb-0">+23%</h3>
-                        <div class="text-info bg-info bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-graph-up"></i>
-                        </div>
-                    </div>
-                    <small class="text-muted mt-2">Dari bulan lalu</small>
-                </div>
-            </div>
-        </div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm p-4 h-100">
-                    <h6 class="fw-bold mb-4">Tren Penyewaan</h6>
-                    <canvas id="rentTrendChart"></canvas>
+            <!-- Stats Grid -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between">
+                            <p class="text-muted small fw-bold">Total Mobil</p>
+                            <i class="bi bi-car-front text-primary"></i>
+                        </div>
+                        <h2 class="fw-bold">6</h2>
+                        <p class="text-muted mb-0 small">5 tersedia</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between">
+                            <p class="text-muted small fw-bold">Orderan Aktif</p>
+                            <i class="bi bi-receipt text-success"></i>
+                        </div>
+                        <h2 class="fw-bold">0</h2>
+                        <p class="text-muted mb-0 small">Sedang berjalan</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between">
+                            <p class="text-muted small fw-bold">Pendapatan Bulan Ini</p>
+                            <i class="bi bi-currency-dollar text-warning"></i>
+                        </div>
+                        <h2 class="fw-bold">Rp 1.0jt</h2>
+                        <p class="text-muted mb-0 small">1 transaksi</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between">
+                            <p class="text-muted small fw-bold">Pertumbuhan</p>
+                            <i class="bi bi-graph-up-arrow text-info"></i>
+                        </div>
+                        <h2 class="fw-bold text-dark">+23%</h2>
+                        <p class="text-muted mb-0 small">Dari bulan lalu</p>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm p-4 h-100">
-                    <h6 class="fw-bold mb-4">Pendapatan Bulanan</h6>
-                    <canvas id="incomeChart"></canvas>
-                </div>
-            </div>
-        </div>
 
-        <div class="card border-0 shadow-sm p-4">
-            <h6 class="fw-bold mb-4">Transaksi Terbaru</h6>
-            <div class="transaction-list">
-                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+            <!-- Charts Grid -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h6 class="fw-bold mb-4">Tren Penyewaan</h6>
+                        <canvas id="rentTrendChart" height="200"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h6 class="fw-bold mb-4">Pendapatan Bulanan</h6>
+                        <canvas id="incomeChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Transaction -->
+            <div class="stat-card">
+                <h6 class="fw-bold mb-4">Transaksi Terbaru</h6>
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="mb-0 fw-bold">John Doe</p>
-                        <small class="text-muted">1 mobil • 15/4/2026</small>
+                        <p class="mb-0 fw-bold text-dark">John Doe</p>
+                        <p class="text-muted small mb-0">1 mobil • 8/4/2026</p>
                     </div>
                     <div class="text-end">
-                        <p class="mb-0 fw-bold text-primary">Rp 500.000</p>
-                        <span class="badge bg-warning text-dark small">Pending</span>
+                        <p class="mb-0 fw-bold text-primary">Rp 1.000.000</p>
+                        <p class="text-muted small mb-0">Pending</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-const ctx = document.getElementById('rentTrendChart').getContext('2d');
-new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr'],
-        datasets: [{
-            label: 'Total Sewa',
-            data: [12, 19, 15, 8],
-            backgroundColor: '#0d6efd',
-            borderRadius: 5
-        }]
-    }
-});
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Rent Trend Chart (Bar)
+        new Chart(document.getElementById('rentTrendChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr'],
+                datasets: [{
+                    label: 'Total Sewa',
+                    data: [12, 19, 15, 8],
+                    backgroundColor: '#4e89ff',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, border: { dash: [5, 5] } } }
+            }
+        });
 
-// Income Chart (Line Chart)
-const ctx2 = document.getElementById('incomeChart').getContext('2d');
-new Chart(ctx2, {
-    type: 'line',
-    data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr'],
-        datasets: [{
-            label: 'Pendapatan',
-            data: [2500000, 4000000, 3000000, 500000],
-            borderColor: '#198754',
-            tension: 0.4
-        }]
-    }
-});
-</script>
-
-<?php include '../includes/footer_admin.php'; ?>
+        // Income Chart (Line)
+        new Chart(document.getElementById('incomeChart'), {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr'],
+                datasets: [{
+                    label: 'Pendapatan',
+                    data: [2500000, 4000000, 3000000, 500000],
+                    borderColor: '#4bc0c0',
+                    tension: 0.4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#4bc0c0',
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, border: { dash: [5, 5] } } }
+            }
+        });
+    </script>
+</body>
+</html>

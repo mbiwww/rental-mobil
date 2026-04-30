@@ -64,18 +64,40 @@
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="logo-admin"><i class="fas fa-car-side" style="color: var(--primary-blue);"></i> RentalKu Admin</div>
-        <div class="nav-menu">
-            <a href="#" class="nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
-            <a href="#" class="nav-item"><i class="fas fa-tags"></i> Kategori</a>
-            <a href="#" class="nav-item"><i class="fas fa-car"></i> Armada Mobil</a>
-            <a href="#" class="nav-item"><i class="fas fa-file-invoice-dollar"></i> Transaksi</a>
-            <a href="#" class="nav-item"><i class="fas fa-users"></i> Data Customer</a>
-            <a href="#" class="nav-item"><i class="fas fa-undo"></i> Pengembalian</a>
-            <a href="#" class="nav-item active"><i class="fas fa-file-alt"></i> Laporan</a>
-        </div>
+   <div class="sidebar">
+    <div class="logo-admin">
+        <i class="fas fa-car-side" style="color: var(--primary-blue);"></i> RentalKu Admin
     </div>
+    <div class="nav-menu">
+        <a href="../index.php" class="nav-item">
+            <i class="fas fa-th-large"></i> Dashboard
+        </a>
+        
+        <a href="kategori.php" class="nav-item">
+            <i class="fas fa-tags"></i> Kategori
+        </a>
+        
+        <a href="armada.php" class="nav-item">
+            <i class="fas fa-car"></i> Armada Mobil
+        </a>
+        
+        <a href="transaksi.php" class="nav-item">
+            <i class="fas fa-file-invoice-dollar"></i> Transaksi
+        </a>
+        
+        <a href="customer.php" class="nav-item">
+            <i class="fas fa-users"></i> Data Customer
+        </a>
+        
+        <a href="pengembalian.php" class="nav-item">
+            <i class="fas fa-redo-alt"></i> Pengembalian
+        </a>
+        
+        <a href="laporan.php" class="nav-item">
+            <i class="fas fa-file-alt"></i> Laporan
+        </a>
+    </div>
+</div>
 
     <div class="main-content">
         <div class="dashboard-header">

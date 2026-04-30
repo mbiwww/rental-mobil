@@ -1,138 +1,248 @@
-<?php
-// admin/pages/armada.php - Manajemen Mobil RentalKu
-include '../../config/database.php';
-include '../../config/functions.php';
-include '../../includes/header_admin.php'; 
-?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Armada - RentalKu</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Inter', sans-serif; color: #333; }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background: white;
+            position: fixed;
+            border-right: 1px solid #eee;
+            padding: 20px;
+        }
+        .nav-link {
+            color: #6c757d;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+        .nav-link.active {
+            background: #eef4ff;
+            color: #0d6efd;
+            font-weight: 600;
+        }
 
-<div class="d-flex">
-    <?php include '../../includes/sidebar_admin.php'; ?>
+        /* Main Content */
+        .main-content { margin-left: 260px; }
+        .top-header {
+            background: white;
+            padding: 15px 40px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    <div class="content-main p-4 w-100 bg-light">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h4 class="fw-bold mb-0">Manajemen Armada</h4>
-                <p class="text-muted small">Total 6 mobil terdaftar</p>
-            </div>
-            <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalTambahMobil">
-                <i class="bi bi-plus-lg"></i> Tambah Mobil
-            </button>
+        /* Elements */
+        .btn-dark-custom {
+            background-color: #0b0e11;
+            color: white;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+            border: none;
+        }
+        .search-input, .status-select {
+            background-color: #f1f3f5;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+        }
+        .table-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid #efefef;
+        }
+        .img-mobil {
+            width: 80px;
+            height: 55px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .badge-available {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="d-flex align-items-center mb-5 ps-2">
+            <i class="bi bi-car-front-fill text-primary fs-3 me-2"></i>
+            <h5 class="fw-bold mb-0">RentalKu Admin</h5>
         </div>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="#"><i class="bi bi-grid"></i> Dashboard</a>
+            <a class="nav-link" href="#"><i class="bi bi-list-ul"></i> Kategori</a>
+            <a class="nav-link active" href="#"><i class="bi bi-car-front"></i> Armada Mobil</a>
+            <a class="nav-link" href="#"><i class="bi bi-cash-stack"></i> Transaksi</a>
+            <a class="nav-link" href="#"><i class="bi bi-people"></i> Data Customer</a>
+            <a class="nav-link" href="#"><i class="bi bi-arrow-left-right"></i> Pengembalian</a>
+            <a class="nav-link" href="#"><i class="bi bi-file-earmark-text"></i> Laporan</a>
+        </nav>
+    </div>
 
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-white">
-                        <tr>
-                            <th class="px-4 py-3 text-muted small">MOBIL</th>
-                            <th class="py-3 text-muted small">KATEGORI</th>
-                            <th class="py-3 text-muted small">TRANSMISI</th>
-                            <th class="py-3 text-muted small">HARGA/HARI</th>
-                            <th class="py-3 text-muted small">STATUS</th>
-                            <th class="py-3 text-muted small text-center">AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white">
-                        <tr>
-                            <td class="px-4">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="../../assets/img/mobil/fortuner.jpg" class="rounded-3" width="60" height="40" style="object-fit: cover;">
-                                    <div>
-                                        <p class="mb-0 fw-bold">Toyota Fortuner</p>
-                                        <small class="text-muted">ID: MOB-001</small>
+    <!-- Content -->
+    <div class="main-content">
+        <header class="top-header">
+            <div></div>
+            <div class="d-flex align-items-center">
+                <div class="text-end me-3">
+                    <p class="mb-0 fw-bold">Admin User</p>
+                    <small class="text-muted">Administrator</small>
+                </div>
+                <i class="bi bi-box-arrow-right fs-4 text-muted"></i>
+            </div>
+        </header>
+
+        <div class="p-5">
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <h1 class="fw-bold mb-1">Manajemen Armada</h1>
+                    <p class="text-muted">Kelola data mobil rental</p>
+                </div>
+                <button class="btn btn-dark-custom d-flex align-items-center gap-2">
+                    <i class="bi bi-plus-lg"></i> Tambah Mobil
+                </button>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <input type="text" class="form-control search-input" placeholder="Cari mobil...">
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select status-select">
+                        <option>Semua Status</option>
+                        <option>Available</option>
+                        <option>Rented</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Table Section -->
+            <div class="table-container shadow-sm">
+                <h5 class="fw-bold mb-4">Daftar Mobil (6)</h5>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead class="text-muted small">
+                            <tr>
+                                <th>Mobil</th>
+                                <th>Kategori</th>
+                                <th>Harga/Hari</th>
+                                <th>Status</th>
+                                <th>Spesifikasi</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Item 1 -->
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="https://placehold.co/100x70/222/fff?text=Fortuner" class="img-mobil">
+                                        <div>
+                                            <p class="mb-0 fw-bold">Toyota Fortuner 2023</p>
+                                            <small class="text-muted">2023</small>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td>SUV</td>
-                            <td>Automatic</td>
-                            <td class="fw-bold text-primary">Rp 500.000</td>
-                            <td>
-                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">Available</span>
-                            </td>
-                            <td class="text-center">
-                                <button class="btn btn-light btn-sm text-primary me-1"><i class="bi bi-pencil-square"></i></button>
-                                <button class="btn btn-light btn-sm text-danger"><i class="bi bi-trash"></i></button>
-                            </td>
-                        </tr>
-                        
-                        <tr>
-                            <td class="px-4">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="../../assets/img/mobil/civic.jpg" class="rounded-3" width="60" height="40" style="object-fit: cover;">
-                                    <div>
-                                        <p class="mb-0 fw-bold">Honda Civic</p>
-                                        <small class="text-muted">ID: MOB-002</small>
+                                </td>
+                                <td>SUV</td>
+                                <td class="fw-bold">Rp 500.000</td>
+                                <td>
+                                    <div class="badge-available">Available <i class="bi bi-chevron-down small"></i></div>
+                                </td>
+                                <td>
+                                    <small class="text-muted d-block">Automatic</small>
+                                    <small class="text-muted">7 kursi • 3 bagasi</small>
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-link text-dark p-1"><i class="bi bi-eye"></i></button>
+                                    <button class="btn btn-link text-dark p-1"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-link text-danger p-1"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            <!-- Item 2 -->
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="https://placehold.co/100x70/333/fff?text=Civic" class="img-mobil">
+                                        <div>
+                                            <p class="mb-0 fw-bold">Honda Civic 2024</p>
+                                            <small class="text-muted">2024</small>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td>Sedan</td>
-                            <td>Automatic</td>
-                            <td class="fw-bold text-primary">Rp 400.000</td>
-                            <td>
-                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 text-dark">Rented</span>
-                            </td>
-                            <td class="text-center">
-                                <button class="btn btn-light btn-sm text-primary me-1"><i class="bi bi-pencil-square"></i></button>
-                                <button class="btn btn-light btn-sm text-danger"><i class="bi bi-trash"></i></button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                                </td>
+                                <td>Sedan</td>
+                                <td class="fw-bold">Rp 400.000</td>
+                                <td>
+                                    <div class="badge-available">Available <i class="bi bi-chevron-down small"></i></div>
+                                </td>
+                                <td>
+                                    <small class="text-muted d-block">Automatic</small>
+                                    <small class="text-muted">5 kursi • 2 bagasi</small>
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-link text-dark p-1"><i class="bi bi-eye"></i></button>
+                                    <button class="btn btn-link text-dark p-1"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-link text-danger p-1"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            <!-- Item 3 -->
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="https://placehold.co/100x70/111/fff?text=Avanza" class="img-mobil">
+                                        <div>
+                                            <p class="mb-0 fw-bold">Toyota Avanza 2023</p>
+                                            <small class="text-muted">2023</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>MPV</td>
+                                <td class="fw-bold">Rp 300.000</td>
+                                <td>
+                                    <div class="badge-available">Available <i class="bi bi-chevron-down small"></i></div>
+                                </td>
+                                <td>
+                                    <small class="text-muted d-block">Manual</small>
+                                    <small class="text-muted">7 kursi • 2 bagasi</small>
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-link text-dark p-1"><i class="bi bi-eye"></i></button>
+                                    <button class="btn btn-link text-dark p-1"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-link text-danger p-1"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="modal fade" id="modalTambahMobil" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold">Tambah Armada Baru</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="../modules/armada/proses_tambah.php" method="POST" enctype="multipart/form-data">
-                <div class="modal-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Nama Mobil</label>
-                            <input type="text" name="nama_mobil" class="form-control" placeholder="Contoh: Toyota Avanza" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Kategori</label>
-                            <select name="kategori_id" class="form-select">
-                                <option value="1">SUV</option>
-                                <option value="2">Sedan</option>
-                                <option value="3">MPV</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold">Transmisi</label>
-                            <select name="transmisi" class="form-select">
-                                <option value="Manual">Manual</option>
-                                <option value="Automatic">Automatic</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold">Kapasitas Kursi</label>
-                            <input type="number" name="kapasitas" class="form-control" placeholder="Contoh: 7" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold">Harga/Hari</label>
-                            <input type="number" name="harga" class="form-control" placeholder="500000" required>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label small fw-bold">Foto Mobil</label>
-                            <input type="file" name="foto" class="form-control" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary px-4">Simpan Armada</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<?php include '../../includes/footer_admin.php'; ?>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
