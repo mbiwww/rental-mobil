@@ -1,14 +1,32 @@
 <?php
-// config/database.php
+/**
+ * Konfigurasi koneksi database PDO
+ * 
+ * File ini berisi pengaturan koneksi ke database MySQL
+ * menggunakan PDO (PHP Data Objects).
+ */
 
-$host = "localhost";
-$user = "root";
-$pass = ""; // Kosongkan jika pakai Laragon/XAMPP default
-$db   = "db_rentalku"; // Pastikan nama database di phpMyAdmin sama
+// Pengaturan database
+$host    = 'localhost';
+$db      = 'car_rental';
+$user    = 'root';
+$pass    = '';
+$charset = 'utf8mb4';
 
-$conn = mysqli_connect($host, $user, $pass, $db);
+// DSN (Data Source Name)
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 
-if (!$conn) {
-    die("Koneksi gagal: " . mysqli_connect_error());
+// Opsi PDO
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,    // Lempar exception saat error
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,          // Hasil query dalam bentuk array asosiatif
+    PDO::ATTR_EMULATE_PREPARES   => false,                     // Gunakan prepared statement asli MySQL
+];
+
+// Buat koneksi PDO
+try {
+    $pdo = new PDO($dsn, $user, $pass, $options);
+} catch (PDOException $e) {
+    // Jangan tampilkan pesan error detail di production
+    die("Koneksi database gagal: " . $e->getMessage());
 }
-?>
