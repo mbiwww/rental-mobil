@@ -60,7 +60,7 @@
 <body>
 
   <?php
-  include '../assets/includes/navbar.php';
+  include '../includes/navbar.php';
   ?>
 
     <main class="empty-cart-container">
@@ -72,6 +72,6 @@
         <a href="katalog.php" class="btn-rent">Mulai Menyewa Mobil</a>
     </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<?php include '../assets/includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>
 </body>
 </html>
