@@ -23,10 +23,6 @@
         <span>Katalog Mobil</span>
       </a>
 
-      <a href="../../rental-mobil/pages/keranjang.php" class="cart-icon" title="Keranjang Sewa">
-        <i class="bi bi-cart3"></i>
-      </a>
-
       <div class="dropdown">
         <a href="#" class="profile-icon dropdown-toggle profile-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" role="button">
           <div class="avatar-circle">
@@ -47,7 +43,7 @@
             </a>
           </li>
           <li>
-            <a class="dropdown-item dropdown-item-custom" href="../../rental-mobil/login.php">
+            <a class="dropdown-item dropdown-item-custom" href="login.php">
               <i class="bi bi-box-arrow-right"></i> Logout
             </a>
           </li>
