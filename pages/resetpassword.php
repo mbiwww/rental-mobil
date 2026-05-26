@@ -6,7 +6,7 @@
   <title>RentalKu · Verifikasi & Reset Password</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="assets/css/resetpassword.css">
+  <link rel="stylesheet" href="../assets/css/resetpassword.css">
 </head>
 <body>
   <div class="container py-4 py-sm-5">
@@ -231,7 +231,7 @@
         
         // Bisa tambahkan redirect setelah 2 detik
         setTimeout(() => {
-          window.location.href = 'login.html';
+          window.location.href = 'login.php';
         }, 2500);
       });
 
