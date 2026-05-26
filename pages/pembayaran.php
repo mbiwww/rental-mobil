@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pembayaran - RentalKu</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/navbar.css">
+    <link rel="stylesheet" href="../assets/css/footer.css">
     <style>
         :root {
             --bg-light: #f8f9fa;
@@ -15,11 +17,6 @@
 
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #fff; }
         
-        /* Navbar */
-        header { display: flex; justify-content: space-between; padding: 20px 80px; border-bottom: 1px solid #eee; align-items: center; }
-        .logo { font-weight: bold; font-size: 22px; display: flex; align-items: center; gap: 8px; }
-        nav a { text-decoration: none; color: #333; margin-right: 30px; }
-
         /* Container Utama */
         .main-container { padding: 40px 80px; display: grid; grid-template-columns: 1.8fr 1fr; gap: 40px; }
 
@@ -62,17 +59,7 @@
     </style>
 </head>
 <body>
-
-    <header>
-        <div class="logo"><i class="fas fa-car-side" style="color: var(--primary-blue);"></i> RentalKu</div>
-        <div>
-            <a href="#">Katalog Mobil</a>
-            <i class="fas fa-shopping-cart" style="margin-right: 20px; position: relative;">
-                <span style="position: absolute; top: -8px; right: -10px; background: #000; color: #fff; font-size: 10px; padding: 2px 5px; border-radius: 50%;">1</span>
-            </i>
-            <i class="far fa-user"></i>
-        </div>
-    </header>
+    <?php include '../includes/navbar.php'; ?>
 
     <div class="main-container">
         <h1>Pembayaran</h1>
@@ -132,6 +119,7 @@
             </div>
         </div>
     </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<?php include '../includes/footer.php'; ?>
 </body>
 </html>
