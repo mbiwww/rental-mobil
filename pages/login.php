@@ -6,7 +6,7 @@
   <title>RentalKu · Login</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="assets/css/login.css">
+  <link rel="stylesheet" href="../assets/css/login.css">
 </head>
 <body>
   <div class="container py-4 py-sm-5">
@@ -50,8 +50,8 @@
                 <a href="resetpassword.php" class="forgot-link">Lupa Password?</a>
               </div>
 
-              <button type="submit" class="btn btn-login w-100 text-white fs-5 mb-3">
-                <a href="navbar.php"><i class="bi bi-box-arrow-in-right me-2"></i>Masuk</a>
+              <button type="submit" class="btn btn-login w-100 text-white fs-5 mb-3" onclick="window.location.href='../index.php'">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Masuk
               </button>
 
               <div class="text-center mt-3">
