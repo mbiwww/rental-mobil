@@ -13,7 +13,7 @@
 </head>
 <body>
   <?php
-  include '../assets/includes/navbar.php';
+  include '../includes/navbar.php';
   ?>
 <!-- Header -->
 <section class="page-header">
@@ -242,6 +242,6 @@
     applyFilters();
   })();
 </script>
-<?php include '../assets/includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>
 </body>
 </html>
