@@ -13,7 +13,7 @@
 </head>
 <body>
   <?php
-  include '../assets/includes/navbar.php';
+  include '../includes/navbar.php';
   ?>
 <div class="container detail-container">
   <a href="katalog.php" class="back-link"><i class="bi bi-arrow-left"></i> Kembali ke Katalog</a>
@@ -23,15 +23,12 @@
     <img src="https://thumb.katadata.co.id/frontend/thumbnail/2024/06/29/zigi-668026c50bcd0-toyota-fortuner-bekas_910_512.jpg" alt="Toyota Fortuner 2023" id="carImage">
   </div>
 
-  <div class="car-header">
-    <h1 class="car-title">Toyota Fortuner 2023</h1>
-    <span class="badge-availability badge-available">Tersedia</span>
-  </div>
-  <p class="text-secondary fs-5">Tahun 2023</p>
-
   <div class="row g-4">
     <div class="col-md-7">
       <div class="card-custom">
+        <h1 class="car-title">Toyota Fortuner 2023</h1>
+        <span class="badge-availability badge-available">Tersedia</span>
+        <hr>
         <h4 class="fw-bold mb-3">Spesifikasi</h4>
         <div class="spec-item"><i class="bi bi-gear-fill"></i><span><strong>Mesin:</strong> 2.4L Diesel Turbo</span></div>
         <div class="spec-item"><i class="bi bi-people-fill"></i><span><strong>Kapasitas:</strong> 7 Penumpang</span></div>
@@ -96,8 +93,8 @@
             <div class="price-detail" id="totalDetail"></div>
           </div>
 
-          <button type="submit" class="btn btn-rental w-100">
-            <i class="bi bi-cart-plus me-2"></i>Tambahkan ke Keranjang
+          <button type="submit" class="btn btn-rental w-100" onclick="window.location.href='pembayaran.php'">
+            <i class="bi bi-bag-fill"></i> Pesan Sekarang
           </button>
           <p class="disclaimer text-center mt-2">
             Dengan melanjutkan, Anda setuju dengan <a href="#">syarat dan ketentuan</a> kami
@@ -319,14 +316,6 @@
     updateEndDateMin();
     renderPickupDropoff();
     updateBooking();
-
-    document.getElementById('bookingForm').addEventListener('submit', function() {
-      if (totalInput.value === '0' || durationInput.value.includes('Min')) {
-        alert('Silakan pilih tanggal yang valid.');
-        return;
-      }
-      alert('Mobil berhasil ditambahkan ke keranjang.\nTotal: Rp ' + totalInput.value);
-    });
   })();
 
   // Modal image
@@ -334,6 +323,6 @@
     document.getElementById('fullImage').src = document.getElementById('carImage').src;
   });
 </script>
-<?php include '../assets/includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>
 </body>
 </html>
