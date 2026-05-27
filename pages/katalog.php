@@ -1,9 +1,48 @@
+<?php
+
+session_start();
+
+require_once '../config/database.php';
+require_once '../classes/Database.php';
+require_once '../classes/Car.php';
+require_once '../classes/CarType.php';
+
+$pdo       = Database::getInstance()->getConnection();
+$carModel  = new Car($pdo);
+$typeModel = new CarType($pdo);
+
+// ── Baca parameter filter dropdown (server-side) ─────────────────────────────
+// Catatan: 'search' dibaca untuk sticky input, tapi TIDAK dikirim ke query DB
+$filterSearch       = trim($_GET['search'] ?? '');
+$filterTypeId       = isset($_GET['type_id']) && $_GET['type_id'] !== '' ? (int)$_GET['type_id'] : null;
+$filterTransmission = in_array($_GET['transmission'] ?? '', ['manual', 'automatic'])
+                        ? $_GET['transmission'] : '';
+$filterStatus       = in_array($_GET['status'] ?? '', ['available', 'rented', 'maintenance'])
+                        ? $_GET['status'] : '';
+
+// ── Ambil semua kategori mobil untuk dropdown ────────────────────────────────
+$carTypes = $typeModel->getAll();
+
+// ── Query DB — hanya filter dropdown, text search ditangani client-side ──────
+$cars = $carModel->getFiltered('', $filterTypeId, $filterTransmission, $filterStatus);
+
+// ── Helper: label & CSS class untuk badge status ─────────────────────────────
+function getStatusBadge(string $status): array {
+    return match($status) {
+        'available'   => ['label' => 'Tersedia',    'class' => 'status-tersedia'],
+        'rented'      => ['label' => 'Disewa',       'class' => 'status-disewa'],
+        'maintenance' => ['label' => 'Maintenance',  'class' => 'status-maintenance'],
+        default       => ['label' => ucfirst($status), 'class' => ''],
+    };
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RentalKu · Katalog Mobil</title>
+  <title>RentalKu &middot; Katalog Mobil</title>
+  <meta name="description" content="Temukan mobil impian Anda dari koleksi RentalKu. Filter berdasarkan tipe, transmisi, dan status ketersediaan.">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,9 +51,8 @@
   <link rel="stylesheet" href="../assets/css/footer.css">
 </head>
 <body>
-  <?php
-  include '../includes/navbar.php';
-  ?>
+  <?php include '../includes/navbar.php'; ?>
+
 <!-- Header -->
 <section class="page-header">
   <div class="container">
@@ -24,224 +62,227 @@
 </section>
 
 <div class="container py-2">
-  <!-- Filter Section dengan pencarian kiri, dropdown auto-fit -->
-  <div class="filter-card">
-    <div class="row g-3 align-items-end">
-      <!-- Input Pencarian -->
-      <div class="col-12 col-md-4 col-lg-3">
-        <label class="form-label fw-semibold small text-uppercase text-secondary">Cari Mobil</label>
-        <div class="input-group">
-          <span class="input-group-text bg-transparent pe-2" style="border-radius:16px 0 0 16px; border:1.5px solid #e2e8f0; border-right:none;">
-            <i class="bi bi-search text-secondary"></i>
-          </span>
-          <input type="text" class="form-control ps-2" id="searchInput" placeholder="Nama mobil..." style="border-left:none;">
+  <!-- Filter Section — dikirim via GET ke halaman ini sendiri -->
+  <form method="GET" action="katalog.php" id="filterForm">
+    <div class="filter-card">
+      <div class="row g-3 align-items-end">
+
+        <!-- Input Pencarian -->
+        <div class="col-12 col-md-4 col-lg-3">
+          <label class="form-label fw-semibold small text-uppercase text-secondary" for="searchInput">Cari Mobil</label>
+          <div class="input-group">
+            <span class="input-group-text bg-transparent pe-2" style="border-radius:16px 0 0 16px; border:1.5px solid #e2e8f0; border-right:none;">
+              <i class="bi bi-search text-secondary"></i>
+            </span>
+            <input
+              type="text"
+              class="form-control ps-2"
+              id="searchInput"
+              name="search"
+              placeholder="Nama mobil..."
+              value="<?= htmlspecialchars($filterSearch) ?>"
+              style="border-left:none;"
+            >
+          </div>
         </div>
-      </div>
-      <!-- Tiga dropdown lain menggunakan col (auto width) -->
-      <div class="col-6 col-md col-lg">
-        <label class="form-label fw-semibold small text-uppercase text-secondary">Tipe Mobil</label>
-        <select class="form-select" id="filterType">
-          <option value="semua">Semua Tipe</option>
-          <option value="suv">SUV</option>
-          <option value="sedan">Sedan</option>
-          <option value="hatchback">Hatchback</option>
-          <option value="mpv">MPV</option>
-        </select>
-      </div>
-      <div class="col-6 col-md col-lg">
-        <label class="form-label fw-semibold small text-uppercase text-secondary">Transmisi</label>
-        <select class="form-select" id="filterTransmisi">
-          <option value="semua">Semua Transmisi</option>
-          <option value="automatic">Automatic</option>
-          <option value="manual">Manual</option>
-        </select>
-      </div>
-      <div class="col-6 col-md col-lg">
-        <label class="form-label fw-semibold small text-uppercase text-secondary">Status</label>
-        <select class="form-select" id="filterStatus">
-          <option value="semua">Semua Status</option>
-          <option value="tersedia">Tersedia</option>
-          <option value="disewa">Disewa</option>
-          <option value="maintenance">Maintenance</option>
-        </select>
+
+        <!-- Dropdown Tipe Mobil (dinamis dari DB) -->
+        <div class="col-6 col-md col-lg">
+          <label class="form-label fw-semibold small text-uppercase text-secondary" for="filterType">Tipe Mobil</label>
+          <select class="form-select" id="filterType" name="type_id">
+            <option value="">Semua Tipe</option>
+            <?php foreach ($carTypes as $type): ?>
+              <option
+                value="<?= (int)$type['id'] ?>"
+                <?= $filterTypeId === (int)$type['id'] ? 'selected' : '' ?>
+              >
+                <?= htmlspecialchars($type['name']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <!-- Dropdown Transmisi -->
+        <div class="col-6 col-md col-lg">
+          <label class="form-label fw-semibold small text-uppercase text-secondary" for="filterTransmisi">Transmisi</label>
+          <select class="form-select" id="filterTransmisi" name="transmission">
+            <option value="">Semua Transmisi</option>
+            <option value="automatic" <?= $filterTransmission === 'automatic' ? 'selected' : '' ?>>Automatic</option>
+            <option value="manual"    <?= $filterTransmission === 'manual'    ? 'selected' : '' ?>>Manual</option>
+          </select>
+        </div>
+
+        <!-- Dropdown Status -->
+        <div class="col-6 col-md col-lg">
+          <label class="form-label fw-semibold small text-uppercase text-secondary" for="filterStatus">Status</label>
+          <select class="form-select" id="filterStatus" name="status">
+            <option value="">Semua Status</option>
+            <option value="available"   <?= $filterStatus === 'available'   ? 'selected' : '' ?>>Tersedia</option>
+            <option value="rented"      <?= $filterStatus === 'rented'      ? 'selected' : '' ?>>Disewa</option>
+            <option value="maintenance" <?= $filterStatus === 'maintenance' ? 'selected' : '' ?>>Maintenance</option>
+          </select>
+        </div>
+
+        <!-- Tombol Cari & Reset -->
+        <div class="col-6 col-md-auto">
+          <button type="submit" class="btn btn-primary w-100" id="searchBtn">
+            <i class="bi bi-search me-1"></i>Cari
+          </button>
+        </div>
+        <?php if ($filterTypeId || $filterTransmission || $filterStatus): ?>
+          <div class="col-6 col-md-auto">
+            <a href="katalog.php" class="btn btn-outline-secondary w-100">
+              <i class="bi bi-x-circle me-1"></i>Reset
+            </a>
+          </div>
+        <?php endif; ?>
+
       </div>
     </div>
+  </form>
+
+  <!-- Info jumlah hasil -->
+  <div class="d-flex align-items-center justify-content-between mb-3 px-1">
+    <span class="text-secondary small">
+      Menampilkan <strong id="resultCount"><?= count($cars) ?></strong> mobil
+      <?php if ($filterTypeId || $filterTransmission || $filterStatus): ?>
+        <span class="badge bg-primary ms-1">Filter aktif</span>
+      <?php endif; ?>
+    </span>
   </div>
 
   <!-- Daftar Mobil -->
   <div class="row g-4" id="carList">
-    <!-- Mobil 1: Toyota Fortuner 2023 (SUV, Automatic, Tersedia) -->
-    <div class="col-md-6 col-lg-4 car-item" data-type="suv" data-transmisi="automatic" data-status="tersedia" data-name="Toyota Fortuner 2023">
-      <div class="car-card p-3">
-        <a href="detail.php">
-        <div class="car-img-placeholder rounded-4 mb-3">
-          <img src="https://thumb.katadata.co.id/frontend/thumbnail/2024/06/29/zigi-668026c50bcd0-toyota-fortuner-bekas_910_512.jpg" class="custom-image" alt="Mobil">
-          <span class="car-type-badge">SUV</span>
-        </div>
-        <h5 class="fw-bold">Toyota Fortuner 2023</h5>
-        <div class="car-detail-item"><i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> Automatic</div>
-        <div class="car-detail-item"><i class="bi bi-people-fill"></i> <strong>Kursi:</strong> 7 Penumpang</div>
-        <div class="car-detail-item"><i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> 3 Koper</div>
-        <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <span class="price">Rp 500.000 <small class="text-secondary fw-normal">/hari</small></span>
-        </div>
-        <span class="status-badge status-tersedia mt-2 d-inline-block">Tersedia</span>
-      </div>
-      </a>
-    </div>
 
-    <!-- Mobil 2: Honda Civic 2024 (Sedan, Automatic, Disewa) -->
-    <div class="col-md-6 col-lg-4 car-item" data-type="sedan" data-transmisi="automatic" data-status="disewa" data-name="Honda Civic 2024">
-      <div class="car-card p-3">
-        <a href="#">
-        <div class="car-img-placeholder rounded-4 mb-3">
-          <img src="#" class="custom-image" alt="Mobil">
-          <span class="car-type-badge">Sedan</span>
-        </div>
-        <h5 class="fw-bold">Honda Civic 2024</h5>
-        <div class="car-detail-item"><i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> Automatic</div>
-        <div class="car-detail-item"><i class="bi bi-people-fill"></i> <strong>Kursi:</strong> 5 Penumpang</div>
-        <div class="car-detail-item"><i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> 2 Koper</div>
-        <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2024</div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <span class="price">Rp 400.000 <small class="text-secondary fw-normal">/hari</small></span>
-        </div>
-        <span class="status-badge status-disewa mt-2 d-inline-block">Disewa</span>
+    <?php if (empty($cars)): ?>
+      <!-- State kosong dari server (filter dropdown tidak ada hasil) -->
+      <div class="col-12 text-center py-5" id="emptyState">
+        <i class="bi bi-search fs-1 text-secondary"></i>
+        <p class="text-secondary mt-3 mb-1">Tidak ada mobil yang sesuai dengan filter Anda.</p>
+        <a href="katalog.php" class="btn btn-outline-primary btn-sm mt-2">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Tampilkan Semua
+        </a>
       </div>
-      </a>
-    </div>
 
-    <!-- Mobil 3: Toyota Avanza 2023 (MPV, Manual, Tersedia) -->
-    <div class="col-md-6 col-lg-4 car-item" data-type="mpv" data-transmisi="manual" data-status="tersedia" data-name="Toyota Avanza 2023">
-      <div class="car-card p-3">
-        <a href="#">
-        <div class="car-img-placeholder rounded-4 mb-3">
-          <img src="#" class="custom-image" alt="Mobil">
-          <span class="car-type-badge">MPV</span>
-        </div>
-        <h5 class="fw-bold">Toyota Avanza 2023</h5>
-        <div class="car-detail-item"><i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> Manual</div>
-        <div class="car-detail-item"><i class="bi bi-people-fill"></i> <strong>Kursi:</strong> 7 Penumpang</div>
-        <div class="car-detail-item"><i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> 2 Koper</div>
-        <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <span class="price">Rp 300.000 <small class="text-secondary fw-normal">/hari</small></span>
-        </div>
-        <span class="status-badge status-tersedia mt-2 d-inline-block">Tersedia</span>
-      </div>
-      </a>
-    </div>
+    <?php else: ?>
 
-    <!-- Mobil 4: Honda Brio 2024 (Hatchback, Automatic, Maintenance) -->
-    <div class="col-md-6 col-lg-4 car-item" data-type="hatchback" data-transmisi="automatic" data-status="maintenance" data-name="Honda Brio 2024">
-      <div class="car-card p-3">
-        <a href="#">
-        <div class="car-img-placeholder rounded-4 mb-3">
-          <img src="#" class="custom-image" alt="Mobil">
-          <span class="car-type-badge">Hatchback</span>
-        </div>
-        <h5 class="fw-bold">Honda Brio 2024</h5>
-        <div class="car-detail-item"><i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> Automatic</div>
-        <div class="car-detail-item"><i class="bi bi-people-fill"></i> <strong>Kursi:</strong> 5 Penumpang</div>
-        <div class="car-detail-item"><i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> 1 Koper</div>
-        <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2024</div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <span class="price">Rp 250.000 <small class="text-secondary fw-normal">/hari</small></span>
-        </div>
-        <span class="status-badge status-maintenance mt-2 d-inline-block">Maintenance</span>
-      </div>
-      </a>
-    </div>
+      <?php foreach ($cars as $car): ?>
+        <?php
+          $badge          = getStatusBadge($car['status']);
+          $namaLengkap    = htmlspecialchars($car['brand'] . ' ' . $car['model'] . ' ' . $car['year']);
+          $typeName       = htmlspecialchars($car['type_name'] ?? '-');
+          $transmisiLabel = $car['transmission'] === 'automatic' ? 'Automatic' : 'Manual';
+          $harga          = 'Rp ' . number_format((float)$car['price_per_day'], 0, ',', '.');
+          $imgSrc         = !empty($car['image'])
+                              ? '../assets/uploads/' . htmlspecialchars($car['image'])
+                              : 'https://placehold.co/600x360/1e2a3a/7eb3f5?text=' . urlencode($car['brand'] . '+' . $car['model']);
 
-    <!-- Mobil 5: Mitsubishi Pajero Sport 2023 (SUV, Automatic, Tersedia) -->
-    <div class="col-md-6 col-lg-4 car-item" data-type="suv" data-transmisi="automatic" data-status="tersedia" data-name="Mitsubishi Pajero Sport">
-      <div class="car-card p-3">
-        <a href="#">
-        <div class="car-img-placeholder rounded-4 mb-3">
-          <img src="#" class="custom-image" alt="Mobil">
-          <span class="car-type-badge">SUV</span>
+          // Mobil berstatus selain 'available' tidak bisa diklik ke detail
+          $isAvailable = $car['status'] === 'available';
+          $linkHref    = $isAvailable ? 'detail.php?id=' . (int)$car['id'] : '#';
+        ?>
+        <div class="col-md-6 col-lg-4 car-item"
+             data-type="<?= strtolower($typeName) ?>"
+             data-transmisi="<?= $car['transmission'] ?>"
+             data-status="<?= $car['status'] ?>"
+             data-name="<?= strtolower($car['brand'] . ' ' . $car['model'] . ' ' . $car['year']) ?>">
+          <div class="car-card p-3 <?= !$isAvailable ? 'car-unavailable' : '' ?>">
+            <a href="<?= $linkHref ?>" <?= !$isAvailable ? 'tabindex="-1" aria-disabled="true"' : '' ?>>
+              <div class="car-img-placeholder rounded-4 mb-3">
+                <img src="<?= $imgSrc ?>" class="custom-image" alt="<?= $namaLengkap ?>">
+                <?php if (!empty($car['type_name'])): ?>
+                  <span class="car-type-badge"><?= $typeName ?></span>
+                <?php endif; ?>
+              </div>
+              <h5 class="fw-bold"><?= $namaLengkap ?></h5>
+              <div class="car-detail-item">
+                <i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> <?= $transmisiLabel ?>
+              </div>
+              <div class="car-detail-item">
+                <i class="bi bi-people-fill"></i> <strong>Kursi:</strong> <?= (int)$car['passenger_capacity'] ?> Penumpang
+              </div>
+              <div class="car-detail-item">
+                <i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> <?= (int)$car['luggage_capacity'] ?> Koper
+              </div>
+              <div class="car-detail-item">
+                <i class="bi bi-calendar3"></i> <strong>Tahun:</strong> <?= (int)$car['year'] ?>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mt-3">
+                <span class="price"><?= $harga ?> <small class="text-secondary fw-normal">/hari</small></span>
+              </div>
+              <span class="status-badge <?= $badge['class'] ?> mt-2 d-inline-block">
+                <?= $badge['label'] ?>
+              </span>
+            </a>
+          </div>
         </div>
-        <h5 class="fw-bold">Mitsubishi Pajero Sport</h5>
-        <div class="car-detail-item"><i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> Automatic</div>
-        <div class="car-detail-item"><i class="bi bi-people-fill"></i> <strong>Kursi:</strong> 7 Penumpang</div>
-        <div class="car-detail-item"><i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> 3 Koper</div>
-        <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <span class="price">Rp 550.000 <small class="text-secondary fw-normal">/hari</small></span>
-        </div>
-        <span class="status-badge status-tersedia mt-2 d-inline-block">Tersedia</span>
-      </div>
-      </a>
-    </div>
+      <?php endforeach; ?>
 
-    <!-- Mobil 6: Toyota Camry 2024 (Sedan, Automatic, Disewa) -->
-    <div class="col-md-6 col-lg-4 car-item" data-type="sedan" data-transmisi="automatic" data-status="disewa" data-name="Toyota Camry 2024">
-      <div class="car-card p-3">
-        <a href="#">
-        <div class="car-img-placeholder rounded-4 mb-3">
-          <img src="#" class="custom-image" alt="Mobil">
-          <span class="car-type-badge">Sedan</span>
-        </div>
-        <h5 class="fw-bold">Toyota Camry 2024</h5>
-        <div class="car-detail-item"><i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> Automatic</div>
-        <div class="car-detail-item"><i class="bi bi-people-fill"></i> <strong>Kursi:</strong> 5 Penumpang</div>
-        <div class="car-detail-item"><i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> 2 Koper</div>
-        <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2024</div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <span class="price">Rp 600.000 <small class="text-secondary fw-normal">/hari</small></span>
-        </div>
-        <span class="status-badge status-disewa mt-2 d-inline-block">Disewa</span>
+      <!-- State kosong client-side: tampil via JS saat pencarian teks tidak ada hasil -->
+      <div class="col-12 text-center py-5" id="emptyState" style="display:none;">
+        <i class="bi bi-search fs-1 text-secondary"></i>
+        <p class="text-secondary mt-3 mb-1">Tidak ada mobil dengan nama "<span id="emptyKeyword"></span>".</p>
+        <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="document.getElementById('searchInput').value=''; document.getElementById('searchInput').dispatchEvent(new Event('input'));">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Hapus Pencarian
+        </button>
       </div>
-      </a>
-    </div>
+
+    <?php endif; ?>
+
   </div>
 </div>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  (function() {
+  (function () {
+    const form        = document.getElementById('filterForm');
     const searchInput = document.getElementById('searchInput');
-    const filterType = document.getElementById('filterType');
-    const filterTransmisi = document.getElementById('filterTransmisi');
-    const filterStatus = document.getElementById('filterStatus');
-    const carItems = document.querySelectorAll('.car-item');
+    const carItems    = document.querySelectorAll('.car-item');
+    const emptyState  = document.getElementById('emptyState');
 
-    function applyFilters() {
-      const searchText = searchInput.value.toLowerCase().trim();
-      const typeVal = filterType.value;
-      const transmisiVal = filterTransmisi.value;
-      const statusVal = filterStatus.value;
+    // Filter kartu secara client-side berdasarkan data-name (brand + model + year)
+    function applySearch() {
+      const keyword     = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      const emptyKw     = document.getElementById('emptyKeyword');
+      const resultCount = document.getElementById('resultCount');
+      let visible       = 0;
 
-      carItems.forEach(item => {
-        const itemName = item.getAttribute('data-name').toLowerCase();
-        const itemType = item.getAttribute('data-type');
-        const itemTransmisi = item.getAttribute('data-transmisi');
-        const itemStatus = item.getAttribute('data-status');
-
-        const matchSearch = itemName.includes(searchText);
-        const matchType = typeVal === 'semua' || itemType === typeVal;
-        const matchTransmisi = transmisiVal === 'semua' || itemTransmisi === transmisiVal;
-        const matchStatus = statusVal === 'semua' || itemStatus === statusVal;
-
-        if (matchSearch && matchType && matchTransmisi && matchStatus) {
-          item.style.display = 'block';
-        } else {
-          item.style.display = 'none';
-        }
+      carItems.forEach(function (item) {
+        const name    = item.getAttribute('data-name') || '';
+        const matched = name.includes(keyword);
+        item.style.display = matched ? '' : 'none';
+        if (matched) visible++;
       });
+
+      // Update angka jumlah hasil secara real-time
+      if (resultCount) resultCount.textContent = visible;
+
+      // Tampilkan / sembunyikan state kosong client-side
+      if (emptyState) {
+        emptyState.style.display = visible === 0 ? '' : 'none';
+        if (emptyKw) emptyKw.textContent = searchInput ? searchInput.value.trim() : '';
+      }
     }
 
-    searchInput.addEventListener('input', applyFilters);
-    filterType.addEventListener('change', applyFilters);
-    filterTransmisi.addEventListener('change', applyFilters);
-    filterStatus.addEventListener('change', applyFilters);
+    // Jalankan filter teks setiap kali user mengetik (real-time, tanpa round-trip)
+    if (searchInput) {
+      searchInput.addEventListener('input', applySearch);
+      applySearch(); // terapkan nilai awal jika ada (misalnya dari URL)
+    }
 
-    // Initial apply
-    applyFilters();
+    // Auto-submit langsung saat dropdown berubah (server-side filter)
+    ['filterType', 'filterTransmisi', 'filterStatus'].forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('change', function () {
+          form.submit();
+        });
+      }
+    });
   })();
 </script>
+
 <?php include '../includes/footer.php'; ?>
 </body>
 </html>
