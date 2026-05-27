@@ -202,4 +202,114 @@ class Car
             return false;
         }
     }
+
+    /**
+     * Mengambil daftar mobil unggulan (status available, dibatasi jumlahnya)
+     * Digunakan untuk menampilkan mobil di landing page.
+     *
+     * @param int $limit Jumlah maksimal mobil yang diambil (default 6)
+     * @return array Daftar mobil unggulan
+     */
+    public function getFeatured(int $limit = 6): array
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT c.*, t.name AS type_name
+                FROM cars c
+                LEFT JOIN car_types t ON c.type_id = t.id
+                WHERE c.status = 'available'
+                ORDER BY c.created_at DESC
+                LIMIT :lmt
+            ");
+            $stmt->bindValue(':lmt', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Menghitung total mobil berdasarkan status
+     *
+     * @param string $status Filter status (kosong = semua)
+     * @return int Jumlah mobil
+     */
+    public function countByStatus(string $status = ''): int
+    {
+        try {
+            if (!empty($status)) {
+                $stmt = $this->db->prepare("SELECT COUNT(*) FROM cars WHERE status = ?");
+                $stmt->execute([$status]);
+            } else {
+                $stmt = $this->db->query("SELECT COUNT(*) FROM cars");
+            }
+            return (int) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Mengambil daftar mobil dengan kombinasi filter server-side
+     * Digunakan di halaman katalog.
+     *
+     * @param string      $search       Kata kunci pencarian (brand / model)
+     * @param int|null    $typeId       ID kategori mobil (null = semua)
+     * @param string      $transmission Filter transmisi: 'manual' | 'automatic' | ''
+     * @param string      $status       Filter status: 'available' | 'rented' | 'maintenance' | ''
+     * @return array Daftar mobil yang sesuai filter
+     */
+    public function getFiltered(
+        string $search = '',
+        ?int   $typeId = null,
+        string $transmission = '',
+        string $status = ''
+    ): array {
+        try {
+            $sql    = "SELECT c.*, t.name AS type_name
+                       FROM cars c
+                       LEFT JOIN car_types t ON c.type_id = t.id
+                       WHERE 1=1";
+            $params = [];
+
+            // Filter pencarian teks: brand, model, atau gabungan keduanya (nama lengkap)
+            if (!empty($search)) {
+                $sql .= " AND (
+                    c.brand LIKE :search
+                    OR c.model LIKE :search
+                    OR CONCAT(c.brand, ' ', c.model) LIKE :search
+                    OR CONCAT(c.brand, ' ', c.model, ' ', c.year) LIKE :search
+                )";
+                $params['search'] = '%' . $search . '%';
+            }
+
+            // Filter tipe/kategori
+            if ($typeId !== null) {
+                $sql .= " AND c.type_id = :type_id";
+                $params['type_id'] = $typeId;
+            }
+
+            // Filter transmisi
+            if (!empty($transmission)) {
+                $sql .= " AND c.transmission = :transmission";
+                $params['transmission'] = $transmission;
+            }
+
+            // Filter status
+            if (!empty($status)) {
+                $sql .= " AND c.status = :status";
+                $params['status'] = $status;
+            }
+
+            $sql .= " ORDER BY c.status ASC, c.created_at DESC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            return [];
+        }
+    }
 }
+
