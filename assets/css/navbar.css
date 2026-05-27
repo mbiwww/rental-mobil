@@ -201,3 +201,58 @@
     .navbar-rental .brand-wrapper:hover {
       opacity: 0.9;
     }
+
+    /* ===== Tombol Masuk & Daftar (state belum login) ===== */
+    .btn-nav-outline {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 16px;
+      border: 2px solid #0d6efd;
+      border-radius: 8px;
+      color: #0d6efd;
+      font-weight: 600;
+      font-size: 0.88rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-nav-outline:hover {
+      background-color: #0d6efd;
+      color: #ffffff;
+    }
+
+    .btn-nav-solid {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 16px;
+      background-color: #0d6efd;
+      border: 2px solid #0d6efd;
+      border-radius: 8px;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.88rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-nav-solid:hover {
+      background-color: #0b5ed7;
+      border-color: #0b5ed7;
+      color: #ffffff;
+    }
+
+    /* ===== Warna merah untuk tombol logout ===== */
+    .dropdown-item-custom.text-danger {
+      color: #dc3545 !important;
+    }
+
+    .dropdown-item-custom.text-danger i {
+      color: #dc3545 !important;
+    }
+
+    .dropdown-item-custom.text-danger:hover {
+      background-color: #fff5f5;
+      border-left-color: #dc3545;
+    }
