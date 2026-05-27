@@ -1,9 +1,34 @@
+<?php
+
+session_start();
+
+// Muat konfigurasi database & class yang dibutuhkan
+require_once 'config/database.php';
+require_once 'classes/Database.php';
+require_once 'classes/Car.php';
+require_once 'classes/CarType.php';
+
+// Buat koneksi melalui Singleton Database
+$pdo       = Database::getInstance()->getConnection();
+$carModel  = new Car($pdo);
+$typeModel = new CarType($pdo);
+
+// Ambil 3 mobil unggulan (status: available, urut terbaru)
+$featuredCars = $carModel->getFeatured(3);
+
+// Ambil semua kategori mobil untuk dropdown
+$carTypes = $typeModel->getAll();
+
+// Total mobil tersedia (untuk badge di tombol "Lihat Semua")
+$totalAvailable = $carModel->countByStatus('available');
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RentalKu · Home</title>
+  <title>RentalKu &middot; Home</title>
+  <meta name="description" content="RentalKu - Sewa mobil berkualitas dengan harga terjangkau. Proses cepat, aman, dan terpercaya. Tersedia berbagai pilihan mobil SUV, Sedan, MPV, Hatchback, dan City Car.">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,7 +38,7 @@
 </head>
 <body>
   <?php include 'includes/navbar.php'; ?>
-  
+
 <section class="hero-section">
   <div class="container hero-content">
     <div class="row align-items-center g-4">
@@ -23,27 +48,28 @@
         <p class="hero-desc mt-3">Ratusan pilihan mobil berkualitas dengan harga terjangkau. Proses cepat, aman, dan terpercaya.</p>
         <div class="search-card mt-4">
           <h5 class="fw-bold mb-3"><i class="bi bi-funnel-fill me-2"></i>Jenis Mobil</h5>
-          <div class="mb-3">
-            <select class="form-select" id="carCategory">
-              <option selected disabled>Pilih kategori</option>
-              <option value="semua">Semua Tipe</option>
-              <option value="suv">SUV</option>
-              <option value="sedan">Sedan</option>
-              <option value="hatchback">Hatchback</option>
-              <option value="mpv">MPV</option>
-            </select>
-          </div>
-          <a href="#">
-            <button class="btn btn-search w-100" id="searchBtn">
+          <!-- Form search: GET ke halaman katalog dengan parameter type_id -->
+          <form action="pages/katalog.php" method="GET">
+            <div class="mb-3">
+              <select class="form-select" id="carCategory" name="type_id">
+                <option value="">Semua Tipe</option>
+                <?php foreach ($carTypes as $type): ?>
+                  <option value="<?= (int)$type['id'] ?>">
+                    <?= htmlspecialchars($type['name']) ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-search w-100" id="searchBtn">
               <i class="bi bi-search me-2"></i>Cari Mobil
             </button>
-          </a>
+          </form>
         </div>
       </div>
 
       <div class="col-lg-6">
         <div class="d-none d-lg-flex">
-        <img src="https://4kwallpapers.com/images/walls/thumbs_3t/24397.jpg" class="custom-image" alt="Mobil">
+          <img src="https://4kwallpapers.com/images/walls/thumbs_3t/24397.jpg" class="custom-image" alt="Mobil">
         </div>
       </div>
     </div>
@@ -56,67 +82,81 @@
     <h2 class="fw-bold">Mobil Unggulan</h2>
     <p class="text-secondary">Pilihan mobil terbaik untuk perjalanan Anda</p>
   </div>
-  <div class="row g-4">
-    <!-- Card 1: -->
-    <div class="col-md-4">
-      <div class="car-card p-3">
-        <a href="pages/detail.php">
-        <div class="car-img-placeholder rounded-4 mb-3">
-          <img src="https://thumb.katadata.co.id/frontend/thumbnail/2024/06/29/zigi-668026c50bcd0-toyota-fortuner-bekas_910_512.jpg" class="custom-image" alt="Mobil">
-        </div>
-        <h5 class="fw-bold">Toyota Fortuner 2023</h5>
-        <div class="car-detail-item"><i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> Automatic </div>
-        <div class="car-detail-item"><i class="bi bi-people-fill"></i> <strong>Kursi:</strong> 7 Penumpang </div>
-        <div class="car-detail-item"><i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> 3 Koper</div>
-        <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <span class="price">Rp 500.000 <small class="text-secondary fw-normal">/hari</small></span>
-        </div>
-        </a>
-      </div>
+
+  <?php if (empty($featuredCars)): ?>
+    <!-- State kosong: tampilkan pesan jika belum ada mobil tersedia -->
+    <div class="text-center py-5">
+      <i class="bi bi-car-front fs-1 text-secondary"></i>
+      <p class="text-secondary mt-3">Belum ada mobil yang tersedia saat ini.</p>
+      <a href="pages/katalog.php" class="btn btn-seeall mt-2">Lihat Katalog Lengkap</a>
     </div>
-    <!-- Card 2: -->
-    <div class="col-md-4">
-      <div class="car-card p-3">
-        <a href="#">
-        <div class="car-img-placeholder rounded-4 mb-3">
-          <img src="https://static1.hotcarsimages.com/wordpress/wp-content/uploads/2024/02/2023-honda-civic-si.jpg" class="custom-image" alt="Mobil">
+  <?php else: ?>
+    <div class="row g-4">
+      <?php foreach ($featuredCars as $car): ?>
+        <?php
+          // Tentukan path gambar: gunakan file upload jika ada, fallback ke placeholder
+          $imgSrc = !empty($car['image'])
+              ? 'assets/uploads/' . htmlspecialchars($car['image'])
+              : 'https://placehold.co/600x360/1e2a3a/7eb3f5?text=' . urlencode($car['brand'] . ' ' . $car['model']);
+
+          // Format harga ke format Rupiah
+          $hargaFormat = 'Rp ' . number_format((float)$car['price_per_day'], 0, ',', '.');
+
+          // Label transmisi yang ramah pengguna
+          $transmisiLabel = $car['transmission'] === 'automatic' ? 'Automatic' : 'Manual';
+        ?>
+        <div class="col-md-4">
+          <div class="car-card p-3">
+            <a href="pages/detail.php?id=<?= (int)$car['id'] ?>">
+              <div class="car-img-placeholder rounded-4 mb-3">
+                <img
+                  src="<?= $imgSrc ?>"
+                  class="custom-image"
+                  alt="<?= htmlspecialchars($car['brand'] . ' ' . $car['model']) ?>"
+                >
+              </div>
+              <h5 class="fw-bold">
+                <?= htmlspecialchars($car['brand'] . ' ' . $car['model'] . ' ' . $car['year']) ?>
+              </h5>
+              <?php if (!empty($car['type_name'])): ?>
+                <div class="car-detail-item">
+                  <i class="bi bi-tag-fill"></i>
+                  <strong>Tipe:</strong> <?= htmlspecialchars($car['type_name']) ?>
+                </div>
+              <?php endif; ?>
+              <div class="car-detail-item">
+                <i class="bi bi-gear-fill"></i>
+                <strong>Transmisi:</strong> <?= $transmisiLabel ?>
+              </div>
+              <div class="car-detail-item">
+                <i class="bi bi-people-fill"></i>
+                <strong>Kursi:</strong> <?= (int)$car['passenger_capacity'] ?> Penumpang
+              </div>
+              <div class="car-detail-item">
+                <i class="bi bi-briefcase-fill"></i>
+                <strong>Bagasi:</strong> <?= (int)$car['luggage_capacity'] ?> Koper
+              </div>
+              <div class="car-detail-item">
+                <i class="bi bi-calendar3"></i>
+                <strong>Tahun:</strong> <?= (int)$car['year'] ?>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mt-3">
+                <span class="price">
+                  <?= $hargaFormat ?> <small class="text-secondary fw-normal">/hari</small>
+                </span>
+              </div>
+            </a>
+          </div>
         </div>
-        <h5 class="fw-bold">Honda Civic Tahun 2024</h5>
-        <div class="car-detail-item"><i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> Automatic </div>
-        <div class="car-detail-item"><i class="bi bi-people-fill"></i> <strong>Kursi:</strong> 5 Penumpang </div>
-        <div class="car-detail-item"><i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> 3 Koper</div>
-        <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2024</div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <span class="price">Rp 400.000 <small class="text-secondary fw-normal">/hari</small></span>
-        </div>
-        </a>
-      </div>
+      <?php endforeach; ?>
     </div>
-    <!-- Card 3 -->
-    <div class="col-md-4">
-      <div class="car-card p-3">
-        <a href="#">
-        <div class="car-img-placeholder rounded-4 mb-3">
-          <img src="https://wallpapercave.com/wp/wp12186590.jpg" class="custom-image" alt="Mobil">
-        </div>
-        <h5 class="fw-bold">Toyota Avanza 2023</h5>
-        <div class="car-detail-item"><i class="bi bi-gear-fill"></i> <strong>Transmisi:</strong> Manual </div>
-        <div class="car-detail-item"><i class="bi bi-people-fill"></i> <strong>Kursi:</strong> 5 Penumpang </div>
-        <div class="car-detail-item"><i class="bi bi-briefcase-fill"></i> <strong>Bagasi:</strong> 3 Koper</div>
-        <div class="car-detail-item"><i class="bi bi-calendar3"></i> <strong>Tahun:</strong> 2023</div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <span class="price">Rp 300.000 <small class="text-secondary fw-normal">/hari</small></span>
-        </div>
-        </a>
-      </div>
+
+    <div class="text-center mt-5">
+      <a href="pages/katalog.php" class="btn btn-seeall btn-lg px-5">
+        <i class="bi bi-grid-3x3-gap-fill me-2"></i>Lihat Semua Mobil
+      </a>
     </div>
-  </div>
-  <div class="text-center mt-5">
-    <a href="pages/katalog.php" class="btn btn-seeall btn-lg px-5">
-      <i class="bi bi-grid-3x3-gap-fill me-2"></i>Lihat Semua Mobil
-    </a>
-  </div>
+  <?php endif; ?>
 </section>
 
 <!-- CARA KERJA -->
@@ -132,7 +172,7 @@
       </div>
       <div class="col-md-4">
         <div class="step-icon">2</div>
-        <h5 class="fw-bold">Booking & Bayar</h5>
+        <h5 class="fw-bold">Booking &amp; Bayar</h5>
         <p class="text-secondary">Pilih tanggal sewa dan lakukan pembayaran dengan mudah</p>
       </div>
       <div class="col-md-4">
@@ -152,7 +192,7 @@
   <div class="row g-4">
     <div class="col-md-4 text-center">
       <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
-      <h5 class="fw-bold">Aman & Terpercaya</h5>
+      <h5 class="fw-bold">Aman &amp; Terpercaya</h5>
       <p class="text-secondary">Mobil terawat dengan asuransi lengkap</p>
     </div>
     <div class="col-md-4 text-center">
