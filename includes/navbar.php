@@ -100,7 +100,7 @@ if ($isLoggedIn && !empty($_SESSION['name'])) {
 
       <?php else: ?>
         <!-- ===== USER BELUM LOGIN ===== -->
-        <a href="<?= $baseUrl ?>pages/login.php" class="btn-nav-outline">
+        <a href="<?= $baseUrl ?>pages/login.php?redirect=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="btn-nav-outline">
           <i class="bi bi-box-arrow-in-right me-1"></i>Masuk
         </a>
       <?php endif; ?>
