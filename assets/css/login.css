@@ -60,9 +60,18 @@
       transform: translateY(-2px);
       box-shadow: 0 12px 20px -8px rgba(11, 43, 74, 0.3);
     }
-    a {
-      color: white;
-      text-decoration: none;
+    .btn-toggle-password {
+      border-left: none;
+      border-radius: 0 16px 16px 0 !important;
+      cursor: pointer;
+      color: #5e718d;
+      border: 1.5px solid #e2e8f0;
+      padding: 0.75rem 0.85rem;
+      transition: color 0.15s;
+    }
+    .btn-toggle-password:hover {
+      color: #2563eb;
+      background-color: #f0f5ff !important;
     }
     .forgot-link {
       color: #4b6589;
