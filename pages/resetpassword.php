@@ -1,256 +1,465 @@
+<?php
+
+/**
+ * Halaman Reset Password — pages/resetpassword.php
+ *
+ * Alur 2 tahap berbasis session:
+ *   Tahap 1 — Verifikasi Identitas: user input Nama, NIK, Email, No. HP
+ *             → kirim ke auth_handler.php?action=verify_identity
+ *             → jika cocok, session['reset_verified_id'] diset, redirect ke sini (tahap 2)
+ *   Tahap 2 — Buat Password Baru: form input password baru & konfirmasi
+ *             → kirim ke auth_handler.php?action=reset_password
+ *             → jika berhasil, session dibersihkan, redirect ke login.php
+ *
+ * Flash message (success/error) dibaca dari session.
+ */
+
+if (session_status() === PHP_SESSION_NONE) session_start();
+
+// Jika sudah login, redirect ke halaman utama
+if (isset($_SESSION['user_id'])) {
+  $target = $_SESSION['role'] === 'admin' ? '../admin/index.php' : '../index.php';
+  header("Location: $target");
+  exit;
+}
+
+// Baca flash message lalu hapus dari session
+$errorMsg   = $_SESSION['error']   ?? '';
+$successMsg = $_SESSION['success'] ?? '';
+unset($_SESSION['error'], $_SESSION['success']);
+
+/**
+ * Status verifikasi:
+ * - Jika session 'reset_verified_id' ada → user sudah lolos verifikasi identitas (tampil tahap 2)
+ * - Jika tidak ada → tampil tahap 1 (form verifikasi identitas)
+ */
+$isVerified = isset($_SESSION['reset_verified_id']);
+
+// Pertahankan nilai input verifikasi agar field tidak kosong setelah error
+$oldInput = $_SESSION['reset_old_input'] ?? [];
+unset($_SESSION['reset_old_input']);
+
+?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RentalKu · Verifikasi & Reset Password</title>
+  <title>RentalKu · Verifikasi &amp; Reset Password</title>
+  <meta name="description" content="Reset password akun RentalKu dengan memverifikasi identitas menggunakan data yang terdaftar.">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="../assets/css/resetpassword.css">
 </head>
+
 <body>
   <div class="container py-4 py-sm-5">
     <div class="row justify-content-center">
       <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
-        
+
         <div class="card rental-card p-3 p-md-4 p-xl-5">
           <div class="card-body">
-            
+
+            <!-- Header -->
             <div class="text-center mb-4">
               <div class="rental-brand justify-content-center">
-                <i class="bi bi-car-front-fill"></i> 
+                <i class="bi bi-car-front-fill"></i>
                 <span>RentalKu</span>
               </div>
               <p class="text-secondary-emphasis mt-2 mb-0" style="font-weight: 400;">
-                Verifikasi Identitas
+                <?= $isVerified ? 'Buat Password Baru' : 'Verifikasi Identitas' ?>
               </p>
               <p class="text-body-tertiary small mt-1">
-                Masukkan data yang terdaftar di akun Anda
+                <?= $isVerified
+                  ? 'Buat password baru untuk akun Anda'
+                  : 'Masukkan data yang terdaftar di akun Anda' ?>
               </p>
             </div>
 
-            <form id="forgotPasswordForm" onsubmit="return false;">
-
-              <div class="mb-3">
-                <label class="form-label fw-semibold small tracking-wide text-secondary">NAMA LENGKAP</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent pe-2">
-                    <i class="bi bi-person"></i>
-                  </span>
-                  <input type="text" class="form-control ps-2" id="fullName" placeholder="Masukan Nama Lengkap" required>
-                </div>
+            <!-- Flash message: error -->
+            <?php if ($errorMsg): ?>
+              <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                <span><?= htmlspecialchars($errorMsg) ?></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
               </div>
+            <?php endif; ?>
 
-              <div class="mb-3">
-                <label class="form-label fw-semibold small tracking-wide text-secondary">EMAIL</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent pe-2">
-                    <i class="bi bi-envelope"></i>
-                  </span>
-                  <input type="email" class="form-control ps-2" id="email" placeholder="Masukan Email" required>
-                </div>
+            <!-- Flash message: success -->
+            <?php if ($successMsg): ?>
+              <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-3" role="alert">
+                <i class="bi bi-check-circle-fill flex-shrink-0"></i>
+                <span><?= htmlspecialchars($successMsg) ?></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
               </div>
+            <?php endif; ?>
 
-              <div class="mb-3">
-                <label class="form-label fw-semibold small tracking-wide text-secondary">NIK</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent pe-2">
-                    <i class="bi bi-person-vcard"></i>
-                  </span>
-                  <input type="number" class="form-control ps-2" id="nik" placeholder="Masukan NIK" required>
-                </div>
-              </div>
+            <!-- ================================================
+                 TAHAP 1: Form Verifikasi Identitas
+                 Ditampilkan jika user belum terverifikasi
+                 ================================================ -->
+            <?php if (!$isVerified): ?>
+              <form
+                id="form-verify"
+                action="../handlers/auth_handler.php?action=verify_identity"
+                method="POST"
+                novalidate>
 
-              <div class="mb-4">
-                <label class="form-label fw-semibold small tracking-wide text-secondary">NOMOR HP</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent pe-2">
-                    <i class="bi bi-phone"></i>
-                  </span>
-                  <input type="number" class="form-control ps-2" id="phone" placeholder="Masukan Nomor HP" required>
-                </div>
-              </div>
-
-              <button type="submit" class="btn btn-verify w-100 text-white fs-5 mb-3" id="verifyBtn">
-                <i class="bi bi-check-circle me-2"></i>Verifikasi & Lanjutkan
-              </button>
-
-              <div id="resetSection" class="reset-section" style="display: none;">
-                <p class="fw-semibold text-secondary mb-3">
-                  <i class="bi bi-key me-1"></i> Buat Password Baru
-                </p>
-                
+                <!-- Nama Lengkap -->
                 <div class="mb-3">
-                  <label class="form-label fw-semibold small tracking-wide text-secondary">PASSWORD BARU</label>
+                  <label for="verify-name" class="form-label fw-semibold small tracking-wide text-secondary text-uppercase">
+                    Nama Lengkap
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-transparent pe-2">
+                      <i class="bi bi-person"></i>
+                    </span>
+                    <input
+                      type="text"
+                      id="verify-name"
+                      name="name"
+                      class="form-control ps-2"
+                      placeholder="Masukkan Nama Lengkap"
+                      value="<?= htmlspecialchars($oldInput['name'] ?? '') ?>"
+                      required
+                      autocomplete="name">
+                  </div>
+                </div>
+
+                <!-- NIK -->
+                <div class="mb-3">
+                  <label for="verify-nik" class="form-label fw-semibold small tracking-wide text-secondary text-uppercase">
+                    NIK
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-transparent pe-2">
+                      <i class="bi bi-person-vcard"></i>
+                    </span>
+                    <input
+                      type="text"
+                      id="verify-nik"
+                      name="nik"
+                      class="form-control ps-2"
+                      placeholder="Masukkan NIK (16 digit)"
+                      maxlength="16"
+                      inputmode="numeric"
+                      pattern="[0-9]{16}"
+                      value="<?= htmlspecialchars($oldInput['nik'] ?? '') ?>"
+                      required>
+                  </div>
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                  <label for="verify-email" class="form-label fw-semibold small tracking-wide text-secondary text-uppercase">
+                    Email
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-transparent pe-2">
+                      <i class="bi bi-envelope"></i>
+                    </span>
+                    <input
+                      type="email"
+                      id="verify-email"
+                      name="email"
+                      class="form-control ps-2"
+                      placeholder="Masukkan Email"
+                      value="<?= htmlspecialchars($oldInput['email'] ?? '') ?>"
+                      required
+                      autocomplete="email">
+                  </div>
+                </div>
+
+                <!-- Nomor HP -->
+                <div class="mb-4">
+                  <label for="verify-phone" class="form-label fw-semibold small tracking-wide text-secondary text-uppercase">
+                    Nomor HP
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-transparent pe-2">
+                      <i class="bi bi-phone"></i>
+                    </span>
+                    <input
+                      type="tel"
+                      id="verify-phone"
+                      name="phone"
+                      class="form-control ps-2"
+                      placeholder="Masukkan Nomor HP"
+                      inputmode="numeric"
+                      value="<?= htmlspecialchars($oldInput['phone'] ?? '') ?>"
+                      required
+                      autocomplete="tel">
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  id="btn-verify"
+                  class="btn btn-verify w-100 text-white fs-5 mb-3">
+                  <i class="bi bi-check-circle me-2"></i>Verifikasi &amp; Lanjutkan
+                </button>
+
+              </form>
+
+            <?php else: ?>
+              <!-- ================================================
+                 TAHAP 2: Form Reset Password
+                 Ditampilkan setelah verifikasi identitas berhasil
+                 ================================================ -->
+
+              <!-- Indikator: verifikasi berhasil -->
+              <div class="alert alert-success d-flex align-items-center gap-2 mb-4 py-2" role="status">
+                <i class="bi bi-shield-check-fill flex-shrink-0"></i>
+                <span class="small">Identitas terverifikasi. Buat password baru Anda.</span>
+              </div>
+
+              <form
+                id="form-reset"
+                action="../handlers/auth_handler.php?action=reset_password"
+                method="POST"
+                novalidate>
+
+                <!-- Password Baru -->
+                <div class="mb-3">
+                  <label for="reset-new-password" class="form-label fw-semibold small tracking-wide text-secondary text-uppercase">
+                    Password Baru
+                  </label>
                   <div class="input-group">
                     <span class="input-group-text bg-transparent pe-2">
                       <i class="bi bi-lock"></i>
                     </span>
-                    <input type="password" class="form-control ps-2" id="newPassword" placeholder="Minimal 8 karakter">
+                    <input
+                      type="password"
+                      id="reset-new-password"
+                      name="new_password"
+                      class="form-control ps-2"
+                      placeholder="Minimal 8 karakter"
+                      required
+                      autocomplete="new-password">
+                    <button
+                      type="button"
+                      class="btn-toggle-password input-group-text bg-transparent"
+                      id="toggle-new-password"
+                      aria-label="Tampilkan/sembunyikan Password Baru"
+                      title="Tampilkan password">
+                      <i class="bi bi-eye" id="icon-new-pass"></i>
+                    </button>
+                  </div>
+
+                  <!-- Panel syarat password — tampil saat user mulai mengetik -->
+                  <div id="password-rules" class="mt-2 d-none">
+                    <p class="mb-1 small text-secondary fw-semibold">Syarat password:</p>
+                    <ul class="list-unstyled mb-0 small" style="line-height: 1.8;">
+                      <li id="rule-length" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Minimal 8 karakter <span class="text-body-tertiary">(12+ lebih aman)</span></li>
+                      <li id="rule-upper" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung huruf besar (A–Z)</li>
+                      <li id="rule-lower" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung huruf kecil (a–z)</li>
+                      <li id="rule-number" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung angka (0–9)</li>
+                      <li id="rule-special" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung karakter khusus (!&nbsp;@&nbsp;#&nbsp;$&nbsp;%&nbsp;^&nbsp;&amp;&nbsp;*)</li>
+                    </ul>
                   </div>
                 </div>
 
-                <div class="mb-3">
-                  <label class="form-label fw-semibold small tracking-wide text-secondary">KONFIRMASI PASSWORD</label>
+                <!-- Konfirmasi Password -->
+                <div class="mb-4">
+                  <label for="reset-confirm-password" class="form-label fw-semibold small tracking-wide text-secondary text-uppercase">
+                    Konfirmasi Password
+                  </label>
                   <div class="input-group">
                     <span class="input-group-text bg-transparent pe-2">
                       <i class="bi bi-lock-fill"></i>
                     </span>
-                    <input type="password" class="form-control ps-2" id="confirmPassword" placeholder="Ulangi password baru">
+                    <input
+                      type="password"
+                      id="reset-confirm-password"
+                      name="konfirmasi_password"
+                      class="form-control ps-2"
+                      placeholder="Ulangi password baru"
+                      required
+                      autocomplete="new-password">
+                    <button
+                      type="button"
+                      class="btn-toggle-password input-group-text bg-transparent"
+                      id="toggle-confirm-password"
+                      aria-label="Tampilkan/sembunyikan konfirmasi password"
+                      title="Tampilkan password">
+                      <i class="bi bi-eye" id="icon-confirm-pass"></i>
+                    </button>
+                  </div>
+                  <div id="konfirm-feedback" class="form-text text-danger d-none">
+                    <i class="bi bi-x-circle me-1"></i>Password tidak cocok
                   </div>
                 </div>
 
-                <button type="button" class="btn btn-reset w-100 text-white fs-6" id="savePasswordBtn">
+                <button
+                  type="submit"
+                  id="btn-reset"
+                  class="btn btn-reset w-100 text-white fs-6 mb-3">
                   <i class="bi bi-save me-2"></i>Simpan Password Baru
                 </button>
 
-                <div id="resetMessage" class="mt-3 small text-center"></div>
-              </div>
+              </form>
 
-              <div class="text-center mt-3">
-                <a href="login.php" class="back-to-login">
-                  <i class="bi bi-arrow-left me-1"></i>Kembali ke Login
+              <!-- Tombol ganti identitas (batalkan verifikasi) -->
+              <div class="text-center">
+                <a
+                  href="../handlers/auth_handler.php?action=cancel_reset"
+                  class="back-to-login small"
+                  id="link-cancel-reset">
+                  <i class="bi bi-arrow-counterclockwise me-1"></i>Masukkan identitas berbeda
                 </a>
               </div>
-            </form>
-          </div>
-        </div>
+
+            <?php endif; ?>
+
+            <!-- Kembali ke Login -->
+            <div class="text-center mt-3">
+              <a href="login.php" class="back-to-login" id="link-back-to-login">
+                <i class="bi bi-arrow-left me-1"></i>Kembali ke Login
+              </a>
+            </div>
+
+          </div><!-- /.card-body -->
+        </div><!-- /.card -->
+
       </div>
     </div>
   </div>
 
-  <!-- JavaScript untuk simulasi verifikasi dan reset password -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    (function() {
-      const form = document.getElementById('forgotPasswordForm');
-      const verifyBtn = document.getElementById('verifyBtn');
-      const resetSection = document.getElementById('resetSection');
-      const fullNameInput = document.getElementById('fullName');
-      const emailInput = document.getElementById('email');
-      const phoneInput = document.getElementById('phone');
-      const newPasswordInput = document.getElementById('newPassword');
-      const confirmPasswordInput = document.getElementById('confirmPassword');
-      const savePasswordBtn = document.getElementById('savePasswordBtn');
-      const resetMessage = document.getElementById('resetMessage');
+    // ── Toggle show/hide password ────────────────────────────────────────────
+    function bindToggle(btnId, inputId, iconId) {
+      const btn = document.getElementById(btnId);
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (!btn) return;
+      btn.addEventListener('click', function() {
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+        icon.className = isPass ? 'bi bi-eye-slash' : 'bi bi-eye';
+        btn.title = isPass ? 'Sembunyikan password' : 'Tampilkan password';
+      });
+    }
+    bindToggle('toggle-new-password', 'reset-new-password', 'icon-new-pass');
+    bindToggle('toggle-confirm-password', 'reset-confirm-password', 'icon-confirm-pass');
 
-      // Variabel untuk menyimpan status verifikasi
-      let isVerified = false;
+    // ── Syarat kekuatan password — real-time ─────────────────────────────────
+    const passwordInput = document.getElementById('reset-new-password');
+    const passwordRules = document.getElementById('password-rules');
+    const rules = {
+      length: {
+        el: document.getElementById('rule-length'),
+        test: v => v.length >= 8
+      },
+      upper: {
+        el: document.getElementById('rule-upper'),
+        test: v => /[A-Z]/.test(v)
+      },
+      lower: {
+        el: document.getElementById('rule-lower'),
+        test: v => /[a-z]/.test(v)
+      },
+      number: {
+        el: document.getElementById('rule-number'),
+        test: v => /[0-9]/.test(v)
+      },
+      special: {
+        el: document.getElementById('rule-special'),
+        test: v => /[!@#$%^&*]/.test(v)
+      },
+    };
 
-      // Fungsi untuk menampilkan pesan error/sukses di bawah tombol verifikasi
-      function showVerifyMessage(msg, isError = true) {
-        // Buat elemen alert jika belum ada
-        let alertDiv = document.getElementById('verifyAlert');
-        if (!alertDiv) {
-          alertDiv = document.createElement('div');
-          alertDiv.id = 'verifyAlert';
-          alertDiv.className = 'alert-message mt-3 p-2 small';
-          verifyBtn.parentNode.insertBefore(alertDiv, verifyBtn.nextSibling);
-        }
-        alertDiv.textContent = msg;
-        alertDiv.classList.remove('text-success', 'text-danger');
-        alertDiv.classList.add(isError ? 'text-danger' : 'text-success');
+    function cekPassword() {
+      const val = passwordInput.value;
+
+      // Tampilkan panel syarat saat user mulai mengetik
+      if (val.length > 0) {
+        passwordRules.classList.remove('d-none');
+      } else {
+        passwordRules.classList.add('d-none');
       }
 
-      // Event listener tombol verifikasi
-      verifyBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        const fullName = fullNameInput.value.trim();
-        const email = emailInput.value.trim();
-        const phone = phoneInput.value.trim();
-
-        // Validasi sederhana: semua field harus diisi
-        if (!fullName || !email || !phone) {
-          showVerifyMessage('❌ Harap lengkapi semua data (Nama, Email, Nomor Telepon).', true);
-          resetSection.style.display = 'none';
-          isVerified = false;
-          return;
-        }
-
-        // Validasi format email sederhana
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailPattern.test(email)) {
-          showVerifyMessage('❌ Format email tidak valid.', true);
-          resetSection.style.display = 'none';
-          isVerified = false;
-          return;
-        }
-
-        // Validasi nomor telepon minimal 10 digit (contoh)
-        const phoneDigits = phone.replace(/\D/g, '');
-        if (phoneDigits.length < 10) {
-          showVerifyMessage('❌ Nomor telepon minimal 10 digit.', true);
-          resetSection.style.display = 'none';
-          isVerified = false;
-          return;
-        }
-
-        // Simulasi verifikasi sukses (di sini seharusnya cek ke backend)
-        // Anggap data cocok
-        isVerified = true;
-        showVerifyMessage('✅ Data cocok! Silakan buat password baru di bawah.', false);
-        
-        // Tampilkan bagian reset password
-        resetSection.style.display = 'block';
-        
-        // Reset pesan pada bagian reset
-        resetMessage.innerHTML = '';
+      // Update tiap item syarat
+      Object.values(rules).forEach(({
+        el,
+        test
+      }) => {
+        const ok = test(val);
+        const icon = el.querySelector('i');
+        el.style.color = ok ? '#16a34a' : '#dc2626';
+        icon.className = ok ? 'bi bi-check-circle-fill me-1' : 'bi bi-x-circle-fill me-1';
       });
 
-      // Event listener tombol simpan password baru
-      savePasswordBtn.addEventListener('click', function() {
-        if (!isVerified) {
-          resetMessage.innerHTML = '<span class="text-danger">⚠️ Anda harus verifikasi terlebih dahulu.</span>';
+      // Perbarui cek konfirmasi
+      cekKonfirmasi();
+    }
+
+    function isPasswordValid() {
+      return Object.values(rules).every(({
+        test
+      }) => test(passwordInput.value));
+    }
+
+    if (passwordInput) passwordInput.addEventListener('input', cekPassword);
+
+    // ── Real-time konfirmasi password ────────────────────────────────────────
+    const konfirmasiInput = document.getElementById('reset-confirm-password');
+    const konfirmFeedback = document.getElementById('konfirm-feedback');
+
+    function cekKonfirmasi() {
+      if (!konfirmasiInput || !konfirmFeedback) return;
+      if (konfirmasiInput.value && konfirmasiInput.value !== passwordInput.value) {
+        konfirmFeedback.classList.remove('d-none');
+      } else {
+        konfirmFeedback.classList.add('d-none');
+      }
+    }
+
+    if (konfirmasiInput) konfirmasiInput.addEventListener('input', cekKonfirmasi);
+
+    // ── Validasi form reset sebelum submit ───────────────────────────────────
+    const resetForm = document.getElementById('form-reset');
+    if (resetForm) {
+      resetForm.addEventListener('submit', function(e) {
+        // 1. Cek semua syarat password
+        if (!isPasswordValid()) {
+          e.preventDefault();
+          passwordRules.classList.remove('d-none');
+          cekPassword();
+          passwordInput.focus();
           return;
         }
 
-        const newPass = newPasswordInput.value;
-        const confirmPass = confirmPasswordInput.value;
-
-        if (!newPass || !confirmPass) {
-          resetMessage.innerHTML = '<span class="text-danger">❌ Password dan konfirmasi harus diisi.</span>';
+        // 2. Cek konfirmasi password
+        if (konfirmasiInput.value !== passwordInput.value) {
+          e.preventDefault();
+          konfirmFeedback.classList.remove('d-none');
+          konfirmasiInput.focus();
           return;
         }
 
-        if (newPass.length < 8) {
-          resetMessage.innerHTML = '<span class="text-danger">❌ Password minimal 8 karakter.</span>';
-          return;
+        // Loading state
+        const btnReset = document.getElementById('btn-reset');
+        if (btnReset) {
+          btnReset.disabled = true;
+          btnReset.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Menyimpan...';
         }
-
-        if (newPass !== confirmPass) {
-          resetMessage.innerHTML = '<span class="text-danger">❌ Konfirmasi password tidak cocok.</span>';
-          return;
-        }
-
-        // Simulasi penyimpanan sukses
-        resetMessage.innerHTML = '<span class="text-success">✅ Password berhasil diperbarui! Anda akan diarahkan ke login.</span>';
-        
-        // Opsional: kosongkan field atau redirect
-        newPasswordInput.value = '';
-        confirmPasswordInput.value = '';
-        
-        // Bisa tambahkan redirect setelah 2 detik
-        setTimeout(() => {
-          window.location.href = 'login.php';
-        }, 2500);
       });
+    }
 
-      // Reset tampilan jika user mengubah data verifikasi (opsional)
-      [fullNameInput, emailInput, phoneInput].forEach(input => {
-        input.addEventListener('input', function() {
-          // Hapus pesan verifikasi jika user mengubah input
-          const alertDiv = document.getElementById('verifyAlert');
-          if (alertDiv) alertDiv.textContent = '';
-          // Jangan sembunyikan reset section, tapi status verifikasi di-reset
-          // supaya user harus verifikasi ulang
-          if (isVerified) {
-            isVerified = false;
-            resetSection.style.display = 'none';
-          }
-        });
+    // ── Loading state form verifikasi ────────────────────────────────────────
+    const verifyForm = document.getElementById('form-verify');
+    if (verifyForm) {
+      verifyForm.addEventListener('submit', function() {
+        const btnVerify = document.getElementById('btn-verify');
+        if (btnVerify) {
+          btnVerify.disabled = true;
+          btnVerify.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Memverifikasi...';
+        }
       });
-
-    })();
+    }
   </script>
 </body>
+
 </html>
