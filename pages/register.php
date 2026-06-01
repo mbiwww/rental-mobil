@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Halaman Register — pages/register.php
  *
@@ -11,12 +12,12 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 // Jika sudah login, redirect ke halaman utama sesuai role
 if (isset($_SESSION['user_id'])) {
-    if ($_SESSION['role'] === 'admin') {
-        header('Location: ../admin/index.php');
-    } else {
-        header('Location: ../index.php');
-    }
-    exit;
+  if ($_SESSION['role'] === 'admin') {
+    header('Location: ../admin/index.php');
+  } else {
+    header('Location: ../index.php');
+  }
+  exit;
 }
 
 // Ambil flash message lalu hapus dari session
@@ -27,23 +28,24 @@ unset($_SESSION['error']);
 // Validasi: hanya izinkan path lokal yang diawali '/' — tolak http:// atau //evil.com
 $redirectUrl = '';
 if (!empty($_GET['redirect'])) {
-    $candidate = urldecode($_GET['redirect']);
-    if (preg_match('/^\/[^\/]/', $candidate)) {
-        $redirectUrl = $candidate;
-    }
+  $candidate = urldecode($_GET['redirect']);
+  if (preg_match('/^\/[^\/]/', $candidate)) {
+    $redirectUrl = $candidate;
+  }
 }
 
 // Simpan nilai input sebelumnya agar tidak hilang saat error
 $old = [
-    'name'    => htmlspecialchars($_POST['name']    ?? ''),
-    'nik'     => htmlspecialchars($_POST['nik']     ?? ''),
-    'email'   => htmlspecialchars($_POST['email']   ?? ''),
-    'phone'   => htmlspecialchars($_POST['phone']   ?? ''),
-    'address' => htmlspecialchars($_POST['address'] ?? ''),
+  'name'    => htmlspecialchars($_POST['name']    ?? ''),
+  'nik'     => htmlspecialchars($_POST['nik']     ?? ''),
+  'email'   => htmlspecialchars($_POST['email']   ?? ''),
+  'phone'   => htmlspecialchars($_POST['phone']   ?? ''),
+  'address' => htmlspecialchars($_POST['address'] ?? ''),
 ];
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -53,6 +55,7 @@ $old = [
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="../assets/css/register.css">
 </head>
+
 <body>
   <div class="container py-4 py-sm-5">
     <div class="row justify-content-center">
@@ -98,8 +101,7 @@ $old = [
                     placeholder="Masukan Nama Lengkap"
                     value="<?= $old['name'] ?>"
                     required
-                    autocomplete="name"
-                  >
+                    autocomplete="name">
                 </div>
               </div>
 
@@ -119,8 +121,7 @@ $old = [
                     maxlength="16"
                     inputmode="numeric"
                     pattern="[0-9]{16}"
-                    required
-                  >
+                    required>
                 </div>
               </div>
 
@@ -138,8 +139,7 @@ $old = [
                     placeholder="Masukan Email Aktif"
                     value="<?= $old['email'] ?>"
                     required
-                    autocomplete="email"
-                  >
+                    autocomplete="email">
                 </div>
               </div>
 
@@ -158,8 +158,7 @@ $old = [
                     value="<?= $old['phone'] ?>"
                     inputmode="numeric"
                     required
-                    autocomplete="tel"
-                  >
+                    autocomplete="tel">
                 </div>
               </div>
 
@@ -177,8 +176,7 @@ $old = [
                     placeholder="Masukan Alamat Lengkap"
                     value="<?= $old['address'] ?>"
                     required
-                    autocomplete="street-address"
-                  >
+                    autocomplete="street-address">
                 </div>
               </div>
 
@@ -195,15 +193,13 @@ $old = [
                     class="form-control ps-2"
                     placeholder="Minimal 8 karakter"
                     required
-                    autocomplete="new-password"
-                  >
+                    autocomplete="new-password">
                   <button
                     type="button"
                     class="btn-toggle-password input-group-text bg-transparent"
                     id="toggle-password"
                     aria-label="Tampilkan/sembunyikan password"
-                    title="Tampilkan password"
-                  >
+                    title="Tampilkan password">
                     <i class="bi bi-eye" id="icon-eye"></i>
                   </button>
                 </div>
@@ -212,10 +208,10 @@ $old = [
                 <div id="password-rules" class="mt-2 d-none">
                   <p class="mb-1 small text-secondary fw-semibold">Syarat password:</p>
                   <ul class="list-unstyled mb-0 small" style="line-height: 1.8;">
-                    <li id="rule-length"  class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Minimal 8 karakter <span class="text-body-tertiary">(12+ lebih aman)</span></li>
-                    <li id="rule-upper"   class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung huruf besar (A–Z)</li>
-                    <li id="rule-lower"   class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung huruf kecil (a–z)</li>
-                    <li id="rule-number"  class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung angka (0–9)</li>
+                    <li id="rule-length" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Minimal 8 karakter <span class="text-body-tertiary">(12+ lebih aman)</span></li>
+                    <li id="rule-upper" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung huruf besar (A–Z)</li>
+                    <li id="rule-lower" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung huruf kecil (a–z)</li>
+                    <li id="rule-number" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung angka (0–9)</li>
                     <li id="rule-special" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung karakter khusus (!&nbsp;@&nbsp;#&nbsp;$&nbsp;%&nbsp;^&nbsp;&amp;&nbsp;*)</li>
                   </ul>
                 </div>
@@ -232,10 +228,17 @@ $old = [
                     id="reg-konfirmasi"
                     name="konfirmasi_password"
                     class="form-control ps-2"
-                    placeholder="Ulangi Password"
+                    placeholder="Ulangi Password Baru"
                     required
-                    autocomplete="new-password"
-                  >
+                    autocomplete="new-password">
+                  <button
+                    type="button"
+                    class="btn-toggle-password input-group-text bg-transparent"
+                    id="toggle-konfirmasi"
+                    aria-label="Tampilkan/sembunyikan konfirmasi password"
+                    title="Tampilkan password">
+                    <i class="bi bi-eye" id="icon-eye-konfirm"></i>
+                  </button>
                 </div>
                 <div id="konfirm-feedback" class="form-text text-danger d-none">
                   <i class="bi bi-x-circle me-1"></i>Password tidak cocok
@@ -273,27 +276,54 @@ $old = [
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Toggle show/hide password
-    const toggleBtn     = document.getElementById('toggle-password');
+    const toggleBtn = document.getElementById('toggle-password');
     const passwordInput = document.getElementById('reg-password');
-    const iconEye       = document.getElementById('icon-eye');
+    const iconEye = document.getElementById('icon-eye');
 
     toggleBtn.addEventListener('click', () => {
       const isPassword = passwordInput.type === 'password';
       passwordInput.type = isPassword ? 'text' : 'password';
-      iconEye.className  = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
-      toggleBtn.title    = isPassword ? 'Sembunyikan password' : 'Tampilkan password';
+      iconEye.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+      toggleBtn.title = isPassword ? 'Sembunyikan password' : 'Tampilkan password';
+    });
+
+    // Toggle show/hide konfirmasi password
+    const toggleKonfirmBtn = document.getElementById('toggle-konfirmasi');
+    const konfirmasiInput2 = document.getElementById('reg-konfirmasi');
+    const iconEyeKonfirm = document.getElementById('icon-eye-konfirm');
+
+    toggleKonfirmBtn.addEventListener('click', () => {
+      const isPassword = konfirmasiInput2.type === 'password';
+      konfirmasiInput2.type = isPassword ? 'text' : 'password';
+      iconEyeKonfirm.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+      toggleKonfirmBtn.title = isPassword ? 'Sembunyikan password' : 'Tampilkan password';
     });
 
     // -------------------------------------------------------
     // Syarat kekuatan password — real-time
     // -------------------------------------------------------
-    const passwordRules  = document.getElementById('password-rules');
+    const passwordRules = document.getElementById('password-rules');
     const rules = {
-      length:  { el: document.getElementById('rule-length'),  test: v => v.length >= 8 },
-      upper:   { el: document.getElementById('rule-upper'),   test: v => /[A-Z]/.test(v) },
-      lower:   { el: document.getElementById('rule-lower'),   test: v => /[a-z]/.test(v) },
-      number:  { el: document.getElementById('rule-number'),  test: v => /[0-9]/.test(v) },
-      special: { el: document.getElementById('rule-special'), test: v => /[!@#$%^&*]/.test(v) },
+      length: {
+        el: document.getElementById('rule-length'),
+        test: v => v.length >= 8
+      },
+      upper: {
+        el: document.getElementById('rule-upper'),
+        test: v => /[A-Z]/.test(v)
+      },
+      lower: {
+        el: document.getElementById('rule-lower'),
+        test: v => /[a-z]/.test(v)
+      },
+      number: {
+        el: document.getElementById('rule-number'),
+        test: v => /[0-9]/.test(v)
+      },
+      special: {
+        el: document.getElementById('rule-special'),
+        test: v => /[!@#$%^&*]/.test(v)
+      },
     };
 
     function cekPassword() {
@@ -307,8 +337,11 @@ $old = [
       }
 
       // Update tiap item syarat
-      Object.values(rules).forEach(({ el, test }) => {
-        const ok  = test(val);
+      Object.values(rules).forEach(({
+        el,
+        test
+      }) => {
+        const ok = test(val);
         const icon = el.querySelector('i');
         el.style.color = ok ? '#16a34a' : '#dc2626';
         icon.className = ok ? 'bi bi-check-circle-fill me-1' : 'bi bi-x-circle-fill me-1';
@@ -319,7 +352,9 @@ $old = [
     }
 
     function isPasswordValid() {
-      return Object.values(rules).every(({ test }) => test(passwordInput.value));
+      return Object.values(rules).every(({
+        test
+      }) => test(passwordInput.value));
     }
 
     passwordInput.addEventListener('input', cekPassword);
@@ -343,9 +378,9 @@ $old = [
     // -------------------------------------------------------
     // Submit handler
     // -------------------------------------------------------
-    const form          = document.getElementById('form-register');
-    const btnRegister   = document.getElementById('btn-register');
-    const agreeTerms    = document.getElementById('agree-terms');
+    const form = document.getElementById('form-register');
+    const btnRegister = document.getElementById('btn-register');
+    const agreeTerms = document.getElementById('agree-terms');
     const termsFeedback = document.getElementById('terms-feedback');
 
     // Sembunyikan feedback checkbox saat user mencentang
@@ -379,17 +414,18 @@ $old = [
         return;
       }
 
-      btnRegister.disabled  = true;
+      btnRegister.disabled = true;
       btnRegister.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Mendaftar...';
     });
 
     // Hanya izinkan angka pada input NIK dan HP
-    document.getElementById('reg-nik').addEventListener('input', function () {
+    document.getElementById('reg-nik').addEventListener('input', function() {
       this.value = this.value.replace(/\D/g, '');
     });
-    document.getElementById('reg-phone').addEventListener('input', function () {
+    document.getElementById('reg-phone').addEventListener('input', function() {
       this.value = this.value.replace(/\D/g, '');
     });
   </script>
 </body>
+
 </html>
