@@ -34,13 +34,15 @@ class AuthHandler extends BaseHandler
     public function dispatch(): void
     {
         switch ($this->getAction()) {
-            case 'login':           $this->login();          break;
-            case 'register':        $this->register();       break;
-            case 'logout':          $this->logout();         break;
-            case 'update_profil':   $this->updateProfil();   break;
-            case 'change_password': $this->changePassword(); break;
-            case 'reset_password':  $this->resetPassword();  break;
-            default:                $this->redirect('../index.php');
+            case 'login':            $this->login();             break;
+            case 'register':         $this->register();          break;
+            case 'logout':           $this->logout();            break;
+            case 'update_profil':    $this->updateProfil();      break;
+            case 'change_password':  $this->changePassword();    break;
+            case 'verify_identity':  $this->verifyIdentityStep(); break;
+            case 'reset_password':   $this->resetPassword();     break;
+            case 'cancel_reset':     $this->cancelReset();       break;
+            default:                 $this->redirect('../index.php');
         }
     }
 
@@ -317,32 +319,91 @@ class AuthHandler extends BaseHandler
     }
 
     // -------------------------------------------------------
-    // RESET PASSWORD
+    // RESET PASSWORD — Tahap 1: Verifikasi Identitas
     // -------------------------------------------------------
 
     /**
-     * Proses reset password via verifikasi 4 data (tanpa token/email)
+     * Tahap 1 — Verifikasi 4 data identitas user.
+     * Jika cocok: simpan user_id ke session dan redirect ke resetpassword.php (tahap 2).
+     * Jika tidak cocok: flash error + pertahankan nilai input lama.
+     */
+    private function verifyIdentityStep(): void
+    {
+        $this->requireMethod('POST', '../pages/resetpassword.php');
+
+        $name  = trim($_POST['name']  ?? '');
+        $nik   = trim($_POST['nik']   ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+
+        // Validasi field wajib
+        if (empty($name) || empty($nik) || empty($email) || empty($phone)) {
+            $this->flashError('Semua field identitas wajib diisi.');
+            $_SESSION['reset_old_input'] = compact('name', 'nik', 'email', 'phone');
+            $this->redirect('../pages/resetpassword.php');
+        }
+
+        // Cek kecocokan 4 data sekaligus di database
+        $user = $this->userModel->verifyIdentity($name, $nik, $email, $phone);
+
+        if (!$user) {
+            $this->flashError('Data yang Anda masukkan tidak cocok dengan data kami.');
+            $_SESSION['reset_old_input'] = compact('name', 'nik', 'email', 'phone');
+            $this->redirect('../pages/resetpassword.php');
+        }
+
+        // Verifikasi berhasil — simpan user_id ke session untuk tahap 2
+        $_SESSION['reset_verified_id'] = (int) $user['id'];
+        $this->redirect('../pages/resetpassword.php');
+    }
+
+    // -------------------------------------------------------
+    // RESET PASSWORD — Tahap 2: Update Password
+    // -------------------------------------------------------
+
+    /**
+     * Tahap 2 — Update password berdasarkan user_id yang sudah terverifikasi.
+     * Jika sesi verifikasi tidak ada, arahkan kembali ke tahap 1.
      */
     private function resetPassword(): void
     {
         $this->requireMethod('POST', '../pages/resetpassword.php');
 
-        $name        = trim($_POST['name']                 ?? '');
-        $nik         = trim($_POST['nik']                  ?? '');
-        $email       = trim($_POST['email']                ?? '');
-        $phone       = trim($_POST['phone']                ?? '');
-        $newPassword = trim($_POST['new_password']         ?? '');
-        $konfirm     = trim($_POST['konfirmasi_password']  ?? '');
-
-        // Validasi field wajib
-        if (empty($name) || empty($nik) || empty($email) || empty($phone) || empty($newPassword)) {
-            $this->flashError('Semua field wajib diisi.');
+        // Pastikan sesi verifikasi identitas sudah ada
+        if (empty($_SESSION['reset_verified_id'])) {
+            $this->flashError('Sesi verifikasi tidak ditemukan. Silakan verifikasi identitas terlebih dahulu.');
             $this->redirect('../pages/resetpassword.php');
         }
 
-        // Validasi panjang password baru
+        $userId      = (int) $_SESSION['reset_verified_id'];
+        $newPassword = trim($_POST['new_password']        ?? '');
+        $konfirm     = trim($_POST['konfirmasi_password'] ?? '');
+
+        // Validasi field wajib
+        if (empty($newPassword) || empty($konfirm)) {
+            $this->flashError('Password baru dan konfirmasi wajib diisi.');
+            $this->redirect('../pages/resetpassword.php');
+        }
+
+        // Validasi 5 syarat kekuatan password (sama seperti register)
         if (strlen($newPassword) < 8) {
             $this->flashError('Password baru minimal 8 karakter.');
+            $this->redirect('../pages/resetpassword.php');
+        }
+        if (!preg_match('/[A-Z]/', $newPassword)) {
+            $this->flashError('Password harus mengandung huruf besar (A–Z).');
+            $this->redirect('../pages/resetpassword.php');
+        }
+        if (!preg_match('/[a-z]/', $newPassword)) {
+            $this->flashError('Password harus mengandung huruf kecil (a–z).');
+            $this->redirect('../pages/resetpassword.php');
+        }
+        if (!preg_match('/[0-9]/', $newPassword)) {
+            $this->flashError('Password harus mengandung angka (0–9).');
+            $this->redirect('../pages/resetpassword.php');
+        }
+        if (!preg_match('/[!@#$%^&*]/', $newPassword)) {
+            $this->flashError('Password harus mengandung karakter khusus (! @ # $ % ^ & *).');
             $this->redirect('../pages/resetpassword.php');
         }
 
@@ -352,23 +413,34 @@ class AuthHandler extends BaseHandler
             $this->redirect('../pages/resetpassword.php');
         }
 
-        // Verifikasi 4 data sekaligus
-        $user = $this->userModel->verifyIdentity($name, $nik, $email, $phone);
-        if (!$user) {
-            $this->flashError('Data yang Anda masukkan tidak cocok dengan data kami.');
-            $this->redirect('../pages/resetpassword.php');
-        }
-
+        // Update password di database
         $result = $this->userModel->updatePassword(
-            $user['id'],
+            $userId,
             password_hash($newPassword, PASSWORD_DEFAULT)
         );
 
-        $this->flashRedirect(
-            $result,
-            'Password berhasil direset. Silakan login dengan password baru.',
-            'Gagal mereset password.',
-            $result ? '../pages/login.php' : '../pages/resetpassword.php'
-        );
+        if ($result) {
+            // Bersihkan sesi verifikasi setelah berhasil
+            unset($_SESSION['reset_verified_id']);
+            $this->flashSuccess('Password berhasil direset. Silakan login dengan password baru.');
+            $this->redirect('../pages/login.php');
+        } else {
+            $this->flashError('Gagal mereset password. Coba lagi.');
+            $this->redirect('../pages/resetpassword.php');
+        }
+    }
+
+    // -------------------------------------------------------
+    // RESET PASSWORD — Batalkan Verifikasi
+    // -------------------------------------------------------
+
+    /**
+     * Hapus sesi verifikasi identitas dan kembali ke tahap 1.
+     * Dipakai saat user ingin memasukkan identitas berbeda.
+     */
+    private function cancelReset(): void
+    {
+        unset($_SESSION['reset_verified_id'], $_SESSION['reset_old_input']);
+        $this->redirect('../pages/resetpassword.php');
     }
 }
