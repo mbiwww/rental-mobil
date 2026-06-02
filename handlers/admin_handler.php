@@ -25,9 +25,11 @@ if ($_SESSION['role'] !== 'admin') {
 
 require_once '../classes/Database.php';
 require_once '../classes/Car.php';
+require_once '../classes/CarType.php';
 
 $db = Database::getInstance()->getConnection();
 $carModel = new Car($db);
+$typeModel = new CarType($db);
 
 // Menentukan aksi yang dikirimkan (dari POST atau GET)
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
@@ -254,6 +256,85 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'update_status') {
         header('Location: ../admin/armada.php?status=success&msg=' . urlencode('Status mobil berhasil diperbarui!'));
     } else {
         header('Location: ../admin/armada.php?status=error&msg=' . urlencode('Gagal memperbarui status mobil.'));
+    }
+    exit;
+}
+
+// ==========================================
+// AKSI 5: TAMBAH KATEGORI (POST)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add_kategori') {
+    $name = trim($_POST['name'] ?? '');
+
+    if (empty($name)) {
+        header('Location: ../admin/kategori.php?status=error&msg=' . urlencode('Nama kategori tidak boleh kosong!'));
+        exit;
+    }
+
+    if ($typeModel->create($name)) {
+        header('Location: ../admin/kategori.php?status=success&msg=' . urlencode('Kategori "' . $name . '" berhasil ditambahkan!'));
+    } else {
+        header('Location: ../admin/kategori.php?status=error&msg=' . urlencode('Gagal menambahkan kategori. Nama mungkin sudah ada.'));
+    }
+    exit;
+}
+
+// ==========================================
+// AKSI 6: EDIT KATEGORI (POST)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit_kategori') {
+    $id   = intval($_POST['id'] ?? 0);
+    $name = trim($_POST['name'] ?? '');
+
+    if ($id <= 0 || empty($name)) {
+        header('Location: ../admin/kategori.php?status=error&msg=' . urlencode('Data tidak valid. ID dan nama wajib diisi.'));
+        exit;
+    }
+
+    // Pastikan kategori ada
+    $existing = $typeModel->getById($id);
+    if (!$existing) {
+        header('Location: ../admin/kategori.php?status=error&msg=' . urlencode('Kategori tidak ditemukan.'));
+        exit;
+    }
+
+    if ($typeModel->update($id, $name)) {
+        header('Location: ../admin/kategori.php?status=success&msg=' . urlencode('Kategori berhasil diperbarui menjadi "' . $name . '"!'));
+    } else {
+        header('Location: ../admin/kategori.php?status=error&msg=' . urlencode('Gagal memperbarui kategori. Nama mungkin sudah ada.'));
+    }
+    exit;
+}
+
+// ==========================================
+// AKSI 7: HAPUS KATEGORI (GET)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'delete_kategori') {
+    $id = intval($_GET['id'] ?? 0);
+
+    if ($id <= 0) {
+        header('Location: ../admin/kategori.php?status=error&msg=' . urlencode('ID kategori tidak valid.'));
+        exit;
+    }
+
+    // Pastikan kategori ada
+    $existing = $typeModel->getById($id);
+    if (!$existing) {
+        header('Location: ../admin/kategori.php?status=error&msg=' . urlencode('Kategori tidak ditemukan.'));
+        exit;
+    }
+
+    // Cegah penghapusan jika masih ada mobil yang menggunakan kategori ini
+    $carCount = $typeModel->countCarsInType($id);
+    if ($carCount > 0) {
+        header('Location: ../admin/kategori.php?status=error&msg=' . urlencode('Tidak bisa menghapus! Kategori ini masih digunakan oleh ' . $carCount . ' mobil.'));
+        exit;
+    }
+
+    if ($typeModel->delete($id)) {
+        header('Location: ../admin/kategori.php?status=success&msg=' . urlencode('Kategori "' . $existing['name'] . '" berhasil dihapus!'));
+    } else {
+        header('Location: ../admin/kategori.php?status=error&msg=' . urlencode('Gagal menghapus kategori dari database.'));
     }
     exit;
 }
