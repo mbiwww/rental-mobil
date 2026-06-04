@@ -24,12 +24,17 @@ if ($_SESSION['role'] !== 'admin') {
 }
 
 require_once '../classes/Database.php';
+require_once '../classes/BaseModel.php';
 require_once '../classes/Car.php';
 require_once '../classes/CarType.php';
+require_once '../classes/Rental.php';
+require_once '../classes/Payment.php';
 
 $db = Database::getInstance()->getConnection();
 $carModel = new Car($db);
 $typeModel = new CarType($db);
+$rentalModel = new Rental($db);
+$paymentModel = new Payment($db);
 
 // Menentukan aksi yang dikirimkan (dari POST atau GET)
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
@@ -335,6 +340,59 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'delete_kategori') {
         header('Location: ../admin/kategori.php?status=success&msg=' . urlencode('Kategori "' . $existing['name'] . '" berhasil dihapus!'));
     } else {
         header('Location: ../admin/kategori.php?status=error&msg=' . urlencode('Gagal menghapus kategori dari database.'));
+    }
+    exit;
+}
+
+// ==========================================
+// AKSI 8: UPDATE STATUS TRANSAKSI / RENTAL (GET)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'update_rental_status') {
+    $id = intval($_GET['id'] ?? 0);
+    $status = $_GET['status'] ?? '';
+
+    $allowedStatuses = ['confirmed', 'ongoing', 'completed', 'cancelled'];
+    if ($id <= 0 || !in_array($status, $allowedStatuses)) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('ID atau Status tidak valid.'));
+        exit;
+    }
+
+    // Get the rental details first
+    $rental = $rentalModel->getById($id);
+    if (!$rental) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Transaksi tidak ditemukan.'));
+        exit;
+    }
+
+    $carId = (int)$rental['car_id'];
+    $db->beginTransaction();
+
+    try {
+        // 1. Update Rental Status
+        $rentalModel->updateStatus($id, $status);
+
+        // 2. Sync Car Status and Payment Status depending on target rental status
+        if ($status === 'confirmed') {
+            // Confirm associated payment if exists
+            $paymentModel->updateStatus($id, 'confirmed');
+        } elseif ($status === 'ongoing') {
+            // Mark car as rented
+            $carModel->updateStatus($carId, 'rented');
+        } elseif ($status === 'completed') {
+            // Mark car as available
+            $carModel->updateStatus($carId, 'available');
+        } elseif ($status === 'cancelled') {
+            // Mark car as available
+            $carModel->updateStatus($carId, 'available');
+            // Reject associated payment if exists
+            $paymentModel->updateStatus($id, 'rejected');
+        }
+
+        $db->commit();
+        header('Location: ../admin/transaksi.php?status=success&msg=' . urlencode('Status transaksi berhasil diperbarui!'));
+    } catch (Exception $e) {
+        $db->rollBack();
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Gagal memperbarui status transaksi: ' . $e->getMessage()));
     }
     exit;
 }

@@ -67,8 +67,8 @@ class Rental extends BaseModel
     public function getById(int $id): array|false
     {
         return $this->query(
-            "SELECT r.*, c.brand, c.model, c.year, c.price_per_day,
-                    u.name AS user_name, u.email AS user_email
+            "SELECT r.*, c.brand, c.model, c.year, c.price_per_day, c.transmission, c.engine_type, c.passenger_capacity, c.luggage_capacity,
+                    u.name AS user_name, u.email AS user_email, u.nik AS user_nik, u.phone AS user_phone, u.address AS user_address
              FROM rentals r
              JOIN cars c ON r.car_id = c.id
              JOIN users u ON r.user_id = u.id
@@ -80,13 +80,37 @@ class Rental extends BaseModel
     /**
      * Ambil semua rental (untuk halaman admin)
      *
+     * @param string $status Filter status (kosong = semua)
      * @return array Daftar semua rental dengan info mobil dan user
      */
-    public function getAll(): array
+    public function getAll(string $status = ''): array
     {
+        if (!empty($status)) {
+            if ($status === 'cancelled') {
+                return $this->query(
+                    "SELECT r.*, c.brand, c.model, c.year, c.transmission, c.engine_type, c.passenger_capacity, c.luggage_capacity, c.price_per_day,
+                            u.name AS user_name, u.email AS user_email, u.nik AS user_nik, u.phone AS user_phone, u.address AS user_address
+                     FROM rentals r
+                     JOIN cars c ON r.car_id = c.id
+                     JOIN users u ON r.user_id = u.id
+                     WHERE r.status IN ('cancelled', 'cancel_requested')
+                     ORDER BY r.created_at DESC"
+                )->fetchAll(PDO::FETCH_ASSOC);
+            }
+            return $this->query(
+                "SELECT r.*, c.brand, c.model, c.year, c.transmission, c.engine_type, c.passenger_capacity, c.luggage_capacity, c.price_per_day,
+                        u.name AS user_name, u.email AS user_email, u.nik AS user_nik, u.phone AS user_phone, u.address AS user_address
+                 FROM rentals r
+                 JOIN cars c ON r.car_id = c.id
+                 JOIN users u ON r.user_id = u.id
+                 WHERE r.status = ?
+                 ORDER BY r.created_at DESC",
+                [$status]
+            )->fetchAll(PDO::FETCH_ASSOC);
+        }
         return $this->query(
-            "SELECT r.*, c.brand, c.model, c.year,
-                    u.name AS user_name, u.email AS user_email
+            "SELECT r.*, c.brand, c.model, c.year, c.transmission, c.engine_type, c.passenger_capacity, c.luggage_capacity, c.price_per_day,
+                    u.name AS user_name, u.email AS user_email, u.nik AS user_nik, u.phone AS user_phone, u.address AS user_address
              FROM rentals r
              JOIN cars c ON r.car_id = c.id
              JOIN users u ON r.user_id = u.id
@@ -128,7 +152,7 @@ class Rental extends BaseModel
                AND status NOT IN ('cancelled')
                AND start_date < ?
                AND end_date > ?",
-            [$carId, $excludeId, $endDate, $startDate]
+             [$carId, $excludeId, $endDate, $startDate]
         )->fetchColumn();
 
         return $count > 0;
@@ -143,6 +167,11 @@ class Rental extends BaseModel
     public function countByStatus(string $status = ''): int
     {
         if (!empty($status)) {
+            if ($status === 'cancelled') {
+                return (int) $this->query(
+                    "SELECT COUNT(*) FROM rentals WHERE status IN ('cancelled', 'cancel_requested')"
+                )->fetchColumn();
+            }
             return (int) $this->query(
                 "SELECT COUNT(*) FROM rentals WHERE status = ?",
                 [$status]
