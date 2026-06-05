@@ -142,6 +142,8 @@ class BookingHandler extends BaseHandler
             'total_price'      => $totalPrice,
             'rental_type'      => $rentalType,
             'driver_cost'      => $driverCost,
+            'pickup_fee'       => $pickupFee,
+            'dropoff_fee'      => $dropoffFee,
         ]);
 
         if ($rentalId > 0) {
