@@ -369,22 +369,33 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'update_rental_statu
 
     try {
         // 1. Update Rental Status
-        $rentalModel->updateStatus($id, $status);
-
-        // 2. Sync Car Status and Payment Status depending on target rental status
-        if ($status === 'confirmed') {
-            // Confirm associated payment if exists
-            $paymentModel->updateStatus($id, 'confirmed');
-        } elseif ($status === 'ongoing') {
-            // Mark car as rented
+        if ($status === 'ongoing') {
+            // Mulai sewa — catat started_at (waktu mulai sewa)
+            $rentalModel->startRental($id);
+            // Ubah status mobil ke rented
             $carModel->updateStatus($carId, 'rented');
+
         } elseif ($status === 'completed') {
-            // Mark car as available
+            // Selesaikan sewa — hitung denda jika terlambat
+            $penaltyInfo = $rentalModel->calculatePenalty($rental);
+            $penaltyFee  = (float) $penaltyInfo['penalty_fee'];
+
+            // Simpan status completed + actual_return_at + penalty_fee
+            $rentalModel->completeRental($id, $penaltyFee);
+
+            // Ubah status mobil ke available
             $carModel->updateStatus($carId, 'available');
+
+        } elseif ($status === 'confirmed') {
+            $rentalModel->updateStatus($id, 'confirmed');
+            // Konfirmasi pembayaran terkait jika ada
+            $paymentModel->updateStatus($id, 'confirmed');
+
         } elseif ($status === 'cancelled') {
-            // Mark car as available
+            $rentalModel->updateStatus($id, 'cancelled');
+            // Ubah status mobil ke available
             $carModel->updateStatus($carId, 'available');
-            // Reject associated payment if exists
+            // Tolak pembayaran terkait jika ada
             $paymentModel->updateStatus($id, 'rejected');
         }
 
