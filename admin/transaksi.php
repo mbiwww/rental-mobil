@@ -310,6 +310,15 @@ $activePage = 'transaksi';
                                     // Duration calculation
                                     $days = (int) (strtotime($r['end_date']) - strtotime($r['start_date'])) / 86400;
                                     if ($days <= 0) $days = 1;
+
+                                    // Hitung biaya sewa dasar (harga mobil × hari)
+                                    $baseCost = (float)$r['price_per_day'] * $days;
+
+                                    // Hitung info denda untuk rental yang sedang berjalan
+                                    $penaltyInfo = ['deadline' => null, 'late_hours' => 0, 'penalty_fee' => 0, 'is_overdue' => false];
+                                    if ($r['status'] === 'ongoing' && !empty($r['started_at'])) {
+                                        $penaltyInfo = $rentalModel->calculatePenalty($r);
+                                    }
                                     ?>
                                     <tr>
                                         <td class="fw-bold text-muted">#TRX-<?= str_pad($r['id'], 4, '0', STR_PAD_LEFT) ?></td>
@@ -347,6 +356,12 @@ $activePage = 'transaksi';
                                             $statusLabel = $statusLabels[$r['status']] ?? $r['status'];
                                             ?>
                                             <span class="badge <?= $badgeClass ?> px-3 py-2 rounded-pill"><?= $statusLabel ?></span>
+                                            <?php if ($penaltyInfo['is_overdue']): ?>
+                                                <br><span class="badge bg-danger px-2 py-1 rounded-pill mt-1" style="font-size: 11px;"><i class="bi bi-exclamation-triangle me-1"></i>Terlambat <?= $penaltyInfo['late_hours'] ?> Jam</span>
+                                            <?php endif; ?>
+                                            <?php if ($r['status'] === 'completed' && (float)$r['penalty_fee'] > 0): ?>
+                                                <br><span class="badge bg-danger px-2 py-1 rounded-pill mt-1" style="font-size: 11px;"><i class="bi bi-cash me-1"></i>Denda: Rp <?= number_format($r['penalty_fee'], 0, ',', '.') ?></span>
+                                            <?php endif; ?>
                                         </td>
                                         <td class="text-end">
                                             <!-- Detail Button -->
@@ -366,8 +381,17 @@ $activePage = 'transaksi';
                                                data-rent-duration="<?= $days ?> Hari"
                                                data-pickup="<?= htmlspecialchars($r['pickup_location']) ?>"
                                                data-dropoff="<?= htmlspecialchars($r['dropoff_location']) ?>"
+                                               data-cost-base="Rp <?= number_format($baseCost, 0, ',', '.') ?>"
                                                data-cost-driver="Rp <?= number_format($r['driver_cost'], 0, ',', '.') ?>"
+                                               data-cost-pickup="Rp <?= number_format($r['pickup_fee'] ?? 0, 0, ',', '.') ?>"
+                                               data-cost-dropoff="Rp <?= number_format($r['dropoff_fee'] ?? 0, 0, ',', '.') ?>"
+                                               data-cost-penalty="Rp <?= number_format($r['status'] === 'completed' ? ($r['penalty_fee'] ?? 0) : $penaltyInfo['penalty_fee'], 0, ',', '.') ?>"
                                                data-cost-total="Rp <?= number_format($r['total_price'], 0, ',', '.') ?>"
+                                               data-penalty-hours="<?= $r['status'] === 'completed' ? (((float)($r['penalty_fee'] ?? 0) > 0) ? (int)(($r['penalty_fee'] ?? 0) / 20000) : 0) : $penaltyInfo['late_hours'] ?>"
+                                               data-is-overdue="<?= $penaltyInfo['is_overdue'] ? 'true' : 'false' ?>"
+                                               data-started-at="<?= !empty($r['started_at']) ? date('d M Y H:i', strtotime($r['started_at'])) : '' ?>"
+                                               data-deadline="<?= $penaltyInfo['deadline'] ? date('d M Y H:i', strtotime($penaltyInfo['deadline'])) : (!empty($r['started_at']) ? date('d M Y H:i', strtotime($r['started_at']) + ($days * 86400)) : '') ?>"
+                                               data-actual-return="<?= !empty($r['actual_return_at']) ? date('d M Y H:i', strtotime($r['actual_return_at'])) : '' ?>"
                                                data-status="<?= $r['status'] ?>"
                                                data-has-payment="<?= $hasPayment ?>"
                                                data-pay-method="<?= htmlspecialchars($paymentMethod) ?>"
@@ -384,10 +408,14 @@ $activePage = 'transaksi';
                                                 <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=confirmed" class="btn-action btn-check" title="Konfirmasi Pembayaran" onclick="return confirm('Konfirmasi pembayaran dan setujui pesanan ini?');"><i class="bi bi-check-circle fs-5"></i></a>
                                                 <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Batalkan Pesanan" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
                                             <?php elseif ($r['status'] === 'confirmed'): ?>
-                                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=ongoing" class="btn-action text-info" title="Mulai Sewa (Mobil Diambil)" onclick="return confirm('Mulai masa sewa mobil? Status mobil akan berubah menjadi Disewa.');"><i class="bi bi-play-circle fs-5"></i></a>
+                                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=ongoing" class="btn-action text-info" title="Mulai Sewa (Mobil Diambil)" onclick="return confirm('Mulai masa sewa mobil? Waktu sewa dimulai dari sekarang.');"><i class="bi bi-play-circle fs-5"></i></a>
                                                 <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Batalkan Pesanan" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
                                             <?php elseif ($r['status'] === 'ongoing'): ?>
-                                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');"><i class="bi bi-check2-all fs-5"></i></a>
+                                                <?php if ($penaltyInfo['is_overdue']): ?>
+                                                    <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('⚠️ TERLAMBAT <?= $penaltyInfo['late_hours'] ?> JAM\n\nDenda: Rp <?= number_format($penaltyInfo['penalty_fee'], 0, ',', '.') ?> (<?= $penaltyInfo['late_hours'] ?> jam × Rp 20.000)\n\nSelesaikan sewa dan terapkan denda?');"><i class="bi bi-check2-all fs-5"></i></a>
+                                                <?php else: ?>
+                                                    <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');"><i class="bi bi-check2-all fs-5"></i></a>
+                                                <?php endif; ?>
                                             <?php elseif ($r['status'] === 'cancel_requested'): ?>
                                                 <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Setujui Pembatalan" onclick="return confirm('Apakah Anda yakin ingin menyetujui pembatalan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
                                             <?php endif; ?>
@@ -421,19 +449,19 @@ $activePage = 'transaksi';
                             <!-- Customer Info -->
                             <div class="detail-section-title"><i class="bi bi-person me-2"></i>Data Penyewa</div>
                             <div class="row">
-                                <div class="col-6 detail-item">
+                                <div class="col-12 detail-item">
                                     <div class="detail-label">Nama Lengkap</div>
                                     <div id="det-cust-name" class="detail-value">-</div>
                                 </div>
-                                <div class="col-6 detail-item">
+                                <div class="col-12 detail-item">
                                     <div class="detail-label">NIK</div>
                                     <div id="det-cust-nik" class="detail-value">-</div>
                                 </div>
-                                <div class="col-6 detail-item">
+                                <div class="col-12 detail-item">
                                     <div class="detail-label">Email</div>
-                                    <div id="det-cust-email" class="detail-value">-</div>
+                                    <div id="det-cust-email" class="detail-value text-break">-</div>
                                 </div>
-                                <div class="col-6 detail-item">
+                                <div class="col-12 detail-item">
                                     <div class="detail-label">Nomor HP</div>
                                     <div id="det-cust-phone" class="detail-value">-</div>
                                 </div>
@@ -490,18 +518,58 @@ $activePage = 'transaksi';
 
                             <!-- Cost & Billing -->
                             <div class="detail-section-title mt-4"><i class="bi bi-wallet2 me-2"></i>Rincian Biaya</div>
-                            <div class="row bg-light p-3 rounded-3 border">
-                                <div class="col-6 detail-item mb-2">
-                                    <div class="detail-label">Biaya Supir</div>
-                                    <div id="det-cost-driver" class="detail-value">-</div>
+                            <div class="bg-light p-3 rounded-3 border">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted small">Biaya Sewa Mobil</span>
+                                    <span id="det-cost-base" class="fw-semibold small">-</span>
                                 </div>
-                                <div class="col-6 detail-item mb-2">
-                                    <div class="detail-label">Status Rental</div>
-                                    <div><span id="det-status-badge" class="badge rounded-pill">-</span></div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted small">Biaya Supir</span>
+                                    <span id="det-cost-driver" class="fw-semibold small">-</span>
                                 </div>
-                                <div class="col-12 border-top pt-2 mt-2">
-                                    <div class="detail-label fw-bold">Total Pembayaran</div>
-                                    <h4 class="fw-bold text-primary mb-0" id="det-cost-total">Rp 0</h4>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted small">Biaya Pickup (Antar)</span>
+                                    <span id="det-cost-pickup" class="fw-semibold small">-</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small">Biaya Dropoff (Ambil)</span>
+                                    <span id="det-cost-dropoff" class="fw-semibold small">-</span>
+                                </div>
+                                <div id="det-penalty-row" class="d-flex justify-content-between mb-2 d-none">
+                                    <span class="text-danger small fw-semibold"><i class="bi bi-exclamation-triangle me-1"></i>Denda Keterlambatan <span id="det-penalty-detail" class="fw-normal"></span></span>
+                                    <span id="det-cost-penalty" class="fw-bold small text-danger">-</span>
+                                </div>
+                                <hr class="my-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold">Total Pembayaran</span>
+                                    <h5 class="fw-bold text-primary mb-0" id="det-cost-total">Rp 0</h5>
+                                </div>
+                                <div class="mt-2">
+                                    <span class="detail-label">Status Rental</span>
+                                    <span id="det-status-badge" class="badge rounded-pill ms-2">-</span>
+                                </div>
+                            </div>
+
+                            <!-- Waktu Sewa (hanya tampil jika sudah started) -->
+                            <div id="det-timing-section" class="d-none">
+                                <div class="detail-section-title mt-4"><i class="bi bi-clock-history me-2"></i>Waktu Sewa</div>
+                                <div class="row">
+                                    <div class="col-6 detail-item">
+                                        <div class="detail-label">Mulai Sewa</div>
+                                        <div id="det-started-at" class="detail-value">-</div>
+                                    </div>
+                                    <div class="col-6 detail-item">
+                                        <div class="detail-label">Batas Pengembalian</div>
+                                        <div id="det-deadline" class="detail-value">-</div>
+                                    </div>
+                                    <div id="det-return-row" class="col-6 detail-item d-none">
+                                        <div class="detail-label">Waktu Dikembalikan</div>
+                                        <div id="det-actual-return" class="detail-value">-</div>
+                                    </div>
+                                    <div id="det-overdue-row" class="col-6 detail-item d-none">
+                                        <div class="detail-label">Status Waktu</div>
+                                        <div id="det-overdue-status" class="detail-value">-</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -589,8 +657,21 @@ $activePage = 'transaksi';
                     const pickup = this.getAttribute('data-pickup');
                     const dropoff = this.getAttribute('data-dropoff');
 
+                    // Rincian biaya
+                    const costBase = this.getAttribute('data-cost-base');
                     const costDriver = this.getAttribute('data-cost-driver');
+                    const costPickup = this.getAttribute('data-cost-pickup');
+                    const costDropoff = this.getAttribute('data-cost-dropoff');
+                    const costPenalty = this.getAttribute('data-cost-penalty');
                     const costTotal = this.getAttribute('data-cost-total');
+                    const penaltyHours = parseInt(this.getAttribute('data-penalty-hours')) || 0;
+                    const isOverdue = this.getAttribute('data-is-overdue') === 'true';
+
+                    // Info waktu sewa
+                    const startedAt = this.getAttribute('data-started-at');
+                    const deadline = this.getAttribute('data-deadline');
+                    const actualReturn = this.getAttribute('data-actual-return');
+
                     const status = this.getAttribute('data-status');
 
                     const hasPayment = this.getAttribute('data-has-payment') === 'true';
@@ -600,7 +681,7 @@ $activePage = 'transaksi';
                     const payProof = this.getAttribute('data-pay-proof');
                     const payPaidAt = this.getAttribute('data-pay-paidat');
 
-                    // Populate fields
+                    // Populate fields — Customer
                     document.getElementById('lbl-trx-id').textContent = trx;
                     document.getElementById('det-cust-name').textContent = custName;
                     document.getElementById('det-cust-nik').textContent = custNik;
@@ -608,18 +689,34 @@ $activePage = 'transaksi';
                     document.getElementById('det-cust-phone').textContent = custPhone;
                     document.getElementById('det-cust-address').textContent = custAddress;
 
+                    // Populate fields — Car
                     document.getElementById('det-car-name').textContent = carName;
                     document.getElementById('det-car-spec').textContent = carSpec;
                     document.getElementById('det-car-price').textContent = carPrice;
 
+                    // Populate fields — Rental info
                     document.getElementById('det-rent-type').textContent = rentType;
                     document.getElementById('det-rent-duration').textContent = rentDuration;
                     document.getElementById('det-rent-dates').textContent = rentDates;
                     document.getElementById('det-pickup').textContent = pickup;
                     document.getElementById('det-dropoff').textContent = dropoff;
 
+                    // Populate fields — Rincian biaya
+                    document.getElementById('det-cost-base').textContent = costBase;
                     document.getElementById('det-cost-driver').textContent = costDriver;
+                    document.getElementById('det-cost-pickup').textContent = costPickup;
+                    document.getElementById('det-cost-dropoff').textContent = costDropoff;
                     document.getElementById('det-cost-total').textContent = costTotal;
+
+                    // Tampilkan denda jika ada
+                    const penaltyRow = document.getElementById('det-penalty-row');
+                    if (penaltyHours > 0) {
+                        penaltyRow.classList.remove('d-none');
+                        document.getElementById('det-cost-penalty').textContent = costPenalty;
+                        document.getElementById('det-penalty-detail').textContent = '(' + penaltyHours + ' jam × Rp 20.000)';
+                    } else {
+                        penaltyRow.classList.add('d-none');
+                    }
 
                     // Status badge formatting
                     const statusBadge = document.getElementById('det-status-badge');
@@ -634,7 +731,7 @@ $activePage = 'transaksi';
                         statusLabelText = 'Confirmed (Disetujui)';
                     } else if (status === 'ongoing') {
                         statusBadge.classList.add('bg-info', 'text-dark');
-                        statusLabelText = 'Ongoing (Sedang Sewa)';
+                        statusLabelText = isOverdue ? 'Ongoing (TERLAMBAT)' : 'Ongoing (Sedang Sewa)';
                     } else if (status === 'completed') {
                         statusBadge.classList.add('bg-success');
                         statusLabelText = 'Completed (Selesai)';
@@ -646,6 +743,38 @@ $activePage = 'transaksi';
                         statusLabelText = 'Cancelled (Batal)';
                     }
                     statusBadge.textContent = statusLabelText;
+
+                    // Tampilkan section waktu sewa jika sudah dimulai
+                    const timingSection = document.getElementById('det-timing-section');
+                    const returnRow = document.getElementById('det-return-row');
+                    const overdueRow = document.getElementById('det-overdue-row');
+
+                    if (startedAt) {
+                        timingSection.classList.remove('d-none');
+                        document.getElementById('det-started-at').textContent = startedAt;
+                        document.getElementById('det-deadline').textContent = deadline || '-';
+
+                        // Tampilkan waktu dikembalikan jika sudah completed
+                        if (actualReturn) {
+                            returnRow.classList.remove('d-none');
+                            document.getElementById('det-actual-return').textContent = actualReturn;
+                        } else {
+                            returnRow.classList.add('d-none');
+                        }
+
+                        // Status waktu: tepat waktu / terlambat
+                        if (isOverdue || penaltyHours > 0) {
+                            overdueRow.classList.remove('d-none');
+                            document.getElementById('det-overdue-status').innerHTML = '<span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle me-1"></i>Terlambat ' + penaltyHours + ' Jam</span>';
+                        } else if (status === 'completed') {
+                            overdueRow.classList.remove('d-none');
+                            document.getElementById('det-overdue-status').innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i>Tepat Waktu</span>';
+                        } else {
+                            overdueRow.classList.add('d-none');
+                        }
+                    } else {
+                        timingSection.classList.add('d-none');
+                    }
 
                     // Payment details rendering
                     const payInfoMissing = document.getElementById('pay-info-missing');
@@ -708,7 +837,7 @@ $activePage = 'transaksi';
                         `;
                     } else if (status === 'confirmed') {
                         footerHtml += `
-                            <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=ongoing" class="btn btn-info text-dark px-4 rounded-3" onclick="return confirm('Mulai masa sewa mobil? Status mobil akan berubah menjadi Disewa.');">
+                            <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=ongoing" class="btn btn-info text-dark px-4 rounded-3" onclick="return confirm('Mulai masa sewa mobil? Waktu sewa dimulai dari sekarang.');">
                                 <i class="bi bi-play-circle me-1"></i> Mulai Sewa (Diambil)
                             </a>
                             <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=cancelled" class="btn btn-danger px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');">
@@ -716,11 +845,19 @@ $activePage = 'transaksi';
                             </a>
                         `;
                     } else if (status === 'ongoing') {
-                        footerHtml += `
-                            <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=completed" class="btn btn-success px-4 rounded-3" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');">
-                                <i class="bi bi-check2-all me-1"></i> Selesaikan Sewa (Kembali)
-                            </a>
-                        `;
+                        if (isOverdue) {
+                            footerHtml += `
+                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=completed" class="btn btn-success px-4 rounded-3" onclick="return confirm('⚠️ TERLAMBAT ${penaltyHours} JAM\\n\\nDenda: ${costPenalty} (${penaltyHours} jam × Rp 20.000)\\n\\nSelesaikan sewa dan terapkan denda?');">
+                                    <i class="bi bi-check2-all me-1"></i> Selesaikan Sewa + Denda
+                                </a>
+                            `;
+                        } else {
+                            footerHtml += `
+                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=completed" class="btn btn-success px-4 rounded-3" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');">
+                                    <i class="bi bi-check2-all me-1"></i> Selesaikan Sewa (Kembali)
+                                </a>
+                            `;
+                        }
                     } else if (status === 'cancel_requested') {
                         footerHtml += `
                             <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=cancelled" class="btn btn-danger px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menyetujui pembatalan pesanan ini?');">
