@@ -22,8 +22,9 @@ class Rental extends BaseModel
             "INSERT INTO rentals (
                 user_id, car_id, start_date, end_date,
                 pickup_location, dropoff_location,
-                total_price, rental_type, driver_cost, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')",
+                total_price, rental_type, driver_cost,
+                pickup_fee, dropoff_fee, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')",
             [
                 $data['user_id'],
                 $data['car_id'],
@@ -34,6 +35,8 @@ class Rental extends BaseModel
                 $data['total_price'],
                 $data['rental_type'],
                 $data['driver_cost'],
+                $data['pickup_fee'] ?? 0,
+                $data['dropoff_fee'] ?? 0,
             ]
         );
 
@@ -178,5 +181,99 @@ class Rental extends BaseModel
             )->fetchColumn();
         }
         return (int) $this->query("SELECT COUNT(*) FROM rentals")->fetchColumn();
+    }
+
+    // -------------------------------------------------------
+    // METHOD DENDA KETERLAMBATAN
+    // -------------------------------------------------------
+
+    // Tarif denda per jam keterlambatan
+    const PENALTY_RATE_PER_HOUR = 20000;
+
+    /**
+     * Mulai masa sewa — catat waktu mulai (started_at) dan ubah status ke ongoing
+     * Dipanggil saat admin klik "Mulai Sewa (Mobil Diambil)"
+     *
+     * @param int $id ID rental
+     * @return bool True jika berhasil
+     */
+    public function startRental(int $id): bool
+    {
+        return $this->query(
+            "UPDATE rentals SET status = 'ongoing', started_at = NOW() WHERE id = ?",
+            [$id]
+        )->rowCount() > 0;
+    }
+
+    /**
+     * Hitung denda keterlambatan berdasarkan started_at dan jumlah hari sewa
+     *
+     * Deadline = started_at + (jumlah_hari × 24 jam)
+     * Jika waktu sekarang melewati deadline, denda dihitung per jam.
+     * Pembulatan: >= 30 menit dibulatkan ke atas (round half up).
+     * Minimum 1 jam jika terlambat.
+     *
+     * @param array $rental Data rental (harus mengandung started_at, start_date, end_date)
+     * @return array ['deadline' => string, 'late_hours' => int, 'penalty_fee' => float, 'is_overdue' => bool]
+     */
+    public function calculatePenalty(array $rental): array
+    {
+        $result = [
+            'deadline'    => null,
+            'late_hours'  => 0,
+            'penalty_fee' => 0,
+            'is_overdue'  => false,
+        ];
+
+        // Jika belum dimulai, tidak ada denda
+        if (empty($rental['started_at'])) {
+            return $result;
+        }
+
+        // Hitung jumlah hari sewa
+        $days = (int) ((strtotime($rental['end_date']) - strtotime($rental['start_date'])) / 86400);
+        if ($days < 1) $days = 1;
+
+        // Hitung deadline: started_at + (hari × 24 jam)
+        $startedAt    = strtotime($rental['started_at']);
+        $deadlineTime = $startedAt + ($days * 86400);
+        $result['deadline'] = date('Y-m-d H:i:s', $deadlineTime);
+
+        // Bandingkan dengan waktu sekarang
+        $now = time();
+        if ($now > $deadlineTime) {
+            $result['is_overdue'] = true;
+
+            // Hitung menit keterlambatan
+            $lateMinutes = ($now - $deadlineTime) / 60;
+
+            // Pembulatan: >= 30 menit bulatkan ke atas, minimum 1 jam
+            $lateHours = max(1, (int) round($lateMinutes / 60));
+
+            $result['late_hours']  = $lateHours;
+            $result['penalty_fee'] = $lateHours * self::PENALTY_RATE_PER_HOUR;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Selesaikan rental — catat waktu pengembalian dan denda
+     * Dipanggil saat admin klik "Selesaikan Sewa (Mobil Kembali)"
+     *
+     * @param int   $id         ID rental
+     * @param float $penaltyFee Total denda keterlambatan
+     * @return bool True jika berhasil
+     */
+    public function completeRental(int $id, float $penaltyFee = 0): bool
+    {
+        return $this->query(
+            "UPDATE rentals
+             SET status = 'completed',
+                 actual_return_at = NOW(),
+                 penalty_fee = ?
+             WHERE id = ?",
+            [$penaltyFee, $id]
+        )->rowCount() > 0;
     }
 }
