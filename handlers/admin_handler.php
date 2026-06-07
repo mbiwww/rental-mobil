@@ -29,12 +29,14 @@ require_once '../classes/Car.php';
 require_once '../classes/CarType.php';
 require_once '../classes/Rental.php';
 require_once '../classes/Payment.php';
+require_once '../classes/User.php';
 
 $db = Database::getInstance()->getConnection();
 $carModel = new Car($db);
 $typeModel = new CarType($db);
 $rentalModel = new Rental($db);
 $paymentModel = new Payment($db);
+$userModel = new User($db);
 
 // Menentukan aksi yang dikirimkan (dari POST atau GET)
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
@@ -464,6 +466,89 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'update_settings') 
     } catch (Exception $e) {
         $db->rollBack();
         header('Location: ../admin/transaksi.php?tab=layanan&status=error&msg=' . urlencode('Gagal memperbarui pengaturan biaya: ' . $e->getMessage()));
+    }
+    exit;
+}
+
+// ==========================================
+// AKSI 11: HAPUS CUSTOMER (GET)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'delete_customer') {
+    $id = intval($_GET['id'] ?? 0);
+
+    if ($id <= 0) {
+        header('Location: ../admin/customer.php?status=error&msg=' . urlencode('ID customer tidak valid.'));
+        exit;
+    }
+
+    // Pastikan customer ada
+    $customer = $userModel->findById($id);
+    if (!$customer || $customer['role'] !== 'customer') {
+        header('Location: ../admin/customer.php?status=error&msg=' . urlencode('Customer tidak ditemukan.'));
+        exit;
+    }
+
+    // Cek apakah customer memiliki rental aktif
+    $activeRentals = $userModel->countActiveRentals($id);
+    if ($activeRentals > 0) {
+        header('Location: ../admin/customer.php?status=error&msg=' . urlencode('Tidak bisa menghapus! Customer ini masih memiliki ' . $activeRentals . ' rental aktif.'));
+        exit;
+    }
+
+    if ($userModel->deleteCustomer($id)) {
+        header('Location: ../admin/customer.php?status=success&msg=' . urlencode('Customer "' . $customer['name'] . '" berhasil dihapus!'));
+    } else {
+        header('Location: ../admin/customer.php?status=error&msg=' . urlencode('Gagal menghapus customer dari database.'));
+    }
+    exit;
+}
+
+// ==========================================
+// AKSI 12: PROSES PENGEMBALIAN MOBIL (GET)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'return_rental') {
+    $id = intval($_GET['id'] ?? 0);
+
+    if ($id <= 0) {
+        header('Location: ../admin/pengembalian.php?status=error&msg=' . urlencode('ID rental tidak valid.'));
+        exit;
+    }
+
+    $rental = $rentalModel->getById($id);
+    if (!$rental) {
+        header('Location: ../admin/pengembalian.php?status=error&msg=' . urlencode('Rental tidak ditemukan.'));
+        exit;
+    }
+
+    if ($rental['status'] !== 'ongoing') {
+        header('Location: ../admin/pengembalian.php?status=error&msg=' . urlencode('Rental ini tidak dalam status ongoing.'));
+        exit;
+    }
+
+    $carId = (int)$rental['car_id'];
+    $db->beginTransaction();
+
+    try {
+        // Hitung denda keterlambatan
+        $penaltyInfo = $rentalModel->calculatePenalty($rental);
+        $penaltyFee  = (float) $penaltyInfo['penalty_fee'];
+
+        // Selesaikan rental
+        $rentalModel->completeRental($id, $penaltyFee);
+
+        // Ubah status mobil ke available
+        $carModel->updateStatus($carId, 'available');
+
+        $db->commit();
+
+        $msg = 'Pengembalian mobil ' . $rental['brand'] . ' ' . $rental['model'] . ' berhasil diproses!';
+        if ($penaltyFee > 0) {
+            $msg .= ' Denda keterlambatan: Rp ' . number_format($penaltyFee, 0, ',', '.');
+        }
+        header('Location: ../admin/pengembalian.php?status=success&msg=' . urlencode($msg));
+    } catch (Exception $e) {
+        $db->rollBack();
+        header('Location: ../admin/pengembalian.php?status=error&msg=' . urlencode('Gagal memproses pengembalian: ' . $e->getMessage()));
     }
     exit;
 }

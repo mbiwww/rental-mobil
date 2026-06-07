@@ -211,4 +211,160 @@ class User
             return 0;
         }
     }
+
+    /**
+     * Mengambil semua customer beserta jumlah total rental mereka
+     *
+     * @param string $search Kata kunci pencarian (nama, email, phone, nik)
+     * @return array Daftar customer dengan kolom total_rentals
+     */
+    public function getAllCustomersWithRentalCount(string $search = ''): array
+    {
+        try {
+            $sql = "
+                SELECT u.id, u.name, u.nik, u.email, u.phone, u.address, u.profile_image, u.created_at,
+                       COUNT(r.id) AS total_rentals,
+                       SUM(CASE WHEN r.status IN ('ongoing', 'confirmed', 'pending') THEN 1 ELSE 0 END) AS active_rentals,
+                       COALESCE(SUM(CASE WHEN r.status = 'completed' THEN r.total_price + COALESCE(r.penalty_fee, 0) ELSE 0 END), 0) AS total_spent
+                FROM users u
+                LEFT JOIN rentals r ON u.id = r.user_id
+                WHERE u.role = 'customer'
+            ";
+            $params = [];
+
+            if (!empty($search)) {
+                $sql .= " AND (u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ? OR u.nik LIKE ?)";
+                $keyword = '%' . trim($search) . '%';
+                $params = [$keyword, $keyword, $keyword, $keyword];
+            }
+
+            $sql .= " GROUP BY u.id ORDER BY u.created_at DESC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Mengambil detail customer beserta riwayat rental-nya
+     *
+     * @param int $id ID customer
+     * @return array|false Data customer atau false jika tidak ditemukan
+     */
+    public function getCustomerDetail(int $id): array|false
+    {
+        try {
+            // Data dasar customer
+            $stmt = $this->db->prepare("
+                SELECT u.*,
+                       COUNT(r.id) AS total_rentals,
+                       COALESCE(SUM(CASE WHEN r.status = 'completed' THEN r.total_price + COALESCE(r.penalty_fee, 0) ELSE 0 END), 0) AS total_spent
+                FROM users u
+                LEFT JOIN rentals r ON u.id = r.user_id
+                WHERE u.id = ? AND u.role = 'customer'
+                GROUP BY u.id
+            ");
+            $stmt->execute([$id]);
+            $customer = $stmt->fetch();
+
+            if (!$customer) return false;
+
+            // Riwayat rental customer
+            $stmt2 = $this->db->prepare("
+                SELECT r.*, c.brand, c.model, c.year
+                FROM rentals r
+                JOIN cars c ON r.car_id = c.id
+                WHERE r.user_id = ?
+                ORDER BY r.created_at DESC
+                LIMIT 10
+            ");
+            $stmt2->execute([$id]);
+            $customer['rentals'] = $stmt2->fetchAll();
+
+            return $customer;
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Menghitung customer yang memiliki minimal 1 rental aktif (pending/confirmed/ongoing)
+     *
+     * @return int Jumlah customer aktif
+     */
+    public function countActiveCustomers(): int
+    {
+        try {
+            $stmt = $this->db->query("
+                SELECT COUNT(DISTINCT u.id)
+                FROM users u
+                JOIN rentals r ON u.id = r.user_id
+                WHERE u.role = 'customer'
+                  AND r.status IN ('pending', 'confirmed', 'ongoing')
+            ");
+            return (int) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Menghitung customer yang memiliki riwayat rental (pernah menyewa)
+     *
+     * @return int Jumlah customer yang pernah menyewa
+     */
+    public function countCustomersWithRentals(): int
+    {
+        try {
+            $stmt = $this->db->query("
+                SELECT COUNT(DISTINCT u.id)
+                FROM users u
+                JOIN rentals r ON u.id = r.user_id
+                WHERE u.role = 'customer'
+            ");
+            return (int) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Menghapus customer dari database
+     * Hanya bisa dihapus jika tidak memiliki rental aktif
+     *
+     * @param int $id ID customer
+     * @return bool True jika berhasil, false jika gagal
+     */
+    public function deleteCustomer(int $id): bool
+    {
+        try {
+            $stmt = $this->db->prepare("DELETE FROM users WHERE id = ? AND role = 'customer'");
+            return $stmt->execute([$id]);
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Cek apakah customer memiliki rental aktif (pending/confirmed/ongoing)
+     *
+     * @param int $id ID customer
+     * @return int Jumlah rental aktif
+     */
+    public function countActiveRentals(int $id): int
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) FROM rentals
+                WHERE user_id = ? AND status IN ('pending', 'confirmed', 'ongoing')
+            ");
+            $stmt->execute([$id]);
+            return (int) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            return 0;
+        }
+    }
 }

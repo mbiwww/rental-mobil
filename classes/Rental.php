@@ -284,4 +284,255 @@ class Rental extends BaseModel
             [$penaltyFee, $id]
         )->rowCount() > 0;
     }
+
+    /**
+     * Hitung total pendapatan bulan ini (dari rental completed)
+     * Berdasarkan created_at rental (bukan payment) karena payment bisa null
+     *
+     * @return float Total pendapatan bulan ini
+     */
+    public function getPendapatanBulanIni(): float
+    {
+        $result = $this->query(
+            "SELECT COALESCE(SUM(total_price + COALESCE(penalty_fee, 0)), 0)
+             FROM rentals
+             WHERE status = 'completed'
+               AND MONTH(created_at) = MONTH(CURDATE())
+               AND YEAR(created_at) = YEAR(CURDATE())"
+        )->fetchColumn();
+        return (float) $result;
+    }
+
+    /**
+     * Hitung total pendapatan keseluruhan (dari rental completed)
+     *
+     * @return float Total pendapatan semua waktu
+     */
+    public function getTotalPendapatan(): float
+    {
+        $result = $this->query(
+            "SELECT COALESCE(SUM(total_price + COALESCE(penalty_fee, 0)), 0)
+             FROM rentals
+             WHERE status = 'completed'"
+        )->fetchColumn();
+        return (float) $result;
+    }
+
+    /**
+     * Ambil data tren jumlah rental per bulan (6 bulan terakhir)
+     *
+     * @return array Array dengan label bulan dan jumlah rental
+     */
+    public function getTrenRental6Bulan(): array
+    {
+        return $this->query(
+            "SELECT
+                DATE_FORMAT(created_at, '%b %Y') AS bulan,
+                DATE_FORMAT(created_at, '%Y-%m') AS bulan_sort,
+                COUNT(*) AS jumlah
+             FROM rentals
+             WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+               AND created_at < DATE_ADD(LAST_DAY(CURDATE()), INTERVAL 1 DAY)
+             GROUP BY bulan_sort, bulan
+             ORDER BY bulan_sort ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Ambil data pendapatan per bulan dari rental completed (6 bulan terakhir)
+     *
+     * @return array Array dengan label bulan dan total pendapatan
+     */
+    public function getPendapatan6Bulan(): array
+    {
+        return $this->query(
+            "SELECT
+                DATE_FORMAT(created_at, '%b %Y') AS bulan,
+                DATE_FORMAT(created_at, '%Y-%m') AS bulan_sort,
+                COALESCE(SUM(total_price + COALESCE(penalty_fee, 0)), 0) AS total
+             FROM rentals
+             WHERE status = 'completed'
+               AND created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+               AND created_at < DATE_ADD(LAST_DAY(CURDATE()), INTERVAL 1 DAY)
+             GROUP BY bulan_sort, bulan
+             ORDER BY bulan_sort ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Ambil transaksi terbaru untuk ditampilkan di dashboard admin
+     *
+     * @param int $limit Jumlah data yang diambil
+     * @return array Daftar rental terbaru dengan info user, mobil, dan pembayaran
+     */
+    public function getRecentTransaksi(int $limit = 8): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT r.id, r.total_price, r.status, r.created_at,
+                    r.start_date, r.end_date, r.rental_type,
+                    u.name AS user_name,
+                    c.brand, c.model,
+                    p.method AS payment_method,
+                    p.status AS payment_status
+             FROM rentals r
+             JOIN users u ON r.user_id = u.id
+             JOIN cars c ON r.car_id = c.id
+             LEFT JOIN payments p ON p.rental_id = r.id
+             ORDER BY r.created_at DESC
+             LIMIT :lmt"
+        );
+        $stmt->bindValue(':lmt', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Hitung persentase pertumbuhan rental bulan ini vs bulan lalu
+     *
+     * @return float Persentase pertumbuhan (bisa negatif)
+     */
+    public function getPertumbuhanBulanan(): float
+    {
+        $bulanIni = (int) $this->query(
+            "SELECT COUNT(*) FROM rentals
+             WHERE MONTH(created_at) = MONTH(CURDATE())
+               AND YEAR(created_at) = YEAR(CURDATE())"
+        )->fetchColumn();
+
+        $bulanLalu = (int) $this->query(
+            "SELECT COUNT(*) FROM rentals
+             WHERE MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+               AND YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))"
+        )->fetchColumn();
+
+        if ($bulanLalu === 0) {
+            return $bulanIni > 0 ? 100.0 : 0.0;
+        }
+
+        return round((($bulanIni - $bulanLalu) / $bulanLalu) * 100, 1);
+    }
+
+    // -------------------------------------------------------
+    // METHOD UNTUK HALAMAN PENGEMBALIAN
+    // -------------------------------------------------------
+
+    /**
+     * Ambil semua rental yang sedang berjalan (ongoing) untuk halaman pengembalian
+     *
+     * @return array Daftar rental ongoing dengan info mobil dan user
+     */
+    public function getOngoingRentals(): array
+    {
+        return $this->query(
+            "SELECT r.*, c.brand, c.model, c.year, c.image,
+                    u.name AS user_name, u.email AS user_email, u.phone AS user_phone
+             FROM rentals r
+             JOIN cars c ON r.car_id = c.id
+             JOIN users u ON r.user_id = u.id
+             WHERE r.status = 'ongoing'
+             ORDER BY r.started_at ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Ambil rental yang baru saja selesai (completed) untuk riwayat pengembalian
+     *
+     * @param int $limit Jumlah data
+     * @return array Daftar rental completed terbaru
+     */
+    public function getRecentlyCompleted(int $limit = 10): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT r.*, c.brand, c.model, c.year,
+                    u.name AS user_name, u.email AS user_email, u.phone AS user_phone
+             FROM rentals r
+             JOIN cars c ON r.car_id = c.id
+             JOIN users u ON r.user_id = u.id
+             WHERE r.status = 'completed'
+             ORDER BY r.actual_return_at DESC
+             LIMIT :lmt"
+        );
+        $stmt->bindValue(':lmt', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Hitung total denda yang sudah terkumpul
+     *
+     * @return float Total denda dari semua rental completed
+     */
+    public function getTotalPenalty(): float
+    {
+        $result = $this->query(
+            "SELECT COALESCE(SUM(penalty_fee), 0) FROM rentals WHERE status = 'completed' AND penalty_fee > 0"
+        )->fetchColumn();
+        return (float) $result;
+    }
+
+    // -------------------------------------------------------
+    // METHOD UNTUK HALAMAN LAPORAN
+    // -------------------------------------------------------
+
+    /**
+     * Ambil data laporan rental berdasarkan rentang tanggal
+     *
+     * @param string $startDate Tanggal awal (YYYY-MM-DD)
+     * @param string $endDate   Tanggal akhir (YYYY-MM-DD)
+     * @param string $status    Filter status (kosong = semua)
+     * @return array Daftar rental dalam periode tersebut
+     */
+    public function getReportData(string $startDate = '', string $endDate = '', string $status = ''): array
+    {
+        $sql = "SELECT r.*, c.brand, c.model, c.year,
+                       u.name AS user_name, u.email AS user_email, u.phone AS user_phone
+                FROM rentals r
+                JOIN cars c ON r.car_id = c.id
+                JOIN users u ON r.user_id = u.id
+                WHERE 1=1";
+        $params = [];
+
+        if (!empty($startDate)) {
+            $sql .= " AND DATE(r.created_at) >= ?";
+            $params[] = $startDate;
+        }
+        if (!empty($endDate)) {
+            $sql .= " AND DATE(r.created_at) <= ?";
+            $params[] = $endDate;
+        }
+        if (!empty($status)) {
+            $sql .= " AND r.status = ?";
+            $params[] = $status;
+        }
+
+        $sql .= " ORDER BY r.created_at DESC";
+
+        return $this->query($sql, $params)->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Ambil ringkasan statistik laporan dalam rentang tanggal
+     *
+     * @param string $startDate Tanggal awal
+     * @param string $endDate   Tanggal akhir
+     * @return array Statistik: total_transaksi, total_completed, total_pendapatan, total_denda, rata_rata_hari
+     */
+    public function getReportStats(string $startDate = '', string $endDate = ''): array
+    {
+        $where = "WHERE 1=1";
+        $params = [];
+        if (!empty($startDate)) { $where .= " AND DATE(r.created_at) >= ?"; $params[] = $startDate; }
+        if (!empty($endDate))   { $where .= " AND DATE(r.created_at) <= ?"; $params[] = $endDate; }
+
+        $row = $this->query(
+            "SELECT COUNT(*) AS total_transaksi,
+                    SUM(CASE WHEN r.status = 'completed' THEN 1 ELSE 0 END) AS total_completed,
+                    COALESCE(SUM(CASE WHEN r.status = 'completed' THEN r.total_price + COALESCE(r.penalty_fee,0) ELSE 0 END), 0) AS total_pendapatan,
+                    COALESCE(SUM(CASE WHEN r.status = 'completed' THEN COALESCE(r.penalty_fee,0) ELSE 0 END), 0) AS total_denda,
+                    COALESCE(AVG(DATEDIFF(r.end_date, r.start_date)), 0) AS rata_rata_hari
+             FROM rentals r $where", $params
+        )->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: ['total_transaksi'=>0,'total_completed'=>0,'total_pendapatan'=>0,'total_denda'=>0,'rata_rata_hari'=>0];
+    }
 }
