@@ -19,6 +19,13 @@ require_once '../classes/Car.php';
 $pdo      = Database::getInstance()->getConnection();
 $carModel = new Car($pdo);
 
+// Ambil setting dari database
+$stmtSettings = $pdo->query("SELECT key_name, value FROM settings");
+$settings = $stmtSettings->fetchAll(PDO::FETCH_KEY_PAIR);
+$driverFee = isset($settings['driver_cost_per_day']) ? (float)$settings['driver_cost_per_day'] : 200000.0;
+$pickupFee = isset($settings['pickup_fee']) ? (float)$settings['pickup_fee'] : 50000.0;
+$dropoffFee = isset($settings['dropoff_fee']) ? (float)$settings['dropoff_fee'] : 50000.0;
+
 // ── Baca & validasi ID dari query string ─────────────────────────────────────
 $carId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
@@ -165,7 +172,7 @@ $isAvailable = $car['status'] === 'available';
               <label for="driverOption" class="form-label">Opsi Supir</label>
               <select class="form-select" id="driverOption" name="rental_type">
                 <option value="without_driver">Tanpa Supir</option>
-                <option value="with_driver">Dengan Supir (+Rp 200.000/hari)</option>
+                <option value="with_driver">Dengan Supir (+Rp <?= number_format($driverFee, 0, ',', '.') ?>/hari)</option>
               </select>
             </div>
 
@@ -240,9 +247,9 @@ $isAvailable = $car['status'] === 'available';
 (function () {
   // ── Konstanta harga dari PHP ─────────────────────────────────────────────
   const basePrice   = <?= $pricePerDay ?>;
-  const driverFee   = 200000;
-  const pickupFee   = 50000;
-  const dropoffFee  = 50000;
+  const driverFee   = <?= $driverFee ?>;
+  const pickupFee   = <?= $pickupFee ?>;
+  const dropoffFee  = <?= $dropoffFee ?>;
 
   // ── Referensi elemen form ────────────────────────────────────────────────
   const startDateInput       = document.getElementById('startDate');
@@ -400,7 +407,7 @@ $isAvailable = $car['status'] === 'available';
           </div>
           <div class="form-check">
             <input class="form-check-input" type="radio" name="pickup_radio" id="pickupAntar" value="antar">
-            <label class="form-check-label" for="pickupAntar">Diantar ke alamat (+Rp 50.000)</label>
+            <label class="form-check-label" for="pickupAntar">Diantar ke alamat (+Rp ${formatRupiah(pickupFee)})</label>
           </div>
           <div id="pickupAddressGroup" class="address-group mt-2" style="display:none;">
             <input type="text" class="form-control" id="pickupAddress" placeholder="Alamat pengantaran mobil">
@@ -417,7 +424,7 @@ $isAvailable = $car['status'] === 'available';
           </div>
           <div class="form-check">
             <input class="form-check-input" type="radio" name="dropoff_radio" id="dropoffAmbil" value="ambil">
-            <label class="form-check-label" for="dropoffAmbil">Dijemput perusahaan di alamat (+Rp 50.000)</label>
+            <label class="form-check-label" for="dropoffAmbil">Dijemput perusahaan di alamat (+Rp ${formatRupiah(dropoffFee)})</label>
           </div>
           <div id="dropoffAddressGroup" class="address-group mt-2" style="display:none;">
             <input type="text" class="form-control" id="dropoffAddress" placeholder="Alamat penjemputan mobil">

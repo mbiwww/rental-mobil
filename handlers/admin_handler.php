@@ -408,6 +408,66 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'update_rental_statu
     exit;
 }
 
+// ==========================================
+// AKSI 9: UPDATE HARGA MOBIL INDIVIDU (POST)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'update_car_price') {
+    $carId = intval($_POST['car_id'] ?? 0);
+    $pricePerDay = floatval($_POST['price_per_day'] ?? 0);
+
+    if ($carId <= 0 || $pricePerDay <= 0) {
+        header('Location: ../admin/transaksi.php?tab=mobil&status=error&msg=' . urlencode('ID mobil atau harga tidak valid!'));
+        exit;
+    }
+
+    $currentCar = $carModel->getById($carId);
+    if (!$currentCar) {
+        header('Location: ../admin/transaksi.php?tab=mobil&status=error&msg=' . urlencode('Data mobil tidak ditemukan.'));
+        exit;
+    }
+
+    try {
+        $stmt = $db->prepare("UPDATE cars SET price_per_day = ? WHERE id = ?");
+        $stmt->execute([$pricePerDay, $carId]);
+        header('Location: ../admin/transaksi.php?tab=mobil&status=success&msg=' . urlencode('Harga sewa mobil ' . $currentCar['brand'] . ' ' . $currentCar['model'] . ' berhasil diperbarui!'));
+    } catch (Exception $e) {
+        header('Location: ../admin/transaksi.php?tab=mobil&status=error&msg=' . urlencode('Gagal memperbarui harga sewa mobil: ' . $e->getMessage()));
+    }
+    exit;
+}
+
+// ==========================================
+// AKSI 10: UPDATE PENGATURAN BIAYA & DRIVER (POST)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'update_settings') {
+    $driverCost = floatval($_POST['driver_cost_per_day'] ?? 0);
+    $pickupFee = floatval($_POST['pickup_fee'] ?? 0);
+    $dropoffFee = floatval($_POST['dropoff_fee'] ?? 0);
+    $penaltyFee = floatval($_POST['penalty_fee_per_hour'] ?? 0);
+
+    if ($driverCost < 0 || $pickupFee < 0 || $dropoffFee < 0 || $penaltyFee < 0) {
+        header('Location: ../admin/transaksi.php?tab=layanan&status=error&msg=' . urlencode('Nilai biaya tidak boleh negatif!'));
+        exit;
+    }
+
+    try {
+        $db->beginTransaction();
+
+        $stmt = $db->prepare("UPDATE settings SET value = ? WHERE key_name = ?");
+        $stmt->execute([$driverCost, 'driver_cost_per_day']);
+        $stmt->execute([$pickupFee, 'pickup_fee']);
+        $stmt->execute([$dropoffFee, 'dropoff_fee']);
+        $stmt->execute([$penaltyFee, 'penalty_fee_per_hour']);
+
+        $db->commit();
+        header('Location: ../admin/transaksi.php?tab=layanan&status=success&msg=' . urlencode('Pengaturan biaya layanan berhasil diperbarui!'));
+    } catch (Exception $e) {
+        $db->rollBack();
+        header('Location: ../admin/transaksi.php?tab=layanan&status=error&msg=' . urlencode('Gagal memperbarui pengaturan biaya: ' . $e->getMessage()));
+    }
+    exit;
+}
+
 // Jika request tidak dikenali, redirect kembali
 header('Location: ../admin/armada.php');
 exit;

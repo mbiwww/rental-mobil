@@ -25,10 +25,23 @@ require_once '../classes/Database.php';
 require_once '../classes/BaseModel.php';
 require_once '../classes/Rental.php';
 require_once '../classes/Payment.php';
+require_once '../classes/Car.php';
+require_once '../classes/Setting.php';
 
 $db = Database::getInstance()->getConnection();
 $rentalModel = new Rental($db);
 $paymentModel = new Payment($db);
+$carModel = new Car($db);
+$settingModel = new Setting($db);
+
+// Filter tab aktif halaman transaksi (transaksi, mobil, layanan)
+$activeTab = $_GET['tab'] ?? 'transaksi';
+if (isset($_GET['status']) && !isset($_GET['tab'])) {
+    $activeTab = 'transaksi';
+}
+
+// Ambil data setting penalty rate untuk format javascript
+$penaltyRate = (float) $settingModel->getValueByKey('penalty_fee_per_hour', 20000.0);
 
 // Filter status
 $activeStatus = $_GET['status'] ?? ''; // '' means Semua
@@ -36,7 +49,7 @@ $activeStatus = $_GET['status'] ?? ''; // '' means Semua
 // Ambil data rental
 $rentals = $rentalModel->getAll($activeStatus);
 
-// List tabs
+// List status tabs
 $tabs = [
     '' => 'Semua',
     'pending' => 'Pending',
@@ -207,12 +220,31 @@ $activePage = 'transaksi';
             background-color: #f8f9fa;
             margin-top: 10px;
         }
-        .proof-img {
-            max-width: 100%;
-            max-height: 250px;
-            object-fit: contain;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        
+        /* Custom styles for transaction page main tabs */
+        .page-tab-link {
+            color: #6c757d;
+            padding: 10px 22px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: 1px solid #dee2e6;
+            background: white;
+            display: inline-flex;
+            align-items: center;
+        }
+        .page-tab-link:hover {
+            color: #0d6efd;
+            background-color: #f8f9fa;
+            border-color: #0d6efd;
+        }
+        .page-tab-link.active {
+            color: white;
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
         }
     </style>
 </head>
@@ -255,16 +287,30 @@ $activePage = 'transaksi';
                 </div>
             <?php endif; ?>
 
-            <!-- Tabs Filter -->
-            <div class="status-tabs mb-4 shadow-sm">
-                <?php foreach ($tabs as $statusVal => $label): 
-                    $count = $rentalModel->countByStatus($statusVal);
-                    $activeClass = ($activeStatus === $statusVal) ? 'active' : '';
-                    $url = 'transaksi.php' . (!empty($statusVal) ? '?status=' . $statusVal : '');
-                ?>
-                    <a href="<?= $url ?>" class="tab-item <?= $activeClass ?>"><?= $label ?> (<?= $count ?>)</a>
-                <?php endforeach; ?>
+            <!-- Main Page Tabs -->
+            <div class="d-flex gap-2 border-bottom pb-3 mb-4 flex-wrap">
+                <a href="transaksi.php?tab=transaksi" class="page-tab-link <?= $activeTab === 'transaksi' ? 'active' : '' ?>">
+                    <i class="bi bi-list-task me-2"></i>Daftar Transaksi
+                </a>
+                <a href="transaksi.php?tab=mobil" class="page-tab-link <?= $activeTab === 'mobil' ? 'active' : '' ?>">
+                    <i class="bi bi-car-front me-2"></i>Harga Sewa Mobil
+                </a>
+                <a href="transaksi.php?tab=layanan" class="page-tab-link <?= $activeTab === 'layanan' ? 'active' : '' ?>">
+                    <i class="bi bi-gear me-2"></i>Harga Driver &amp; Layanan
+                </a>
             </div>
+
+            <?php if ($activeTab === 'transaksi'): ?>
+                <!-- Tabs Filter -->
+                <div class="status-tabs mb-4 shadow-sm">
+                    <?php foreach ($tabs as $statusVal => $label): 
+                        $count = $rentalModel->countByStatus($statusVal);
+                        $activeClass = ($activeStatus === $statusVal) ? 'active' : '';
+                        $url = 'transaksi.php?tab=transaksi' . (!empty($statusVal) ? '&status=' . $statusVal : '');
+                    ?>
+                        <a href="<?= $url ?>" class="tab-item <?= $activeClass ?>"><?= $label ?> (<?= $count ?>)</a>
+                    <?php endforeach; ?>
+                </div>
 
             <!-- Table Section -->
             <div class="table-container shadow-sm">
@@ -387,7 +433,7 @@ $activePage = 'transaksi';
                                                data-cost-dropoff="Rp <?= number_format($r['dropoff_fee'] ?? 0, 0, ',', '.') ?>"
                                                data-cost-penalty="Rp <?= number_format($r['status'] === 'completed' ? ($r['penalty_fee'] ?? 0) : $penaltyInfo['penalty_fee'], 0, ',', '.') ?>"
                                                data-cost-total="Rp <?= number_format($r['total_price'], 0, ',', '.') ?>"
-                                               data-penalty-hours="<?= $r['status'] === 'completed' ? (((float)($r['penalty_fee'] ?? 0) > 0) ? (int)(($r['penalty_fee'] ?? 0) / 20000) : 0) : $penaltyInfo['late_hours'] ?>"
+                                               data-penalty-hours="<?= $r['status'] === 'completed' ? (((float)($r['penalty_fee'] ?? 0) > 0) ? (int)(($r['penalty_fee'] ?? 0) / $penaltyRate) : 0) : $penaltyInfo['late_hours'] ?>"
                                                data-is-overdue="<?= $penaltyInfo['is_overdue'] ? 'true' : 'false' ?>"
                                                data-started-at="<?= !empty($r['started_at']) ? date('d M Y H:i', strtotime($r['started_at'])) : '' ?>"
                                                data-deadline="<?= $penaltyInfo['deadline'] ? date('d M Y H:i', strtotime($penaltyInfo['deadline'])) : (!empty($r['started_at']) ? date('d M Y H:i', strtotime($r['started_at']) + ($days * 86400)) : '') ?>"
@@ -412,7 +458,7 @@ $activePage = 'transaksi';
                                                 <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Batalkan Pesanan" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
                                             <?php elseif ($r['status'] === 'ongoing'): ?>
                                                 <?php if ($penaltyInfo['is_overdue']): ?>
-                                                    <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('⚠️ TERLAMBAT <?= $penaltyInfo['late_hours'] ?> JAM\n\nDenda: Rp <?= number_format($penaltyInfo['penalty_fee'], 0, ',', '.') ?> (<?= $penaltyInfo['late_hours'] ?> jam × Rp 20.000)\n\nSelesaikan sewa dan terapkan denda?');"><i class="bi bi-check2-all fs-5"></i></a>
+                                                    <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('⚠️ TERLAMBAT <?= $penaltyInfo['late_hours'] ?> JAM\n\nDenda: Rp <?= number_format($penaltyInfo['penalty_fee'], 0, ',', '.') ?> (<?= $penaltyInfo['late_hours'] ?> jam × Rp <?= number_format($penaltyRate, 0, ',', '.') ?>)\n\nSelesaikan sewa dan terapkan denda?');"><i class="bi bi-check2-all fs-5"></i></a>
                                                 <?php else: ?>
                                                     <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');"><i class="bi bi-check2-all fs-5"></i></a>
                                                 <?php endif; ?>
@@ -427,6 +473,160 @@ $activePage = 'transaksi';
                     </table>
                 </div>
             </div>
+            <?php elseif ($activeTab === 'mobil'): ?>
+                <!-- TAMPILAN 2: UPDATE HARGA SEWA MOBIL -->
+                <?php
+                $cars = $carModel->getAll();
+                ?>
+                <div class="table-container shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">
+                            Daftar Harga Sewa Mobil
+                            <span class="badge bg-light text-secondary fw-normal ms-1"><?= count($cars) ?></span>
+                        </h5>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Mobil</th>
+                                    <th>Tipe &amp; Transmisi</th>
+                                    <th>Kapasitas</th>
+                                    <th>Harga Sewa Saat Ini</th>
+                                    <th width="300">Update Harga Baru</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($cars)): ?>
+                                    <tr>
+                                        <td colspan="5" class="text-center py-5 text-muted">
+                                            <i class="bi bi-car-front fs-1 d-block mb-3 text-secondary"></i>
+                                            Tidak ada armada mobil ditemukan.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($cars as $c): ?>
+                                        <?php
+                                        $carImg = !empty($c['image'])
+                                            ? '../assets/uploads/' . htmlspecialchars($c['image'])
+                                            : 'https://placehold.co/120x80/1e2a3a/7eb3f5?text=' . urlencode($c['brand']);
+                                        ?>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img src="<?= $carImg ?>" alt="<?= htmlspecialchars($c['brand']) ?>" class="rounded me-3" style="width: 80px; height: 50px; object-fit: cover;">
+                                                    <div>
+                                                        <div class="fw-bold"><?= htmlspecialchars($c['brand'] . ' ' . $c['model']) ?></div>
+                                                        <div class="text-muted small">Tahun <?= $c['year'] ?></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold"><?= htmlspecialchars($c['type_name'] ?? 'Lainnya') ?></div>
+                                                <div class="text-muted small text-capitalize"><?= htmlspecialchars($c['transmission']) ?></div>
+                                            </td>
+                                            <td>
+                                                <div class="text-secondary"><?= $c['passenger_capacity'] ?> Penumpang</div>
+                                                <div class="text-muted small"><?= $c['luggage_capacity'] ?> Koper</div>
+                                            </td>
+                                            <td>
+                                                <div class="fw-bold text-primary">Rp <?= number_format($c['price_per_day'], 0, ',', '.') ?></div>
+                                            </td>
+                                            <td>
+                                                <form action="../handlers/admin_handler.php" method="POST" class="d-inline">
+                                                    <input type="hidden" name="action" value="update_car_price">
+                                                    <input type="hidden" name="car_id" value="<?= $c['id'] ?>">
+                                                    <div class="input-group">
+                                                        <span class="input-group-text bg-light text-secondary border-end-0" style="border-radius:10px 0 0 10px;">Rp</span>
+                                                        <input type="number" name="price_per_day" class="form-control border-start-0 ps-1" value="<?= (int)$c['price_per_day'] ?>" required min="1000" style="border-radius:0; max-width: 130px;">
+                                                        <button type="submit" class="btn btn-primary px-3 fw-semibold" style="border-radius:0 10px 10px 0;">
+                                                            <i class="bi bi-save me-1"></i> Simpan
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            <?php elseif ($activeTab === 'layanan'): ?>
+                <!-- TAMPILAN 3: UPDATE PENGATURAN BIAYA DRIVER & LAYANAN -->
+                <?php
+                $driverCost = $settingModel->getValueByKey('driver_cost_per_day', 200000);
+                $pickupFee = $settingModel->getValueByKey('pickup_fee', 50000);
+                $dropoffFee = $settingModel->getValueByKey('dropoff_fee', 50000);
+                $penaltyFee = $settingModel->getValueByKey('penalty_fee_per_hour', 20000);
+                ?>
+                <div class="row">
+                    <div class="col-lg-8 col-md-10">
+                        <div class="card border-0 rounded-4 shadow-sm">
+                            <div class="card-header bg-primary text-white p-4 rounded-top-4 border-0">
+                                <h5 class="fw-bold mb-1"><i class="bi bi-gear-fill me-2"></i>Pengaturan Biaya Layanan</h5>
+                                <p class="mb-0 text-white-50 small">Atur tarif biaya supir, pick up, drop off, dan denda keterlambatan secara global.</p>
+                            </div>
+                            <div class="card-body p-5">
+                                <form action="../handlers/admin_handler.php" method="POST">
+                                    <input type="hidden" name="action" value="update_settings">
+                                    
+                                    <!-- Harga Driver -->
+                                    <div class="mb-4">
+                                        <label for="driver_cost_per_day" class="form-label fw-semibold text-secondary">Biaya Supir per Hari</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0" style="border-radius: 12px 0 0 12px;"><i class="bi bi-person-badge text-muted me-1"></i> Rp</span>
+                                            <input type="number" id="driver_cost_per_day" name="driver_cost_per_day" class="form-control border-start-0 ps-1" value="<?= (int)$driverCost ?>" required min="0" style="border-radius: 0;">
+                                            <span class="input-group-text bg-light text-muted border-start-0" style="border-radius: 0 12px 12px 0;">/ Hari</span>
+                                        </div>
+                                        <div class="form-text text-muted">Biaya harian tambahan jika pelanggan menyewa dengan supir.</div>
+                                    </div>
+                                    
+                                    <!-- Biaya Pick Up -->
+                                    <div class="mb-4">
+                                        <label for="pickup_fee" class="form-label fw-semibold text-secondary">Biaya Pick Up (Antar Mobil)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0" style="border-radius: 12px 0 0 12px;"><i class="bi bi-geo-alt text-muted me-1"></i> Rp</span>
+                                            <input type="number" id="pickup_fee" name="pickup_fee" class="form-control border-start-0 ps-1" value="<?= (int)$pickupFee ?>" required min="0" style="border-radius: 0 12px 12px 0;">
+                                        </div>
+                                        <div class="form-text text-muted">Tarif pengantaran mobil lepas kunci ke lokasi pelanggan.</div>
+                                    </div>
+                                    
+                                    <!-- Biaya Drop Off -->
+                                    <div class="mb-4">
+                                        <label for="dropoff_fee" class="form-label fw-semibold text-secondary">Biaya Drop Off (Ambil Mobil)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0" style="border-radius: 12px 0 0 12px;"><i class="bi bi-signpost text-muted me-1"></i> Rp</span>
+                                            <input type="number" id="dropoff_fee" name="dropoff_fee" class="form-control border-start-0 ps-1" value="<?= (int)$dropoffFee ?>" required min="0" style="border-radius: 0 12px 12px 0;">
+                                        </div>
+                                        <div class="form-text text-muted">Tarif penjemputan mobil lepas kunci kembali dari lokasi pelanggan.</div>
+                                    </div>
+                                    
+                                    <!-- Biaya Denda -->
+                                    <div class="mb-5">
+                                        <label for="penalty_fee_per_hour" class="form-label fw-semibold text-secondary">Biaya Denda Keterlambatan</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0" style="border-radius: 12px 0 0 12px;"><i class="bi bi-clock-history text-muted me-1"></i> Rp</span>
+                                            <input type="number" id="penalty_fee_per_hour" name="penalty_fee_per_hour" class="form-control border-start-0 ps-1" value="<?= (int)$penaltyFee ?>" required min="0" style="border-radius: 0;">
+                                            <span class="input-group-text bg-light text-muted border-start-0" style="border-radius: 0 12px 12px 0;">/ Jam</span>
+                                        </div>
+                                        <div class="form-text text-muted">Tarif denda keterlambatan per jam saat mobil dikembalikan melewati batas waktu.</div>
+                                    </div>
+                                    
+                                    <!-- Submit Button -->
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <button type="submit" class="btn btn-primary btn-lg px-5 fw-semibold rounded-3 shadow-sm">
+                                            <i class="bi bi-check-circle me-1"></i> Simpan Pengaturan
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -630,6 +830,11 @@ $activePage = 'transaksi';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        const penaltyRate = <?= $penaltyRate ?>;
+        function formatRupiah(num) {
+            return Math.round(num).toLocaleString('id-ID');
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             // Modal Detail Logic
             const detailModalEl = document.getElementById('modalDetailRental');
@@ -713,7 +918,7 @@ $activePage = 'transaksi';
                     if (penaltyHours > 0) {
                         penaltyRow.classList.remove('d-none');
                         document.getElementById('det-cost-penalty').textContent = costPenalty;
-                        document.getElementById('det-penalty-detail').textContent = '(' + penaltyHours + ' jam × Rp 20.000)';
+                        document.getElementById('det-penalty-detail').textContent = '(' + penaltyHours + ' jam × Rp ' + formatRupiah(penaltyRate) + ')';
                     } else {
                         penaltyRow.classList.add('d-none');
                     }
@@ -847,7 +1052,7 @@ $activePage = 'transaksi';
                     } else if (status === 'ongoing') {
                         if (isOverdue) {
                             footerHtml += `
-                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=completed" class="btn btn-success px-4 rounded-3" onclick="return confirm('⚠️ TERLAMBAT ${penaltyHours} JAM\\n\\nDenda: ${costPenalty} (${penaltyHours} jam × Rp 20.000)\\n\\nSelesaikan sewa dan terapkan denda?');">
+                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=completed" class="btn btn-success px-4 rounded-3" onclick="return confirm('⚠️ TERLAMBAT ${penaltyHours} JAM\\n\\nDenda: ${costPenalty} (${penaltyHours} jam × Rp ${formatRupiah(penaltyRate)})\\n\\nSelesaikan sewa dan terapkan denda?');">
                                     <i class="bi bi-check2-all me-1"></i> Selesaikan Sewa + Denda
                                 </a>
                             `;

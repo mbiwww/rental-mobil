@@ -117,16 +117,25 @@ class BookingHandler extends BaseHandler
 
         // ── Hitung biaya ─────────────────────────────────────────────────────
         $pricePerDay = (float) $car['price_per_day'];
-        $driverCost  = ($rentalType === 'with_driver') ? ($totalDays * 200000) : 0;
 
-        // Biaya pickup & dropoff (masing-masing Rp 50.000)
+        // Ambil pengaturan biaya dari database
+        $stmtSettings = $this->db->query("SELECT key_name, value FROM settings");
+        $settings = $stmtSettings->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        $dbDriverCost = isset($settings['driver_cost_per_day']) ? (float)$settings['driver_cost_per_day'] : 200000.0;
+        $dbPickupFee  = isset($settings['pickup_fee']) ? (float)$settings['pickup_fee'] : 50000.0;
+        $dbDropoffFee = isset($settings['dropoff_fee']) ? (float)$settings['dropoff_fee'] : 50000.0;
+
+        $driverCost  = ($rentalType === 'with_driver') ? ($totalDays * $dbDriverCost) : 0;
+
+        // Biaya pickup & dropoff
         // Dengan supir: sudah include di biaya supir, jadi tidak ada biaya tambahan
         if ($rentalType === 'with_driver') {
             $pickupFee  = 0;
             $dropoffFee = 0;
         } else {
-            $pickupFee  = ($pickupOption  === 'antar') ? 50000 : 0;
-            $dropoffFee = ($dropoffOption === 'ambil') ? 50000 : 0;
+            $pickupFee  = ($pickupOption  === 'antar') ? $dbPickupFee : 0;
+            $dropoffFee = ($dropoffOption === 'ambil') ? $dbDropoffFee : 0;
         }
 
         $totalPrice = ($pricePerDay * $totalDays) + $driverCost + $pickupFee + $dropoffFee;

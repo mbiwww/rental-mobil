@@ -250,8 +250,16 @@ class Rental extends BaseModel
             // Pembulatan: >= 30 menit bulatkan ke atas, minimum 1 jam
             $lateHours = max(1, (int) round($lateMinutes / 60));
 
+            // Ambil biaya denda per jam dari settings database
+            $stmt = $this->db->prepare("SELECT value FROM settings WHERE key_name = 'penalty_fee_per_hour'");
+            $stmt->execute();
+            $rate = (float) $stmt->fetchColumn();
+            if ($rate <= 0) {
+                $rate = 20000.0; // fallback jika setting tidak ditemukan
+            }
+
             $result['late_hours']  = $lateHours;
-            $result['penalty_fee'] = $lateHours * self::PENALTY_RATE_PER_HOUR;
+            $result['penalty_fee'] = $lateHours * $rate;
         }
 
         return $result;
