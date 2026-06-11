@@ -209,9 +209,14 @@ class Rental extends BaseModel
      * Hitung denda keterlambatan berdasarkan started_at dan jumlah hari sewa
      *
      * Deadline = started_at + (jumlah_hari × 24 jam)
-     * Jika waktu sekarang melewati deadline, denda dihitung per jam.
-     * Pembulatan: >= 30 menit dibulatkan ke atas (round half up).
-     * Minimum 1 jam jika terlambat.
+     * Grace period: 30 menit setelah deadline → tidak kena denda.
+     * Jika lewat 30 menit, denda dihitung per jam dengan pembulatan:
+     *   penalty_hours = ceil((late_minutes - 30) / 60)
+     *
+     * Contoh (deadline 08:00):
+     *   08:00 – 08:30 → tidak kena denda (grace period)
+     *   08:31 – 09:30 → denda 1 jam
+     *   09:31 – 10:30 → denda 2 jam
      *
      * @param array $rental Data rental (harus mengandung started_at, start_date, end_date)
      * @return array ['deadline' => string, 'late_hours' => int, 'penalty_fee' => float, 'is_overdue' => bool]
@@ -242,24 +247,28 @@ class Rental extends BaseModel
         // Bandingkan dengan waktu sekarang
         $now = time();
         if ($now > $deadlineTime) {
-            $result['is_overdue'] = true;
-
             // Hitung menit keterlambatan
             $lateMinutes = ($now - $deadlineTime) / 60;
 
-            // Pembulatan: >= 30 menit bulatkan ke atas, minimum 1 jam
-            $lateHours = max(1, (int) round($lateMinutes / 60));
+            if ($lateMinutes <= 30) {
+                // Grace period 30 menit — tidak kena denda
+                // is_overdue tetap false, late_hours dan penalty_fee tetap 0
+            } else {
+                // Lewat grace period — hitung denda per jam, bulatkan ke atas
+                $result['is_overdue'] = true;
+                $lateHours = (int) ceil(($lateMinutes - 30) / 60);
 
-            // Ambil biaya denda per jam dari settings database
-            $stmt = $this->db->prepare("SELECT value FROM settings WHERE key_name = 'penalty_fee_per_hour'");
-            $stmt->execute();
-            $rate = (float) $stmt->fetchColumn();
-            if ($rate <= 0) {
-                $rate = 20000.0; // fallback jika setting tidak ditemukan
+                // Ambil biaya denda per jam dari settings database
+                $stmt = $this->db->prepare("SELECT value FROM settings WHERE key_name = 'penalty_fee_per_hour'");
+                $stmt->execute();
+                $rate = (float) $stmt->fetchColumn();
+                if ($rate <= 0) {
+                    $rate = 20000.0; // fallback jika setting tidak ditemukan
+                }
+
+                $result['late_hours']  = $lateHours;
+                $result['penalty_fee'] = $lateHours * $rate;
             }
-
-            $result['late_hours']  = $lateHours;
-            $result['penalty_fee'] = $lateHours * $rate;
         }
 
         return $result;
