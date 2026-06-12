@@ -9,14 +9,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/navbar.css">
   <link rel="stylesheet" href="../assets/css/footer.css">
-  <style>
+  <style type="text/tailwindcss">
     @import "tailwindcss";
 
     .dash-container {
       width: 100%;
       margin-right: auto;
       margin-left: auto;
-      padding-right: 1rem;
+      padding-right: 1rem; 
       padding-left: 1rem;
     }
 
