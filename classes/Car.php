@@ -88,11 +88,11 @@ class Car
     {
         try {
             $sql = "INSERT INTO cars (
-                        type_id, brand, model, year, engine_type, 
+                        type_id, plate_number, brand, model, year, engine_type, 
                         transmission, passenger_capacity, luggage_capacity, 
                         price_per_day, status, image, description
                     ) VALUES (
-                        :type_id, :brand, :model, :year, :engine_type, 
+                        :type_id, :plate_number, :brand, :model, :year, :engine_type, 
                         :transmission, :passenger_capacity, :luggage_capacity, 
                         :price_per_day, :status, :image, :description
                     )";
@@ -100,6 +100,7 @@ class Car
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
                 'type_id'            => $data['type_id'] ?: null,
+                'plate_number'       => $data['plate_number'] ?: null,
                 'brand'              => $data['brand'],
                 'model'              => $data['model'],
                 'year'               => $data['year'],
@@ -129,6 +130,7 @@ class Car
         try {
             $sql = "UPDATE cars SET 
                         type_id = :type_id, 
+                        plate_number = :plate_number, 
                         brand = :brand, 
                         model = :model, 
                         year = :year, 
@@ -142,6 +144,7 @@ class Car
             
             $params = [
                 'type_id'            => $data['type_id'] ?: null,
+                'plate_number'       => $data['plate_number'] ?: null,
                 'brand'              => $data['brand'],
                 'model'              => $data['model'],
                 'year'               => $data['year'],

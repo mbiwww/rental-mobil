@@ -289,6 +289,9 @@ $activePage = 'armada';
                                                 <div>
                                                     <p class="mb-0 fw-bold"><?= htmlspecialchars($car['brand'] . ' ' . $car['model']) ?></p>
                                                     <small class="text-muted"><?= $car['year'] ?> • <?= htmlspecialchars($car['engine_type'] ?? '-') ?></small>
+                                                    <?php if (!empty($car['plate_number'])): ?>
+                                                        <br><span class="badge bg-dark bg-opacity-75 px-2 py-1 mt-1" style="font-size: 11px; letter-spacing: 1px;"><i class="bi bi-credit-card-2-front me-1"></i><?= htmlspecialchars($car['plate_number']) ?></span>
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         </td>
@@ -329,6 +332,7 @@ $activePage = 'armada';
                                                         data-brand="<?= htmlspecialchars($car['brand']) ?>"
                                                         data-model="<?= htmlspecialchars($car['model']) ?>"
                                                         data-year="<?= $car['year'] ?>"
+                                                        data-plate-number="<?= htmlspecialchars($car['plate_number'] ?? '-') ?>"
                                                         data-category="<?= htmlspecialchars($car['type_name'] ?? 'Umum') ?>"
                                                         data-engine-type="<?= htmlspecialchars($car['engine_type'] ?? '-') ?>"
                                                         data-transmission="<?= $car['transmission'] ?>"
@@ -349,6 +353,7 @@ $activePage = 'armada';
                                                         data-model="<?= htmlspecialchars($car['model']) ?>"
                                                         data-year="<?= $car['year'] ?>"
                                                         data-type-id="<?= $car['type_id'] ?>"
+                                                        data-plate-number="<?= htmlspecialchars($car['plate_number'] ?? '') ?>"
                                                         data-engine-type="<?= htmlspecialchars($car['engine_type'] ?? '') ?>"
                                                         data-transmission="<?= $car['transmission'] ?>"
                                                         data-passenger-capacity="<?= $car['passenger_capacity'] ?>"
@@ -393,13 +398,17 @@ $activePage = 'armada';
                     <input type="hidden" name="action" value="add_car">
                     <div class="modal-body p-4">
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label form-label-required fw-semibold small">Merk Mobil</label>
                                 <input type="text" name="brand" class="form-control rounded-3" placeholder="Contoh: Toyota, Honda" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label form-label-required fw-semibold small">Model Mobil</label>
                                 <input type="text" name="model" class="form-control rounded-3" placeholder="Contoh: Avanza, Civic" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small">No. Plat Mobil</label>
+                                <input type="text" name="plate_number" class="form-control rounded-3" placeholder="Contoh: BP 1234 XX" style="text-transform: uppercase;">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label form-label-required fw-semibold small">Tahun</label>
@@ -483,13 +492,17 @@ $activePage = 'armada';
                     <input type="hidden" name="id" id="edit-id">
                     <div class="modal-body p-4">
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label form-label-required fw-semibold small">Merk Mobil</label>
                                 <input type="text" name="brand" id="edit-brand" class="form-control rounded-3" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label form-label-required fw-semibold small">Model Mobil</label>
                                 <input type="text" name="model" id="edit-model" class="form-control rounded-3" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small">No. Plat Mobil</label>
+                                <input type="text" name="plate_number" id="edit-plate-number" class="form-control rounded-3" style="text-transform: uppercase;">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label form-label-required fw-semibold small">Tahun</label>
@@ -584,6 +597,10 @@ $activePage = 'armada';
                                 <span id="view-year" class="fw-semibold">2023</span>
                             </div>
                             <div class="col-6">
+                                <small class="text-muted d-block">No. Plat</small>
+                                <span id="view-plate-number" class="fw-semibold" style="letter-spacing: 1px;">-</span>
+                            </div>
+                            <div class="col-6 mt-2 border-top pt-2">
                                 <small class="text-muted d-block">Tipe Mesin</small>
                                 <span id="view-engine" class="fw-semibold">2.4L Diesel</span>
                             </div>
@@ -631,6 +648,7 @@ $activePage = 'armada';
             const viewCategory = document.getElementById('view-category');
             const viewStatusBadge = document.getElementById('view-status-badge');
             const viewYear = document.getElementById('view-year');
+            const viewPlateNumber = document.getElementById('view-plate-number');
             const viewEngine = document.getElementById('view-engine');
             const viewTransmission = document.getElementById('view-transmission');
             const viewCapacity = document.getElementById('view-capacity');
@@ -642,6 +660,7 @@ $activePage = 'armada';
                     const brand = this.getAttribute('data-brand');
                     const model = this.getAttribute('data-model');
                     const year = this.getAttribute('data-year');
+                    const plateNumber = this.getAttribute('data-plate-number');
                     const category = this.getAttribute('data-category');
                     const engineType = this.getAttribute('data-engine-type');
                     const transmission = this.getAttribute('data-transmission');
@@ -656,6 +675,7 @@ $activePage = 'armada';
                     viewName.textContent = brand + ' ' + model;
                     viewCategory.textContent = category;
                     viewYear.textContent = year;
+                    viewPlateNumber.textContent = plateNumber || '-';
                     viewEngine.textContent = engineType;
                     viewTransmission.textContent = transmission;
                     viewCapacity.textContent = `${passenger} Kursi • ${luggage} Bagasi`;
@@ -691,6 +711,7 @@ $activePage = 'armada';
             const editModel = document.getElementById('edit-model');
             const editYear = document.getElementById('edit-year');
             const editTypeId = document.getElementById('edit-type-id');
+            const editPlateNumber = document.getElementById('edit-plate-number');
             const editEngineType = document.getElementById('edit-engine-type');
             const editTransmission = document.getElementById('edit-transmission');
             const editPassenger = document.getElementById('edit-passenger-capacity');
@@ -706,6 +727,7 @@ $activePage = 'armada';
                     const model = this.getAttribute('data-model');
                     const year = this.getAttribute('data-year');
                     const typeId = this.getAttribute('data-type-id');
+                    const plateNumber = this.getAttribute('data-plate-number');
                     const engineType = this.getAttribute('data-engine-type');
                     const transmission = this.getAttribute('data-transmission');
                     const passenger = this.getAttribute('data-passenger-capacity');
@@ -720,6 +742,7 @@ $activePage = 'armada';
                     editModel.value = model;
                     editYear.value = year;
                     editTypeId.value = typeId || '';
+                    editPlateNumber.value = plateNumber || '';
                     editEngineType.value = engineType;
                     editTransmission.value = transmission;
                     editPassenger.value = passenger;

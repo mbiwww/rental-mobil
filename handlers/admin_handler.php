@@ -92,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add_car') {
     $model = trim($_POST['model'] ?? '');
     $year = intval($_POST['year'] ?? 0);
     $type_id = intval($_POST['type_id'] ?? 0);
+    $plate_number = strtoupper(trim($_POST['plate_number'] ?? ''));
     $engine_type = trim($_POST['engine_type'] ?? '');
     $transmission = $_POST['transmission'] ?? 'manual';
     $passenger_capacity = intval($_POST['passenger_capacity'] ?? 0);
@@ -119,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add_car') {
 
     $carData = [
         'type_id' => $type_id,
+        'plate_number' => $plate_number,
         'brand' => $brand,
         'model' => $model,
         'year' => $year,
@@ -149,6 +151,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit_car') {
     $model = trim($_POST['model'] ?? '');
     $year = intval($_POST['year'] ?? 0);
     $type_id = intval($_POST['type_id'] ?? 0);
+    $plate_number = strtoupper(trim($_POST['plate_number'] ?? ''));
     $engine_type = trim($_POST['engine_type'] ?? '');
     $transmission = $_POST['transmission'] ?? 'manual';
     $passenger_capacity = intval($_POST['passenger_capacity'] ?? 0);
@@ -191,6 +194,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit_car') {
 
     $carData = [
         'type_id' => $type_id,
+        'plate_number' => $plate_number,
         'brand' => $brand,
         'model' => $model,
         'year' => $year,
