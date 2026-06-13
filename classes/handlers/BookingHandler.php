@@ -8,22 +8,26 @@
  *
  * Aturan: tidak ada output HTML di class ini, selalu redirect+exit.
  */
+require_once __DIR__ . '/../Payment.php';
+
 class BookingHandler extends BaseHandler
 {
     // Model yang dibutuhkan
-    private Rental $rentalModel;
-    private Car    $carModel;
+    private Rental  $rentalModel;
+    private Car     $carModel;
+    private Payment $paymentModel;
 
     /**
-     * Constructor — Inisialisasi model Rental dan Car
+     * Constructor — Inisialisasi model Rental, Car, dan Payment
      *
      * @param PDO $db Instance koneksi PDO
      */
     public function __construct(PDO $db)
     {
         parent::__construct($db);
-        $this->rentalModel = new Rental($db);
-        $this->carModel    = new Car($db);
+        $this->rentalModel  = new Rental($db);
+        $this->carModel     = new Car($db);
+        $this->paymentModel = new Payment($db);
     }
 
     /**
@@ -34,6 +38,8 @@ class BookingHandler extends BaseHandler
         switch ($this->getAction()) {
             case 'create_booking': $this->createBooking(); break;
             case 'cancel_booking': $this->cancelBooking(); break;
+            case 'pay_rental':     $this->payRental();      break;
+            case 'request_refund': $this->requestRefund();  break;
             default:               $this->redirect('../pages/katalog.php');
         }
     }
@@ -207,5 +213,163 @@ class BookingHandler extends BaseHandler
             'Gagal membatalkan booking. Coba lagi.',
             '../pages/dashboard.php'
         );
+    }
+
+    // -------------------------------------------------------
+    // PAY RENTAL
+    // -------------------------------------------------------
+
+    /**
+     * Upload bukti transfer dan simpan data pembayaran
+     */
+    private function payRental(): void
+    {
+        $this->requireMethod('POST', '../pages/dashboard.php');
+        $this->requireAuth('customer', '../pages/login.php');
+
+        $userId        = (int) $_SESSION['user_id'];
+        $rentalId      = (int) ($_POST['rental_id'] ?? 0);
+        $bankAccountId = (int) ($_POST['bank_account_id'] ?? 0);
+
+        if (!$rentalId || !$bankAccountId) {
+            $this->flashError('Pilih rekening tujuan transfer bank.');
+            $this->redirect('../pages/pembayaran.php?rental_id=' . $rentalId);
+        }
+
+        // Ambil data rental dan validasi kepemilikan
+        $rental = $this->rentalModel->getById($rentalId);
+        if (!$rental || (int) $rental['user_id'] !== $userId) {
+            $this->flashError('Transaksi tidak ditemukan atau bukan milik Anda.');
+            $this->redirect('../pages/dashboard.php');
+        }
+
+        // Validasi status sewa (hanya pending yang bisa dibayar)
+        if ($rental['status'] !== 'pending') {
+            $this->flashError('Transaksi ini tidak dapat dibayar.');
+            $this->redirect('../pages/dashboard.php');
+        }
+
+        // File upload handling
+        if (!isset($_FILES['proof_image']) || $_FILES['proof_image']['error'] !== UPLOAD_ERR_OK) {
+            $this->flashError('Bukti transfer wajib diunggah.');
+            $this->redirect('../pages/pembayaran.php?rental_id=' . $rentalId);
+        }
+
+        $file = $_FILES['proof_image'];
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        $fileType = mime_content_type($file['tmp_name']);
+        
+        if (!in_array($fileType, $allowedTypes)) {
+            $this->flashError('Format gambar tidak valid. Hanya JPG, JPEG, dan PNG yang diperbolehkan.');
+            $this->redirect('../pages/pembayaran.php?rental_id=' . $rentalId);
+        }
+        
+        if ($file['size'] > 5 * 1024 * 1024) {
+            $this->flashError('Ukuran file gambar terlalu besar. Maksimal 5MB.');
+            $this->redirect('../pages/pembayaran.php?rental_id=' . $rentalId);
+        }
+        
+        $uploadDir = '../assets/uploads/payments/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+        
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $newFilename = uniqid('proof_') . '.' . $ext;
+        $targetPath = $uploadDir . $newFilename;
+        
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            $this->flashError('Gagal mengunggah bukti pembayaran.');
+            $this->redirect('../pages/pembayaran.php?rental_id=' . $rentalId);
+        }
+
+        // Simpan / update ke database
+        $existingPayment = $this->paymentModel->getByRentalId($rentalId);
+        if ($existingPayment) {
+            // Hapus gambar lama jika ada
+            if (!empty($existingPayment['proof_image'])) {
+                $oldPath = $uploadDir . $existingPayment['proof_image'];
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
+            $stmt = $this->db->prepare(
+                "UPDATE payments SET bank_account_id = ?, proof_image = ?, status = 'pending', paid_at = NULL WHERE rental_id = ?"
+            );
+            $result = $stmt->execute([$bankAccountId, $newFilename, $rentalId]);
+        } else {
+            $paymentId = $this->paymentModel->create([
+                'rental_id' => $rentalId,
+                'method' => 'bank_transfer',
+                'bank_account_id' => $bankAccountId,
+                'proof_image' => $newFilename
+            ]);
+            $result = $paymentId > 0;
+        }
+
+        if ($result) {
+            $this->flashSuccess('Bukti transfer berhasil diunggah! Pembayaran Anda sedang diverifikasi oleh admin.');
+            $this->redirect('../pages/dashboard.php');
+        } else {
+            $this->flashError('Gagal menyimpan data pembayaran. Coba lagi.');
+            $this->redirect('../pages/pembayaran.php?rental_id=' . $rentalId);
+        }
+    }
+
+    // -------------------------------------------------------
+    // REQUEST REFUND (REFUND REQUEST BY CUSTOMER)
+    // -------------------------------------------------------
+
+    /**
+     * Memproses permintaan refund/cancel sewa oleh customer
+     */
+    private function requestRefund(): void
+    {
+        $this->requireMethod('POST', '../pages/dashboard.php');
+        $this->requireAuth('customer', '../pages/login.php');
+
+        $userId       = (int) $_SESSION['user_id'];
+        $rentalId     = (int) ($_POST['rental_id'] ?? 0);
+        $reasonOption = trim($_POST['reason_option'] ?? '');
+        $reasonDetail = trim($_POST['reason_detail'] ?? '');
+
+        if (!$rentalId || empty($reasonOption)) {
+            $this->flashError('ID rental dan alasan pembatalan wajib diisi.');
+            $this->redirect('../pages/dashboard.php');
+        }
+
+        // Ambil data rental dan pastikan milik user yang sedang login
+        $rental = $this->rentalModel->getById($rentalId);
+        if (!$rental || (int) $rental['user_id'] !== $userId) {
+            $this->flashError('Transaksi tidak ditemukan atau bukan milik Anda.');
+            $this->redirect('../pages/dashboard.php');
+        }
+
+        // Hanya rental berstatus confirmed yang bisa di-refund
+        if ($rental['status'] !== 'confirmed') {
+            $this->flashError('Hanya pesanan yang sudah disetujui (Confirmed) yang bisa diajukan refund/pembatalan.');
+            $this->redirect('../pages/dashboard.php');
+        }
+
+        $this->db->beginTransaction();
+        try {
+            // 1. Simpan alasan refund ke tabel refunds
+            $stmt = $this->db->prepare("
+                INSERT INTO refunds (rental_id, reason_option, reason_detail, status)
+                VALUES (?, ?, ?, 'requested')
+            ");
+            $stmt->execute([$rentalId, $reasonOption, $reasonDetail]);
+
+            // 2. Ubah status rental menjadi cancel_requested
+            $this->rentalModel->updateStatus($rentalId, 'cancel_requested');
+
+            $this->db->commit();
+            $this->flashSuccess('Permintaan pembatalan & refund berhasil diajukan. Status akan segera diperiksa admin.');
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            $this->flashError('Gagal memproses pembatalan: ' . $e->getMessage());
+        }
+
+        $this->redirect('../pages/dashboard.php');
     }
 }

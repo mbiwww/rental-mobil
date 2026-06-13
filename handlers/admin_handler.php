@@ -30,6 +30,7 @@ require_once '../classes/CarType.php';
 require_once '../classes/Rental.php';
 require_once '../classes/Payment.php';
 require_once '../classes/User.php';
+require_once '../classes/BankAccount.php';
 
 $db = Database::getInstance()->getConnection();
 $carModel = new Car($db);
@@ -37,6 +38,7 @@ $typeModel = new CarType($db);
 $rentalModel = new Rental($db);
 $paymentModel = new Payment($db);
 $userModel = new User($db);
+$bankAccountModel = new BankAccount($db);
 
 // Menentukan aksi yang dikirimkan (dari POST atau GET)
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
@@ -553,6 +555,109 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'return_rental') {
     } catch (Exception $e) {
         $db->rollBack();
         header('Location: ../admin/pengembalian.php?status=error&msg=' . urlencode('Gagal memproses pengembalian: ' . $e->getMessage()));
+    }
+    exit;
+}
+
+// ==========================================
+// AKSI 13: TAMBAH REKENING BANK (POST)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add_bank_account') {
+    $bank_name = trim($_POST['bank_name'] ?? '');
+    $account_number = trim($_POST['account_number'] ?? '');
+    $account_holder = trim($_POST['account_holder'] ?? '');
+    $is_active = intval($_POST['is_active'] ?? 1);
+
+    if (empty($bank_name) || empty($account_number) || empty($account_holder)) {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=error&msg=' . urlencode('Semua kolom rekening wajib diisi!'));
+        exit;
+    }
+
+    $bankData = [
+        'bank_name' => $bank_name,
+        'account_number' => $account_number,
+        'account_holder' => $account_holder,
+        'is_active' => $is_active
+    ];
+
+    if ($bankAccountModel->create($bankData)) {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=success&msg=' . urlencode('Rekening bank baru berhasil ditambahkan!'));
+    } else {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=error&msg=' . urlencode('Gagal menambahkan rekening bank.'));
+    }
+    exit;
+}
+
+// ==========================================
+// AKSI 14: EDIT REKENING BANK (POST)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit_bank_account') {
+    $id = intval($_POST['id'] ?? 0);
+    $bank_name = trim($_POST['bank_name'] ?? '');
+    $account_number = trim($_POST['account_number'] ?? '');
+    $account_holder = trim($_POST['account_holder'] ?? '');
+    $is_active = intval($_POST['is_active'] ?? 1);
+
+    if ($id <= 0 || empty($bank_name) || empty($account_number) || empty($account_holder)) {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=error&msg=' . urlencode('Semua kolom edit rekening wajib diisi!'));
+        exit;
+    }
+
+    $existing = $bankAccountModel->getById($id);
+    if (!$existing) {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=error&msg=' . urlencode('Rekening bank tidak ditemukan.'));
+        exit;
+    }
+
+    $bankData = [
+        'bank_name' => $bank_name,
+        'account_number' => $account_number,
+        'account_holder' => $account_holder,
+        'is_active' => $is_active
+    ];
+
+    if ($bankAccountModel->update($id, $bankData)) {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=success&msg=' . urlencode('Data rekening bank berhasil diperbarui!'));
+    } else {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=error&msg=' . urlencode('Gagal memperbarui rekening bank.'));
+    }
+    exit;
+}
+
+// ==========================================
+// AKSI 15: TOGGLE STATUS REKENING (GET)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'toggle_bank_account_status') {
+    $id = intval($_GET['id'] ?? 0);
+
+    if ($id <= 0) {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=error&msg=' . urlencode('ID rekening tidak valid.'));
+        exit;
+    }
+
+    if ($bankAccountModel->toggleStatus($id)) {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=success&msg=' . urlencode('Status rekening bank berhasil diubah!'));
+    } else {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=error&msg=' . urlencode('Gagal mengubah status rekening bank.'));
+    }
+    exit;
+}
+
+// ==========================================
+// AKSI 16: HAPUS REKENING BANK (GET)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'delete_bank_account') {
+    $id = intval($_GET['id'] ?? 0);
+
+    if ($id <= 0) {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=error&msg=' . urlencode('ID rekening tidak valid.'));
+        exit;
+    }
+
+    if ($bankAccountModel->delete($id)) {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=success&msg=' . urlencode('Rekening bank berhasil dihapus!'));
+    } else {
+        header('Location: ../admin/transaksi.php?tab=rekening&status=error&msg=' . urlencode('Gagal menghapus rekening bank.'));
     }
     exit;
 }

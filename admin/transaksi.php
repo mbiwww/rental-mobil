@@ -27,14 +27,16 @@ require_once '../classes/Rental.php';
 require_once '../classes/Payment.php';
 require_once '../classes/Car.php';
 require_once '../classes/Setting.php';
+require_once '../classes/BankAccount.php';
 
 $db = Database::getInstance()->getConnection();
 $rentalModel = new Rental($db);
 $paymentModel = new Payment($db);
 $carModel = new Car($db);
 $settingModel = new Setting($db);
+$bankAccountModel = new BankAccount($db);
 
-// Filter tab aktif halaman transaksi (transaksi, mobil, layanan)
+// Filter tab aktif halaman transaksi (transaksi, mobil, layanan, rekening)
 $activeTab = $_GET['tab'] ?? 'transaksi';
 if (isset($_GET['status']) && !isset($_GET['tab'])) {
     $activeTab = 'transaksi';
@@ -297,6 +299,9 @@ $activePage = 'transaksi';
                 </a>
                 <a href="transaksi.php?tab=layanan" class="page-tab-link <?= $activeTab === 'layanan' ? 'active' : '' ?>">
                     <i class="bi bi-gear me-2"></i>Harga Driver &amp; Layanan
+                </a>
+                <a href="transaksi.php?tab=rekening" class="page-tab-link <?= $activeTab === 'rekening' ? 'active' : '' ?>">
+                    <i class="bi bi-credit-card me-2"></i>Rekening Bank Transfer
                 </a>
             </div>
 
@@ -624,6 +629,83 @@ $activePage = 'transaksi';
                                 </form>
                             </div>
                         </div>
+                    </div>
+                </div>
+            <?php elseif ($activeTab === 'rekening'): ?>
+                <!-- TAMPILAN 4: PENGATURAN REKENING TRANSFER ADMIN -->
+                <?php
+                $bankAccounts = $bankAccountModel->getAll();
+                ?>
+                <div class="table-container shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">
+                            Daftar Rekening Transfer Admin
+                            <span class="badge bg-light text-secondary fw-normal ms-1"><?= count($bankAccounts) ?></span>
+                        </h5>
+                        <button type="button" class="btn btn-primary btn-sm fw-semibold px-3 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalAddBankAccount">
+                            <i class="bi bi-plus-lg me-1"></i> Tambah Rekening
+                        </button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Nama Bank</th>
+                                    <th>Nomor Rekening</th>
+                                    <th>Nama Pemilik</th>
+                                    <th>Status</th>
+                                    <th class="text-end" width="180">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($bankAccounts)): ?>
+                                    <tr>
+                                        <td colspan="5" class="text-center py-5 text-muted">
+                                            <i class="bi bi-credit-card fs-1 d-block mb-3 text-secondary"></i>
+                                            Belum ada rekening bank yang ditambahkan.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($bankAccounts as $bank): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="fw-bold text-[#0b2b4a]"><?= htmlspecialchars($bank['bank_name']) ?></div>
+                                            </td>
+                                            <td>
+                                                <div class="font-monospace fw-semibold"><?= htmlspecialchars($bank['account_number']) ?></div>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold text-secondary"><?= htmlspecialchars($bank['account_holder']) ?></div>
+                                            </td>
+                                            <td>
+                                                <?php if ($bank['is_active'] == 1): ?>
+                                                    <span class="badge bg-success px-2 py-1 rounded-pill">Aktif</span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-secondary px-2 py-1 rounded-pill">Nonaktif</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="../handlers/admin_handler.php?action=toggle_bank_account_status&id=<?= $bank['id'] ?>" class="btn-action <?= $bank['is_active'] == 1 ? 'text-warning' : 'text-success' ?>" title="<?= $bank['is_active'] == 1 ? 'Nonaktifkan' : 'Aktifkan' ?>">
+                                                    <i class="bi <?= $bank['is_active'] == 1 ? 'bi-toggle-on' : 'bi-toggle-off' ?> fs-5"></i>
+                                                </a>
+                                                <button type="button" class="btn-action btn-view btn-edit-bank" title="Edit Rekening"
+                                                        data-id="<?= $bank['id'] ?>"
+                                                        data-bank-name="<?= htmlspecialchars($bank['bank_name']) ?>"
+                                                        data-account-number="<?= htmlspecialchars($bank['account_number']) ?>"
+                                                        data-account-holder="<?= htmlspecialchars($bank['account_holder']) ?>"
+                                                        data-is-active="<?= $bank['is_active'] ?>">
+                                                    <i class="bi bi-pencil-square fs-5"></i>
+                                                </button>
+                                                <a href="../handlers/admin_handler.php?action=delete_bank_account&id=<?= $bank['id'] ?>" class="btn-action btn-cancel" title="Hapus Rekening" onclick="return confirm('Apakah Anda yakin ingin menghapus rekening bank ini?');">
+                                                    <i class="bi bi-trash fs-5"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             <?php endif; ?>
@@ -1078,6 +1160,27 @@ $activePage = 'transaksi';
                 });
             });
 
+            // Edit Bank Account Modal Trigger
+            const editBankButtons = document.querySelectorAll('.btn-edit-bank');
+            const editBankModal = new bootstrap.Modal(document.getElementById('modalEditBankAccount'));
+            editBankButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    const bankName = this.getAttribute('data-bank-name');
+                    const accountNumber = this.getAttribute('data-account-number');
+                    const accountHolder = this.getAttribute('data-account-holder');
+                    const isActive = this.getAttribute('data-is-active');
+
+                    document.getElementById('edit_bank_id').value = id;
+                    document.getElementById('edit_bank_name').value = bankName;
+                    document.getElementById('edit_account_number').value = accountNumber;
+                    document.getElementById('edit_account_holder').value = accountHolder;
+                    document.getElementById('edit_is_active').value = isActive;
+
+                    editBankModal.show();
+                });
+            });
+
             // Auto-dismiss alert after 5 seconds
             const alertEl = document.querySelector('.alert');
             if (alertEl) {
@@ -1088,5 +1191,90 @@ $activePage = 'transaksi';
             }
         });
     </script>
+
+    <!-- Modal Add Bank Account -->
+    <div class="modal fade" id="modalAddBankAccount" tabindex="-1" aria-labelledby="modalAddBankAccountLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow">
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <h5 class="modal-title fw-bold" id="modalAddBankAccountLabel">
+                        <i class="bi bi-credit-card-2-front text-primary me-2"></i>Tambah Rekening Bank Baru
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="../handlers/admin_handler.php" method="POST">
+                    <input type="hidden" name="action" value="add_bank_account">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label for="add_bank_name" class="form-label fw-semibold text-secondary">Nama Bank (contoh: BCA, Mandiri)</label>
+                            <input type="text" id="add_bank_name" name="bank_name" class="form-control" placeholder="Nama Bank" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="add_account_number" class="form-label fw-semibold text-secondary">Nomor Rekening</label>
+                            <input type="text" id="add_account_number" name="account_number" class="form-control" placeholder="Nomor Rekening" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="add_account_holder" class="form-label fw-semibold text-secondary">Nama Pemilik Rekening</label>
+                            <input type="text" id="add_account_holder" name="account_holder" class="form-control" placeholder="Atas Nama" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="add_is_active" class="form-label fw-semibold text-secondary">Status Aktif</label>
+                            <select id="add_is_active" name="is_active" class="form-select">
+                                <option value="1">Aktif</option>
+                                <option value="0">Nonaktif</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 bg-light p-3 rounded-bottom-4">
+                        <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary rounded-3 px-4">Simpan Rekening</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Bank Account -->
+    <div class="modal fade" id="modalEditBankAccount" tabindex="-1" aria-labelledby="modalEditBankAccountLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow">
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <h5 class="modal-title fw-bold" id="modalEditBankAccountLabel">
+                        <i class="bi bi-pencil-square text-primary me-2"></i>Edit Rekening Bank
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="../handlers/admin_handler.php" method="POST">
+                    <input type="hidden" name="action" value="edit_bank_account">
+                    <input type="hidden" id="edit_bank_id" name="id" value="">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label for="edit_bank_name" class="form-label fw-semibold text-secondary">Nama Bank</label>
+                            <input type="text" id="edit_bank_name" name="bank_name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_account_number" class="form-label fw-semibold text-secondary">Nomor Rekening</label>
+                            <input type="text" id="edit_account_number" name="account_number" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_account_holder" class="form-label fw-semibold text-secondary">Nama Pemilik Rekening</label>
+                            <input type="text" id="edit_account_holder" name="account_holder" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_is_active" class="form-label fw-semibold text-secondary">Status Aktif</label>
+                            <select id="edit_is_active" name="is_active" class="form-select">
+                                <option value="1">Aktif</option>
+                                <option value="0">Nonaktif</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 bg-light p-3 rounded-bottom-4">
+                        <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary rounded-3 px-4">Update Rekening</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
