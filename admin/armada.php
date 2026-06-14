@@ -279,7 +279,7 @@ $activePage = 'armada';
                                 <?php foreach ($cars as $car): ?>
                                     <?php 
                                     // Penentuan gambar mobil
-                                    $imagePath = '../assets/uploads/' . $car['image'];
+                                    $imagePath = '../assets/uploads/cars/' . $car['image'];
                                     $imageSrc = (!empty($car['image']) && file_exists($imagePath)) ? $imagePath : 'https://placehold.co/100x70/eaeaea/666666?text=' . urlencode($car['brand']);
                                     ?>
                                     <tr>
