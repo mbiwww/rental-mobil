@@ -44,13 +44,13 @@ $bankAccountModel = new BankAccount($db);
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 /**
- * Helper untuk mengupload gambar mobil ke folder assets/uploads/
+ * Helper untuk mengupload gambar mobil ke folder assets/uploads/cars/
  * 
  * @param array $file Array dari $_FILES['image']
  * @param string $uploadDir Jalur folder penyimpanan
  * @return string|array Mengembalikan nama file baru atau array berisi error
  */
-function uploadImage($file, $uploadDir = '../assets/uploads/')
+function uploadImage($file, $uploadDir = '../assets/uploads/cars/')
 {
     if (empty($file) || $file['error'] !== UPLOAD_ERR_OK) {
         return null;
@@ -187,7 +187,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit_car') {
 
         // Hapus file gambar lama jika ada agar tidak menumpuk di server
         if (!empty($currentCar['image'])) {
-            $oldImagePath = '../assets/uploads/' . $currentCar['image'];
+            $oldImagePath = '../assets/uploads/cars/' . $currentCar['image'];
             if (file_exists($oldImagePath)) {
                 unlink($oldImagePath);
             }
@@ -238,7 +238,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'delete_car') {
 
     // Hapus file gambar dari server
     if (!empty($currentCar['image'])) {
-        $imagePath = '../assets/uploads/' . $currentCar['image'];
+        $imagePath = '../assets/uploads/cars/' . $currentCar['image'];
         if (file_exists($imagePath)) {
             unlink($imagePath);
         }
