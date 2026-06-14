@@ -100,7 +100,7 @@ $totalAvailable = $carModel->countByStatus('available');
           <?php
           // Tentukan path gambar: gunakan file upload jika ada, fallback ke placeholder
           $imgSrc = !empty($car['image'])
-            ? 'assets/uploads/' . htmlspecialchars($car['image'])
+            ? 'assets/uploads/cars/' . htmlspecialchars($car['image'])
             : 'https://placehold.co/600x360/1e2a3a/7eb3f5?text=' . urlencode($car['brand'] . ' ' . $car['model']);
 
           // Format harga ke format Rupiah
