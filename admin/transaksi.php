@@ -514,7 +514,7 @@ $activePage = 'transaksi';
                                     <?php foreach ($cars as $c): ?>
                                         <?php
                                         $carImg = !empty($c['image'])
-                                            ? '../assets/uploads/' . htmlspecialchars($c['image'])
+                                            ? '../assets/uploads/cars/' . htmlspecialchars($c['image'])
                                             : 'https://placehold.co/120x80/1e2a3a/7eb3f5?text=' . urlencode($c['brand']);
                                         ?>
                                         <tr>
