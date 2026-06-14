@@ -63,6 +63,7 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/navbar.css">
   <link rel="stylesheet" href="../assets/css/footer.css">
   <link rel="stylesheet" href="../assets/css/flash.css">
@@ -105,6 +106,21 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
       .dash-container {
         max-width: 1320px;
       }
+    }
+  </style>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+    }
+    .soft-bloom {
+      box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.05);
     }
   </style>
 </head>
@@ -172,7 +188,6 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
       <!-- ===== Riwayat Sewa ===== -->
       <div class="tab-pane fade show active" id="riwayat" role="tabpanel">
 
-        <!-- Rental list -->
         <div id="rental-list">
           <?php if (empty($rentals)): ?>
             <!-- Empty state -->
@@ -182,131 +197,173 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
               <p>Mulai menyewa mobil untuk melihat riwayat di sini</p>
             </div>
           <?php else: ?>
-            <?php foreach ($rentals as $r): ?>
-              <?php
-              $p = $paymentModel->getByRentalId($r['id']);
-              $days = (int) ((strtotime($r['end_date']) - strtotime($r['start_date'])) / 86400);
-              if ($days <= 0) $days = 1;
+            <div class="bg-white rounded-xl soft-bloom border border-slate-200/30 overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-50/80 border-b border-slate-200/30">
+                      <th class="px-6 py-4 text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Mobil</th>
+                      <th class="px-6 py-4 text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Tanggal Sewa</th>
+                      <th class="px-6 py-4 text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Durasi</th>
+                      <th class="px-6 py-4 text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Total</th>
+                      <th class="px-6 py-4 text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Status</th>
+                      <th class="px-6 py-4 text-xs font-semibold uppercase tracking-[0.05em] text-slate-400 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100/50">
+                    <?php foreach ($rentals as $r): ?>
+                      <?php
+                      $p = $paymentModel->getByRentalId($r['id']);
+                      $days = (int) ((strtotime($r['end_date']) - strtotime($r['start_date'])) / 86400);
+                      if ($days <= 0) $days = 1;
 
-              // Determine visual configurations based on status
-              // Statuses: 'pending','confirmed','ongoing','completed','cancel_requested','cancelled'
-              $statusConfig = match($r['status']) {
-                  'pending' => [
-                      'border' => 'border-l-amber-400',
-                      'bg' => 'bg-amber-100 text-amber-800',
-                      'label' => $p ? ($p['status'] === 'rejected' ? 'Pembayaran Ditolak' : 'Menunggu Verifikasi') : 'Belum Dibayar',
-                      'desc' => $p ? ($p['status'] === 'rejected' ? 'Pembayaran ditolak admin. Silakan bayar kembali.' : 'Menunggu konfirmasi pembayaran oleh admin') : 'Silakan lakukan pembayaran secepatnya',
-                      'allow_pay' => !$p || $p['status'] === 'rejected',
-                      'allow_cancel' => !$p || $p['status'] === 'rejected',
-                      'allow_refund' => false
-                  ],
-                  'confirmed' => [
-                      'border' => 'border-l-blue-500',
-                      'bg' => 'bg-blue-100 text-blue-800',
-                      'label' => 'Terkonfirmasi',
-                      'desc' => 'Mobil siap diambil sesuai jadwal sewa',
-                      'allow_pay' => false,
-                      'allow_cancel' => false,
-                      'allow_refund' => true
-                  ],
-                  'ongoing' => [
-                      'border' => 'border-l-indigo-500',
-                      'bg' => 'bg-indigo-100 text-indigo-800',
-                      'label' => 'Sedang Disewa',
-                      'desc' => 'Mobil sedang aktif Anda gunakan',
-                      'allow_pay' => false,
-                      'allow_cancel' => false,
-                      'allow_refund' => false
-                  ],
-                  'completed' => [
-                      'border' => 'border-l-emerald-500',
-                      'bg' => 'bg-emerald-100 text-emerald-800',
-                      'label' => 'Selesai',
-                      'desc' => 'Masa sewa selesai dan mobil telah dikembalikan',
-                      'allow_pay' => false,
-                      'allow_cancel' => false,
-                      'allow_refund' => false
-                  ],
-                  'cancel_requested' => [
-                      'border' => 'border-l-orange-500',
-                      'bg' => 'bg-orange-100 text-orange-800',
-                      'label' => 'Refund Diproses',
-                      'desc' => 'Permintaan pengembalian dana sedang diproses',
-                      'allow_pay' => false,
-                      'allow_cancel' => false,
-                      'allow_refund' => false
-                  ],
-                  'cancelled' => [
-                      'border' => 'border-l-slate-400',
-                      'bg' => 'bg-slate-200 text-slate-700',
-                      'label' => 'Dibatalkan',
-                      'desc' => 'Pemesanan dibatalkan',
-                      'allow_pay' => false,
-                      'allow_cancel' => false,
-                      'allow_refund' => false
-                  ],
-                  default => [
-                      'border' => 'border-l-slate-300',
-                      'bg' => 'bg-slate-100 text-slate-800',
-                      'label' => ucfirst($r['status']),
-                      'desc' => '',
-                      'allow_pay' => false,
-                      'allow_cancel' => false,
-                      'allow_refund' => false
-                  ]
-              };
-              ?>
-              <div class="bg-white p-5 rounded-2xl border-l-4 <?= $statusConfig['border'] ?> shadow-[0_4px_12px_rgba(0,0,0,0.02)] border border-black/5 mb-4">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h6 class="text-base font-bold text-[#0b2b4a] mb-1">
-                      <?= htmlspecialchars($r['brand'] . ' ' . $r['model'] . ' ' . $r['year']) ?>
-                    </h6>
-                    <div class="text-sm text-slate-500 flex flex-wrap gap-x-4 gap-y-1">
-                      <span><i class="bi bi-calendar3 mr-1"></i> <?= date('d M Y', strtotime($r['start_date'])) ?> - <?= date('d M Y', strtotime($r['end_date'])) ?> (<?= $days ?> hari)</span>
-                      <span><i class="bi bi-wallet2 mr-1"></i> Rp <?= number_format($r['total_price'], 0, ',', '.') ?></span>
-                    </div>
-                    <div class="mt-2 flex gap-2 items-center">
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold <?= $statusConfig['bg'] ?>">
-                        <?= $statusConfig['label'] ?>
-                      </span>
-                      <?php if ($r['status'] === 'completed' && (float)$r['penalty_fee'] > 0): ?>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                          Denda: Rp <?= number_format($r['penalty_fee'], 0, ',', '.') ?>
-                        </span>
-                      <?php endif; ?>
-                    </div>
-                    <small class="block text-xs text-slate-400 mt-1.5"><?= $statusConfig['desc'] ?></small>
-                  </div>
-                  <div class="text-left md:text-right flex flex-wrap gap-2 justify-start md:justify-end shrink-0">
-                    <?php if ($statusConfig['allow_pay']): ?>
-                      <a href="pembayaran.php?rental_id=<?= $r['id'] ?>" class="px-5 py-2 rounded-full bg-blue-600 text-white text-xs font-semibold shadow-md hover:bg-blue-700 transition-all text-center no-underline">
-                        Bayar Sekarang
-                      </a>
-                    <?php endif; ?>
+                      // Determine visual configurations based on status
+                      // Statuses: 'pending','confirmed','ongoing','completed','cancel_requested','cancelled'
+                      $statusConfig = match($r['status']) {
+                          'pending' => [
+                              'bg' => 'bg-amber-500/10 text-amber-500',
+                              'label' => $p ? ($p['status'] === 'rejected' ? 'Pembayaran Ditolak' : 'Menunggu Verifikasi') : 'Belum Dibayar',
+                              'desc' => $p ? ($p['status'] === 'rejected' ? 'Pembayaran ditolak admin. Silakan bayar kembali.' : 'Menunggu konfirmasi pembayaran oleh admin') : 'Silakan lakukan pembayaran secepatnya',
+                              'allow_pay' => !$p || $p['status'] === 'rejected',
+                              'allow_cancel' => !$p || $p['status'] === 'rejected',
+                              'allow_refund' => false
+                          ],
+                          'confirmed' => [
+                              'bg' => 'bg-blue-800/10 text-blue-800',
+                              'label' => 'Terkonfirmasi',
+                              'desc' => 'Mobil siap diambil sesuai jadwal sewa',
+                              'allow_pay' => false,
+                              'allow_cancel' => false,
+                              'allow_refund' => true
+                          ],
+                          'ongoing' => [
+                              'bg' => 'bg-violet-600/10 text-violet-600',
+                              'label' => 'Sedang Disewa',
+                              'desc' => 'Mobil sedang aktif Anda gunakan',
+                              'allow_pay' => false,
+                              'allow_cancel' => false,
+                              'allow_refund' => false
+                          ],
+                          'completed' => [
+                              'bg' => 'bg-emerald-500/10 text-emerald-500',
+                              'label' => 'Selesai',
+                              'desc' => 'Masa sewa selesai dan mobil telah dikembalikan',
+                              'allow_pay' => false,
+                              'allow_cancel' => false,
+                              'allow_refund' => false
+                          ],
+                          'cancel_requested' => [
+                              'bg' => 'bg-orange-500/10 text-orange-500',
+                              'label' => 'Refund Diproses',
+                              'desc' => 'Permintaan pengembalian dana sedang diproses',
+                              'allow_pay' => false,
+                              'allow_cancel' => false,
+                              'allow_refund' => false
+                          ],
+                          'cancelled' => [
+                              'bg' => 'bg-red-500/10 text-red-500',
+                              'label' => 'Dibatalkan',
+                              'desc' => 'Pemesanan dibatalkan',
+                              'allow_pay' => false,
+                              'allow_cancel' => false,
+                              'allow_refund' => false
+                          ],
+                          default => [
+                              'bg' => 'bg-slate-500/10 text-slate-600',
+                              'label' => ucfirst($r['status']),
+                              'desc' => '',
+                              'allow_pay' => false,
+                              'allow_cancel' => false,
+                              'allow_refund' => false
+                          ]
+                      };
+                      ?>
+                      <tr class="hover:bg-slate-50/50 transition-colors">
+                        <!-- Mobil -->
+                        <td class="px-6 py-4">
+                          <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                              <span class="material-symbols-outlined text-slate-400">directions_car</span>
+                            </div>
+                            <span class="font-semibold text-[#0b2b4a] text-base"><?= htmlspecialchars($r['brand'] . ' ' . $r['model'] . ' ' . $r['year']) ?></span>
+                          </div>
+                        </td>
+                        <!-- Tanggal Sewa -->
+                        <td class="px-6 py-4">
+                          <div class="flex items-center gap-2 text-slate-400 text-sm">
+                            <span class="material-symbols-outlined" style="font-size:18px">calendar_today</span>
+                            <span><?= date('d M Y', strtotime($r['start_date'])) ?> - <?= date('d M Y', strtotime($r['end_date'])) ?></span>
+                          </div>
+                        </td>
+                        <!-- Durasi -->
+                        <td class="px-6 py-4">
+                          <span class="text-sm text-[#0b2b4a]"><?= $days ?> Hari</span>
+                        </td>
+                        <!-- Total -->
+                        <td class="px-6 py-4">
+                          <span class="text-sm font-semibold text-[#0b2b4a]">Rp <?= number_format($r['total_price'], 0, ',', '.') ?></span>
+                          <?php if ($r['status'] === 'completed' && (float)$r['penalty_fee'] > 0): ?>
+                            <span class="block text-xs text-red-500 font-medium mt-0.5">+ Denda Rp <?= number_format($r['penalty_fee'], 0, ',', '.') ?></span>
+                          <?php endif; ?>
+                        </td>
+                        <!-- Status -->
+                        <td class="px-6 py-4">
+                          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium <?= $statusConfig['bg'] ?>">
+                            <?= $statusConfig['label'] ?>
+                          </span>
+                        </td>
+                        <!-- Aksi -->
+                        <td class="px-6 py-4 text-right">
+                          <div class="flex flex-col items-end gap-1">
+                            <?php if ($statusConfig['allow_pay']): ?>
+                              <a href="pembayaran.php?rental_id=<?= $r['id'] ?>" class="px-4 py-1.5 rounded-lg bg-[#00288e] text-white text-sm font-semibold shadow-sm hover:bg-[#1e40af] active:scale-95 transition-all text-center" style="text-decoration:none">
+                                Bayar Sekarang
+                              </a>
+                            <?php endif; ?>
 
-                    <?php if ($statusConfig['allow_cancel']): ?>
-                      <form action="../handlers/booking_handler.php?action=cancel_booking" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?');" class="inline">
-                        <input type="hidden" name="rental_id" value="<?= $r['id'] ?>">
-                        <button type="submit" class="px-5 py-2 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 border border-slate-200 transition-all">
-                          Batalkan
-                        </button>
-                      </form>
-                    <?php endif; ?>
+                            <?php if ($statusConfig['allow_cancel']): ?>
+                              <form action="../handlers/booking_handler.php?action=cancel_booking" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?');" class="inline">
+                                <input type="hidden" name="rental_id" value="<?= $r['id'] ?>">
+                                <button type="submit" class="px-4 py-1.5 rounded-lg bg-slate-200/60 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition-all">
+                                  Batalkan
+                                </button>
+                              </form>
+                            <?php endif; ?>
 
-                    <?php if ($statusConfig['allow_refund']): ?>
-                      <button type="button" class="px-5 py-2 rounded-full bg-red-500 text-white text-xs font-semibold shadow-md hover:bg-red-600 hover:-translate-y-0.5 transition-all btn-refund-modal" data-rental-id="<?= $r['id'] ?>" data-car-name="<?= htmlspecialchars($r['brand'] . ' ' . $r['model']) ?>">
-                        Refund / Batal
-                      </button>
-                    <?php endif; ?>
-
-                    <?php if (!$statusConfig['allow_pay'] && !$statusConfig['allow_cancel'] && !$statusConfig['allow_refund']): ?>
-                      <span class="text-xs text-slate-400 italic">Tidak ada aksi</span>
-                    <?php endif; ?>
-                  </div>
-                </div>
+                            <button type="button" class="px-4 py-1.5 rounded-lg <?= ($statusConfig['allow_pay'] || $statusConfig['allow_cancel']) ? 'bg-slate-200/60 text-slate-600 hover:bg-slate-200' : 'bg-[#00288e] text-white hover:bg-[#1e40af] shadow-sm' ?> text-sm font-semibold active:scale-95 transition-all btn-detail-modal"
+                              data-rental-id="<?= $r['id'] ?>"
+                              data-car-name="<?= htmlspecialchars($r['brand'] . ' ' . $r['model'] . ' ' . $r['year']) ?>"
+                              data-car-image="<?= htmlspecialchars($r['image'] ?? '') ?>"
+                              data-start-date="<?= date('d M Y', strtotime($r['start_date'])) ?>"
+                              data-end-date="<?= date('d M Y', strtotime($r['end_date'])) ?>"
+                              data-days="<?= $days ?>"
+                              data-rental-type="<?= htmlspecialchars($r['rental_type'] ?? 'Lepas Kunci') ?>"
+                              data-pickup="<?= htmlspecialchars($r['pickup_location'] ?? '-') ?>"
+                              data-dropoff="<?= htmlspecialchars($r['dropoff_location'] ?? '-') ?>"
+                              data-total="Rp <?= number_format($r['total_price'], 0, ',', '.') ?>"
+                              data-driver-cost="Rp <?= number_format($r['driver_cost'] ?? 0, 0, ',', '.') ?>"
+                              data-pickup-fee="Rp <?= number_format($r['pickup_fee'] ?? 0, 0, ',', '.') ?>"
+                              data-dropoff-fee="Rp <?= number_format($r['dropoff_fee'] ?? 0, 0, ',', '.') ?>"
+                              data-penalty="Rp <?= number_format($r['penalty_fee'] ?? 0, 0, ',', '.') ?>"
+                              data-status="<?= $statusConfig['label'] ?>"
+                              data-status-class="<?= $statusConfig['bg'] ?>"
+                              data-payment-method="<?= htmlspecialchars($p['method'] ?? '-') ?>"
+                              data-payment-status="<?= htmlspecialchars($p['status'] ?? 'Belum Dibayar') ?>"
+                              data-payment-bank="<?= htmlspecialchars($p ? ($p['bank_name'] . ' - ' . $p['account_number'] . ' (' . $p['account_holder'] . ')') : '-') ?>"
+                              data-payment-proof="<?= htmlspecialchars($p['proof_image'] ?? '') ?>"
+                              data-created-at="<?= date('d M Y H:i', strtotime($r['created_at'])) ?>"
+                              data-allow-refund="<?= $statusConfig['allow_refund'] ? '1' : '0' ?>"
+                            >
+                              Detail
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
               </div>
-            <?php endforeach; ?>
+            </div>
           <?php endif; ?>
         </div>
       </div>
@@ -428,41 +485,129 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
     </div>
   </div>
 
-  <!-- Modal Refund / Pembatalan -->
-  <div class="modal fade" id="refundModal" tabindex="-1" aria-labelledby="refundModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+  <!-- Modal Detail Pesanan -->
+  <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content rounded-2xl shadow-lg border-0">
-        <div class="modal-header border-0 px-4 pt-4">
-          <h5 class="text-lg font-bold text-[#0b2b4a]" id="refundModalLabel">Pengajuan Refund & Pembatalan</h5>
+        <div class="modal-header border-0 px-5 pt-5 pb-0">
+          <div>
+            <h5 class="text-lg font-bold text-[#0b2b4a]" id="detailModalLabel">Detail Pesanan</h5>
+            <p class="text-xs text-slate-400 mt-0.5" id="detailCreatedAt"></p>
+          </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body px-4 pb-4">
-          <form id="refundForm" method="POST" action="../handlers/booking_handler.php?action=request_refund">
-            <input type="hidden" name="rental_id" id="refundRentalId" value="">
-            <div class="mb-3">
-              <label class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Mobil</label>
-              <input type="text" id="refundCarName" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 font-semibold text-[#0b2b4a] outline-none" readonly>
+        <div class="modal-body px-5 pb-5 pt-3">
+
+          <!-- Status Badge -->
+          <div class="mb-4">
+            <span id="detailStatusBadge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"></span>
+          </div>
+
+          <!-- Informasi Mobil -->
+          <div class="bg-slate-50 rounded-xl p-4 mb-4">
+            <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Informasi Mobil</h6>
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
+                <img id="detailCarImage" src="" alt="" class="w-full h-full object-cover hidden">
+                <span id="detailCarIcon" class="material-symbols-outlined text-slate-300" style="font-size:32px">directions_car</span>
+              </div>
+              <div>
+                <p class="font-semibold text-[#0b2b4a] text-base" id="detailCarName"></p>
+                <p class="text-sm text-slate-400" id="detailRentalType"></p>
+              </div>
             </div>
-            <div class="mb-3">
-              <label for="reasonOption" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Alasan Utama <span class="text-danger">*</span></label>
-              <select name="reason_option" id="reasonOption" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" required>
-                <option value="">-- Pilih Alasan Pembatalan --</option>
-                <option value="Perubahan rencana perjalanan">Perubahan rencana perjalanan</option>
-                <option value="Kondisi darurat keluarga">Kondisi darurat keluarga</option>
-                <option value="Mobil tidak sesuai ekspektasi">Mobil tidak sesuai ekspektasi</option>
-                <option value="Menemukan harga lebih murah">Menemukan harga lebih murah</option>
-                <option value="Masalah pembayaran">Masalah pembayaran</option>
-                <option value="Lainnya">Lainnya</option>
-              </select>
+          </div>
+
+          <!-- Jadwal & Lokasi -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div class="bg-slate-50 rounded-xl p-4">
+              <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Jadwal Sewa</h6>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-slate-400" style="font-size:18px">calendar_today</span>
+                  <span class="text-sm text-[#0b2b4a]" id="detailDates"></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-slate-400" style="font-size:18px">schedule</span>
+                  <span class="text-sm text-[#0b2b4a]" id="detailDuration"></span>
+                </div>
+              </div>
             </div>
-            <div class="mb-4">
-              <label for="reasonDetail" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Detail Alasan & Rekening Refund <span class="text-danger">*</span></label>
-              <textarea name="reason_detail" id="reasonDetail" rows="3" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" placeholder="Tulis rincian alasan dan nomor rekening Anda untuk pengembalian dana" required></textarea>
+            <div class="bg-slate-50 rounded-xl p-4">
+              <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Lokasi</h6>
+              <div class="space-y-2">
+                <div class="flex items-start gap-2">
+                  <span class="material-symbols-outlined text-emerald-500 shrink-0" style="font-size:18px">trip_origin</span>
+                  <div><p class="text-[10px] text-slate-400">Pengambilan</p><p class="text-sm text-[#0b2b4a]" id="detailPickup"></p></div>
+                </div>
+                <div class="flex items-start gap-2">
+                  <span class="material-symbols-outlined text-red-400 shrink-0" style="font-size:18px">location_on</span>
+                  <div><p class="text-[10px] text-slate-400">Pengembalian</p><p class="text-sm text-[#0b2b4a]" id="detailDropoff"></p></div>
+                </div>
+              </div>
             </div>
-            <button type="submit" class="w-full px-5 py-3 rounded-full bg-red-600 text-white font-semibold shadow-md hover:bg-red-700 hover:-translate-y-0.5 transition-all">
-              <i class="bi bi-check2-circle mr-2"></i>Kirim Pengajuan Refund
-            </button>
-          </form>
+          </div>
+
+          <!-- Rincian Biaya -->
+          <div class="bg-slate-50 rounded-xl p-4 mb-4">
+            <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Rincian Biaya</h6>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between"><span class="text-slate-500">Biaya Sopir</span><span class="text-[#0b2b4a] font-medium" id="detailDriverCost"></span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Biaya Antar</span><span class="text-[#0b2b4a] font-medium" id="detailPickupFee"></span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Biaya Jemput</span><span class="text-[#0b2b4a] font-medium" id="detailDropoffFee"></span></div>
+              <div class="flex justify-between" id="detailPenaltyRow"><span class="text-red-500">Denda Keterlambatan</span><span class="text-red-500 font-medium" id="detailPenalty"></span></div>
+              <hr class="border-slate-200">
+              <div class="flex justify-between font-semibold text-base"><span class="text-[#0b2b4a]">Total</span><span class="text-[#00288e]" id="detailTotal"></span></div>
+            </div>
+          </div>
+
+          <!-- Pembayaran -->
+          <div class="bg-slate-50 rounded-xl p-4 mb-4">
+            <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Informasi Pembayaran</h6>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between"><span class="text-slate-500">Metode</span><span class="text-[#0b2b4a] font-medium" id="detailPayMethod"></span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Rekening Tujuan</span><span class="text-[#0b2b4a] font-medium text-right" id="detailPayBank" style="max-width:60%"></span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Status Pembayaran</span><span class="font-medium" id="detailPayStatus"></span></div>
+            </div>
+          </div>
+
+          <!-- Bukti Transfer -->
+          <div id="detailProofSection" class="bg-slate-50 rounded-xl p-4 mb-4 hidden">
+            <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Bukti Transfer</h6>
+            <div class="flex justify-center">
+              <img id="detailProofImage" src="" alt="Bukti Transfer" class="max-w-full max-h-80 rounded-xl border border-slate-200 shadow-sm cursor-pointer" onclick="window.open(this.src, '_blank')">
+            </div>
+            <p class="text-[10px] text-slate-400 text-center mt-2">Klik gambar untuk melihat ukuran penuh</p>
+          </div>
+
+          <!-- Refund Section (hanya muncul jika allow_refund) -->
+          <div id="detailRefundSection" class="hidden">
+            <hr class="border-slate-200 my-4">
+            <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Ajukan Pembatalan & Refund</h6>
+            <form id="refundForm" method="POST" action="../handlers/booking_handler.php?action=request_refund">
+              <input type="hidden" name="rental_id" id="refundRentalId" value="">
+              <div class="mb-3">
+                <label for="reasonOption" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Alasan Utama <span class="text-red-500">*</span></label>
+                <select name="reason_option" id="reasonOption" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" required>
+                  <option value="" disabled selected>-- Pilih Alasan Pembatalan --</option>
+                  <option value="Perubahan rencana perjalanan">Perubahan rencana perjalanan</option>
+                  <option value="Kondisi darurat keluarga">Kondisi darurat keluarga</option>
+                  <option value="Mobil tidak sesuai ekspektasi">Mobil tidak sesuai ekspektasi</option>
+                  <option value="Menemukan harga lebih murah">Menemukan harga lebih murah</option>
+                  <option value="Masalah pembayaran">Masalah pembayaran</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+              </div>
+              <div class="mb-4 hidden" id="reasonDetailContainer">
+                <label for="reasonDetail" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Detail Alasan & Rekening Refund <span class="text-red-500">*</span></label>
+                <textarea name="reason_detail" id="reasonDetail" rows="3" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" placeholder="Tulis rincian alasan dan nomor rekening Anda untuk pengembalian dana"></textarea>
+              </div>
+              <button type="submit" class="w-full px-5 py-3 rounded-xl bg-red-600 text-white font-semibold shadow-md hover:bg-red-700 hover:-translate-y-0.5 transition-all">
+                <i class="bi bi-check2-circle mr-2"></i>Kirim Pengajuan Refund
+              </button>
+            </form>
+          </div>
+
         </div>
       </div>
     </div>
@@ -547,20 +692,117 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
       activatePill('dataDiri');
     })();
 
-    // Trigger Modal Refund & set data
+    // Trigger Modal Detail & populate data
     document.addEventListener('DOMContentLoaded', function () {
-      var refundModal = new bootstrap.Modal(document.getElementById('refundModal'));
-      document.querySelectorAll('.btn-refund-modal').forEach(function(btn) {
+      var detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+      document.querySelectorAll('.btn-detail-modal').forEach(function(btn) {
         btn.addEventListener('click', function() {
-          var rentalId = this.getAttribute('data-rental-id');
-          var carName = this.getAttribute('data-car-name');
-          
-          document.getElementById('refundRentalId').value = rentalId;
-          document.getElementById('refundCarName').value = carName;
-          
-          refundModal.show();
+          var d = this.dataset;
+
+          // Header
+          document.getElementById('detailCreatedAt').textContent = 'Dibuat: ' + d.createdAt;
+
+          // Status
+          var badge = document.getElementById('detailStatusBadge');
+          badge.textContent = d.status;
+          badge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ' + d.statusClass;
+
+          // Car info
+          document.getElementById('detailCarName').textContent = d.carName;
+          document.getElementById('detailRentalType').textContent = d.rentalType === 'with_driver' ? 'Dengan Sopir' : 'Lepas Kunci';
+          var carImg = document.getElementById('detailCarImage');
+          var carIcon = document.getElementById('detailCarIcon');
+          if (d.carImage) {
+            carImg.src = '../assets/uploads/cars/' + d.carImage;
+            carImg.classList.remove('hidden');
+            carIcon.classList.add('hidden');
+          } else {
+            carImg.classList.add('hidden');
+            carIcon.classList.remove('hidden');
+          }
+
+          // Dates & Location
+          document.getElementById('detailDates').textContent = d.startDate + ' — ' + d.endDate;
+          document.getElementById('detailDuration').textContent = d.days + ' Hari';
+          document.getElementById('detailPickup').textContent = d.pickup;
+          document.getElementById('detailDropoff').textContent = d.dropoff;
+
+          // Costs
+          document.getElementById('detailDriverCost').textContent = d.driverCost;
+          document.getElementById('detailPickupFee').textContent = d.pickupFee;
+          document.getElementById('detailDropoffFee').textContent = d.dropoffFee;
+          document.getElementById('detailTotal').textContent = d.total;
+          var penaltyRow = document.getElementById('detailPenaltyRow');
+          if (d.penalty && d.penalty !== 'Rp 0') {
+            document.getElementById('detailPenalty').textContent = d.penalty;
+            penaltyRow.classList.remove('hidden');
+          } else {
+            penaltyRow.classList.add('hidden');
+          }
+
+          // Payment
+          document.getElementById('detailPayMethod').textContent = d.paymentMethod === 'bank_transfer' ? 'Transfer Bank' : d.paymentMethod;
+          document.getElementById('detailPayBank').textContent = d.paymentBank;
+          var payStatus = document.getElementById('detailPayStatus');
+          var ps = d.paymentStatus;
+          payStatus.textContent = ps === 'pending' ? 'Menunggu Verifikasi' : ps === 'confirmed' ? 'Terverifikasi' : ps === 'rejected' ? 'Ditolak' : ps;
+          payStatus.className = 'font-medium ' + (ps === 'confirmed' ? 'text-emerald-500' : ps === 'rejected' ? 'text-red-500' : 'text-amber-500');
+
+          // Proof image
+          var proofSection = document.getElementById('detailProofSection');
+          var proofImg = document.getElementById('detailProofImage');
+          if (d.paymentProof) {
+            proofImg.src = '../assets/uploads/payments/' + d.paymentProof;
+            proofSection.classList.remove('hidden');
+          } else {
+            proofSection.classList.add('hidden');
+          }
+
+          // Refund section
+          var refundSection = document.getElementById('detailRefundSection');
+          if (d.allowRefund === '1') {
+            document.getElementById('refundRentalId').value = d.rentalId;
+            refundSection.classList.remove('hidden');
+          } else {
+            refundSection.classList.add('hidden');
+          }
+
+          // Reset refund form fields when modal is opened
+          var reasonOption = document.getElementById('reasonOption');
+          var reasonDetail = document.getElementById('reasonDetail');
+          var reasonDetailContainer = document.getElementById('reasonDetailContainer');
+          if (reasonOption) {
+            reasonOption.value = "";
+          }
+          if (reasonDetailContainer) {
+            reasonDetailContainer.classList.add('hidden');
+          }
+          if (reasonDetail) {
+            reasonDetail.value = "";
+            reasonDetail.removeAttribute('required');
+          }
+
+          detailModal.show();
         });
       });
+
+      // Handle showing/hiding detail refund field based on reason choice
+      var reasonOption = document.getElementById('reasonOption');
+      var reasonDetail = document.getElementById('reasonDetail');
+      var reasonDetailContainer = document.getElementById('reasonDetailContainer');
+
+      if (reasonOption && reasonDetail && reasonDetailContainer) {
+        reasonOption.addEventListener('change', function() {
+          if (this.value === 'Lainnya') {
+            reasonDetailContainer.classList.remove('hidden');
+            reasonDetail.setAttribute('required', 'required');
+          } else {
+            reasonDetailContainer.classList.add('hidden');
+            reasonDetail.removeAttribute('required');
+            reasonDetail.value = '';
+          }
+        });
+      }
     });
   </script>
   <?php include '../includes/footer.php'; ?>
