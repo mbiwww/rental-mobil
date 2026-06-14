@@ -177,7 +177,7 @@ function getStatusBadge(string $status): array
           $transmisiLabel = $car['transmission'] === 'automatic' ? 'Automatic' : 'Manual';
           $harga          = 'Rp ' . number_format((float)$car['price_per_day'], 0, ',', '.');
           $imgSrc         = !empty($car['image'])
-            ? '../assets/uploads/' . htmlspecialchars($car['image'])
+            ? '../assets/uploads/cars/' . htmlspecialchars($car['image'])
             : 'https://placehold.co/600x360/1e2a3a/7eb3f5?text=' . urlencode($car['brand'] . '+' . $car['model']);
 
           // Mobil berstatus selain 'available' tidak bisa diklik ke detail
