@@ -5,6 +5,10 @@
  * Mengelola koneksi database menggunakan pola Singleton
  * agar hanya ada 1 instance koneksi PDO selama siklus request.
  */
+
+// Set timezone to UTC+7 (Asia/Jakarta)
+date_default_timezone_set('Asia/Jakarta');
+
 class Database
 {
     // Instance tunggal dari class ini

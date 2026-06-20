@@ -35,6 +35,8 @@ class Payment extends BaseModel
      */
     public function updateStatus(int $rentalId, string $status): bool
     {
+        // Set timezone to Asia/Jakarta (UTC+7) to match database created_at timezone
+        date_default_timezone_set('Asia/Jakarta');
         $paidAt = ($status === 'confirmed') ? date('Y-m-d H:i:s') : null;
         return $this->query(
             "UPDATE payments SET status = ?, paid_at = ? WHERE rental_id = ?",

@@ -6,6 +6,10 @@
  * menggunakan PDO (PHP Data Objects).
  */
 
+// Set timezone to UTC+7 (Asia/Jakarta)
+date_default_timezone_set('Asia/Jakarta');
+
+
 // Pengaturan database
 $host    = 'localhost';
 $db      = 'car_rental';
