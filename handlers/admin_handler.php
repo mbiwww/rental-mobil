@@ -6,22 +6,7 @@
  * kemudian melakukan redirect kembali ke admin/armada.php dengan query status.
  */
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// MOCK SESSION ADMIN (Untuk kemudahan testing selama masa pengembangan)
-// Hapus atau sesuaikan bagian ini jika handlers/auth_handler.php sudah diimplementasi
-if (!isset($_SESSION['role'])) {
-    $_SESSION['role'] = 'admin';
-    $_SESSION['name'] = 'Admin Tester';
-}
-
-// Cek otentikasi admin
-if ($_SESSION['role'] !== 'admin') {
-    header('Location: ../pages/login.php');
-    exit;
-}
+require_once __DIR__ . '/../includes/admin_auth_check.php';
 
 require_once '../classes/Database.php';
 require_once '../classes/BaseModel.php';

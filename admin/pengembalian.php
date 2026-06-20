@@ -5,9 +5,7 @@
  * Menampilkan rental ongoing yang perlu dikembalikan dan riwayat pengembalian.
  * Fitur: Proses pengembalian, hitung denda otomatis, riwayat completed.
  */
-if (session_status() === PHP_SESSION_NONE) session_start();
-if (!isset($_SESSION['role'])) { $_SESSION['role'] = 'admin'; $_SESSION['name'] = 'Admin Tester'; }
-if ($_SESSION['role'] !== 'admin') { header('Location: ../pages/login.php'); exit; }
+require_once __DIR__ . '/../includes/admin_auth_check.php';
 
 require_once '../classes/Database.php';
 require_once '../classes/BaseModel.php';

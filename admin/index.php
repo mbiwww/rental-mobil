@@ -5,13 +5,7 @@
  * Menampilkan ringkasan statistik, grafik tren, dan transaksi terbaru.
  * Semua data diambil dari database via model classes.
  */
-session_start();
-
-// Proteksi halaman admin
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header('Location: ../pages/login.php');
-    exit;
-}
+require_once __DIR__ . '/../includes/admin_auth_check.php';
 
 // Include model classes
 require_once __DIR__ . '/../config/database.php';
