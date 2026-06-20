@@ -87,7 +87,7 @@ $activePage      = 'customer';
                     <p class="mb-0 fw-bold"><?= htmlspecialchars($_SESSION['name'] ?? 'Admin') ?></p>
                     <small class="text-muted">Administrator</small>
                 </div>
-                <a href="../pages/login.php" class="text-muted" title="Logout">
+                <a href="../handlers/auth_handler.php?action=logout" class="text-muted text-decoration-none" title="Logout">
                     <i class="bi bi-box-arrow-right fs-4"></i>
                 </a>
             </div>
