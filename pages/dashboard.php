@@ -463,15 +463,60 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
               <form id="passwordForm" method="POST" action="../handlers/auth_handler.php?action=change_password">
                 <div class="mb-3">
                   <label class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Password Lama</label>
-                  <input type="password" name="old_password" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-gray-50 font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" placeholder="••••••••" required>
+                  <div class="relative">
+                    <input type="password" name="old_password" id="inputOldPassword" class="w-full px-4 py-3 pr-12 rounded-2xl border-2 border-slate-200 bg-gray-50 font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" placeholder="••••••••" required>
+                    <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors" id="toggleOldPassword" aria-label="Tampilkan/sembunyikan password">
+                      <i class="bi bi-eye text-lg" id="iconOldPassword"></i>
+                    </button>
+                  </div>
                 </div>
                 <div class="mb-3">
                   <label class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Password Baru</label>
-                  <input type="password" name="new_password" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-gray-50 font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" placeholder="Minimal 8 karakter" required>
+                  <div class="relative">
+                    <input type="password" name="new_password" id="inputNewPassword" class="w-full px-4 py-3 pr-12 rounded-2xl border-2 border-slate-200 bg-gray-50 font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" placeholder="Minimal 8 karakter" required>
+                    <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors" id="toggleNewPassword" aria-label="Tampilkan/sembunyikan password">
+                      <i class="bi bi-eye text-lg" id="iconNewPassword"></i>
+                    </button>
+                  </div>
+
+                  <!-- Panel syarat password — tampil saat user mulai mengetik -->
+                  <div id="dash-password-rules" class="mt-3 hidden">
+                    <p class="mb-1.5 text-xs font-semibold text-slate-500">Syarat password:</p>
+                    <ul class="space-y-1 text-sm">
+                      <li id="dash-rule-length" class="flex items-center gap-1.5 text-red-500">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <span>Minimal 8 karakter <span class="text-slate-400">(12+ lebih aman)</span></span>
+                      </li>
+                      <li id="dash-rule-upper" class="flex items-center gap-1.5 text-red-500">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <span>Mengandung huruf besar (A–Z)</span>
+                      </li>
+                      <li id="dash-rule-lower" class="flex items-center gap-1.5 text-red-500">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <span>Mengandung huruf kecil (a–z)</span>
+                      </li>
+                      <li id="dash-rule-number" class="flex items-center gap-1.5 text-red-500">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <span>Mengandung angka (0–9)</span>
+                      </li>
+                      <li id="dash-rule-special" class="flex items-center gap-1.5 text-red-500">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <span>Mengandung karakter khusus (! @ # $ % ^ & *)</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
                 <div class="mb-3">
                   <label class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Konfirmasi Password Baru</label>
-                  <input type="password" name="konfirmasi_password" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-gray-50 font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" placeholder="Ulangi password baru" required>
+                  <div class="relative">
+                    <input type="password" name="konfirmasi_password" id="inputConfirmPassword" class="w-full px-4 py-3 pr-12 rounded-2xl border-2 border-slate-200 bg-gray-50 font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" placeholder="Ulangi password baru" required>
+                    <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors" id="toggleConfirmPassword" aria-label="Tampilkan/sembunyikan konfirmasi password">
+                      <i class="bi bi-eye text-lg" id="iconConfirmPassword"></i>
+                    </button>
+                  </div>
+                  <div id="dash-konfirm-feedback" class="mt-2 text-sm text-red-500 hidden">
+                    <i class="bi bi-x-circle mr-1"></i>Password tidak cocok
+                  </div>
                 </div>
                 <button type="submit" class="w-full px-5 py-3 rounded-full bg-[#0b2b4a] text-white font-semibold shadow-md hover:bg-[#1e3a6f] hover:-translate-y-0.5 transition-all">
                   <i class="bi bi-shield-lock mr-2"></i>Ganti Password
@@ -804,6 +849,102 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
         });
       }
     });
+
+    // -------------------------------------------------------
+    // Password toggle visibility — Dashboard
+    // -------------------------------------------------------
+    function setupToggle(btnId, inputId, iconId) {
+      var btn = document.getElementById(btnId);
+      var input = document.getElementById(inputId);
+      var icon = document.getElementById(iconId);
+      if (!btn || !input || !icon) return;
+      btn.addEventListener('click', function() {
+        var isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        icon.className = isPassword ? 'bi bi-eye-slash text-lg' : 'bi bi-eye text-lg';
+        btn.title = isPassword ? 'Sembunyikan password' : 'Tampilkan password';
+      });
+    }
+    setupToggle('toggleOldPassword', 'inputOldPassword', 'iconOldPassword');
+    setupToggle('toggleNewPassword', 'inputNewPassword', 'iconNewPassword');
+    setupToggle('toggleConfirmPassword', 'inputConfirmPassword', 'iconConfirmPassword');
+
+    // -------------------------------------------------------
+    // Syarat kekuatan password — real-time (Dashboard)
+    // -------------------------------------------------------
+    (function() {
+      var newPwInput = document.getElementById('inputNewPassword');
+      var confirmPwInput = document.getElementById('inputConfirmPassword');
+      var rulesPanel = document.getElementById('dash-password-rules');
+      var konfirmFeedback = document.getElementById('dash-konfirm-feedback');
+      var passwordForm = document.getElementById('passwordForm');
+      if (!newPwInput || !rulesPanel) return;
+
+      var dashRules = {
+        length:  { el: document.getElementById('dash-rule-length'),  test: function(v) { return v.length >= 8; } },
+        upper:   { el: document.getElementById('dash-rule-upper'),   test: function(v) { return /[A-Z]/.test(v); } },
+        lower:   { el: document.getElementById('dash-rule-lower'),   test: function(v) { return /[a-z]/.test(v); } },
+        number:  { el: document.getElementById('dash-rule-number'),  test: function(v) { return /[0-9]/.test(v); } },
+        special: { el: document.getElementById('dash-rule-special'), test: function(v) { return /[!@#$%^&*]/.test(v); } }
+      };
+
+      function cekDashPassword() {
+        var val = newPwInput.value;
+        if (val.length > 0) {
+          rulesPanel.classList.remove('hidden');
+        } else {
+          rulesPanel.classList.add('hidden');
+        }
+        for (var key in dashRules) {
+          var rule = dashRules[key];
+          var ok = rule.test(val);
+          var icon = rule.el.querySelector('i');
+          rule.el.className = ok
+            ? 'flex items-center gap-1.5 text-green-600'
+            : 'flex items-center gap-1.5 text-red-500';
+          icon.className = ok ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill';
+        }
+        cekDashKonfirmasi();
+      }
+
+      function isDashPasswordValid() {
+        for (var key in dashRules) {
+          if (!dashRules[key].test(newPwInput.value)) return false;
+        }
+        return true;
+      }
+
+      function cekDashKonfirmasi() {
+        if (!confirmPwInput || !konfirmFeedback) return;
+        if (confirmPwInput.value && confirmPwInput.value !== newPwInput.value) {
+          konfirmFeedback.classList.remove('hidden');
+        } else {
+          konfirmFeedback.classList.add('hidden');
+        }
+      }
+
+      newPwInput.addEventListener('input', cekDashPassword);
+      if (confirmPwInput) confirmPwInput.addEventListener('input', cekDashKonfirmasi);
+
+      // Submit validation
+      if (passwordForm) {
+        passwordForm.addEventListener('submit', function(e) {
+          if (!isDashPasswordValid()) {
+            e.preventDefault();
+            rulesPanel.classList.remove('hidden');
+            cekDashPassword();
+            newPwInput.focus();
+            return;
+          }
+          if (confirmPwInput && confirmPwInput.value !== newPwInput.value) {
+            e.preventDefault();
+            konfirmFeedback.classList.remove('hidden');
+            confirmPwInput.focus();
+            return;
+          }
+        });
+      }
+    })();
   </script>
   <?php include '../includes/footer.php'; ?>
 </body>
