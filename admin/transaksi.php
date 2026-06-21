@@ -1069,10 +1069,14 @@ $activePage = 'transaksi';
 
                         const payStatusEl = document.getElementById('det-pay-status');
                         payStatusEl.className = 'fw-bold ';
-                        if (payStatus === 'pending') {
+                        let finalPayStatus = payStatus;
+                        if (status === 'cancel_requested' || (status === 'cancelled' && hasPayment)) {
+                            finalPayStatus = 'confirmed';
+                        }
+                        if (finalPayStatus === 'pending') {
                             payStatusEl.classList.add('text-warning');
                             payStatusEl.textContent = 'PENDING VERIFIKASI';
-                        } else if (payStatus === 'confirmed') {
+                        } else if (finalPayStatus === 'confirmed') {
                             payStatusEl.classList.add('text-success');
                             payStatusEl.textContent = 'TERKONFIRMASI';
                         } else {

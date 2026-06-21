@@ -217,6 +217,14 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                       $days = (int) ((strtotime($r['end_date']) - strtotime($r['start_date'])) / 86400);
                       if ($days <= 0) $days = 1;
 
+                      // Query refund data jika ada
+                      $refund = null;
+                      if (in_array($r['status'], ['cancel_requested', 'cancelled'])) {
+                          $stmtRefund = $db->prepare("SELECT * FROM refunds WHERE rental_id = ? ORDER BY requested_at DESC LIMIT 1");
+                          $stmtRefund->execute([$r['id']]);
+                          $refund = $stmtRefund->fetch(PDO::FETCH_ASSOC);
+                      }
+
                       // Hitung deadline pengembalian kendaraan
                       $deadlineText = '';
                       $isOverdue = false;
@@ -371,6 +379,11 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                               data-allow-refund="<?= $statusConfig['allow_refund'] ? '1' : '0' ?>"
                               data-deadline="<?= htmlspecialchars($deadlineText) ?>"
                               data-is-overdue="<?= $isOverdue ? '1' : '0' ?>"
+                              data-refund-reason="<?= htmlspecialchars($refund['reason_option'] ?? '') ?>"
+                              data-refund-detail="<?= htmlspecialchars($refund['reason_detail'] ?? '') ?>"
+                              data-refund-status="<?= htmlspecialchars($refund['status'] ?? '') ?>"
+                              data-refund-date="<?= $refund ? date('d M Y H:i', strtotime($refund['requested_at'])) : '' ?>"
+                              data-refund-proof="<?= htmlspecialchars($refund['refund_proof_image'] ?? '') ?>"
                             >
                               Detail
                             </button>
@@ -650,6 +663,28 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
             <p class="text-[10px] text-slate-400 text-center mt-2">Klik gambar untuk melihat ukuran penuh</p>
           </div>
 
+          <!-- Informasi Refund (muncul jika rental di-cancel/refund) -->
+          <div id="detailRefundInfoSection" class="bg-amber-50 rounded-xl p-4 mb-4 border border-amber-200/50 hidden">
+            <h6 class="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-3 flex items-center gap-1.5">
+              <span class="material-symbols-outlined" style="font-size:16px">currency_exchange</span>
+              Informasi Pengembalian Dana
+            </h6>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between"><span class="text-slate-500">Alasan Pembatalan</span><span class="text-[#0b2b4a] font-medium text-right" id="detailRefundReason" style="max-width:60%"></span></div>
+              <div class="flex justify-between" id="detailRefundDetailRow"><span class="text-slate-500">Detail Alasan</span><span class="text-[#0b2b4a] font-medium text-right" id="detailRefundDetail" style="max-width:60%"></span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Status Refund</span><span class="font-medium" id="detailRefundStatus"></span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Tanggal Pengajuan</span><span class="text-[#0b2b4a] font-medium" id="detailRefundDate"></span></div>
+            </div>
+            <!-- Bukti Refund (jika admin sudah upload) -->
+            <div id="detailRefundProofSection" class="mt-3 pt-3 border-t border-amber-200/50 hidden">
+              <p class="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-2">Bukti Pengembalian Dana</p>
+              <div class="flex justify-center">
+                <img id="detailRefundProofImage" src="" alt="Bukti Refund" class="max-w-full max-h-60 rounded-xl border border-amber-200 shadow-sm cursor-pointer" onclick="window.open(this.src, '_blank')">
+              </div>
+              <p class="text-[10px] text-slate-400 text-center mt-2">Klik gambar untuk melihat ukuran penuh</p>
+            </div>
+          </div>
+
           <!-- Refund Section (hanya muncul jika allow_refund) -->
           <div id="detailRefundSection" class="hidden">
             <hr class="border-slate-200 my-4">
@@ -826,6 +861,9 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
           document.getElementById('detailPayBank').textContent = d.paymentBank;
           var payStatus = document.getElementById('detailPayStatus');
           var ps = d.paymentStatus;
+          if (d.refundReason) {
+            ps = 'confirmed';
+          }
           payStatus.textContent = ps === 'pending' ? 'Menunggu Verifikasi' : ps === 'confirmed' ? 'Terverifikasi' : ps === 'rejected' ? 'Ditolak' : ps;
           payStatus.className = 'font-medium ' + (ps === 'confirmed' ? 'text-emerald-500' : ps === 'rejected' ? 'text-red-500' : 'text-amber-500');
 
@@ -837,6 +875,43 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
             proofSection.classList.remove('hidden');
           } else {
             proofSection.classList.add('hidden');
+          }
+
+          // Refund info section
+          var refundInfoSection = document.getElementById('detailRefundInfoSection');
+          if (d.refundReason) {
+            refundInfoSection.classList.remove('hidden');
+            document.getElementById('detailRefundReason').textContent = d.refundReason;
+
+            // Detail alasan (hanya tampil jika ada)
+            var refundDetailRow = document.getElementById('detailRefundDetailRow');
+            if (d.refundDetail) {
+              document.getElementById('detailRefundDetail').textContent = d.refundDetail;
+              refundDetailRow.classList.remove('hidden');
+            } else {
+              refundDetailRow.classList.add('hidden');
+            }
+
+            // Status refund
+            var refundStatusEl = document.getElementById('detailRefundStatus');
+            var rs = d.refundStatus;
+            refundStatusEl.textContent = rs === 'requested' ? 'Menunggu Persetujuan' : rs === 'approved' ? 'Disetujui' : rs === 'rejected' ? 'Ditolak' : rs;
+            refundStatusEl.className = 'font-medium ' + (rs === 'approved' ? 'text-emerald-500' : rs === 'rejected' ? 'text-red-500' : 'text-amber-500');
+
+            // Tanggal pengajuan
+            document.getElementById('detailRefundDate').textContent = d.refundDate;
+
+            // Bukti refund (jika admin sudah upload)
+            var refundProofSection = document.getElementById('detailRefundProofSection');
+            var refundProofImg = document.getElementById('detailRefundProofImage');
+            if (d.refundProof) {
+              refundProofImg.src = '../assets/uploads/refunds/' + d.refundProof;
+              refundProofSection.classList.remove('hidden');
+            } else {
+              refundProofSection.classList.add('hidden');
+            }
+          } else {
+            refundInfoSection.classList.add('hidden');
           }
 
           // Refund section

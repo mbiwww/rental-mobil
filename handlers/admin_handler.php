@@ -385,6 +385,12 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'update_rental_statu
             $paymentModel->updateStatus($id, 'confirmed');
 
         } elseif ($status === 'cancelled') {
+            // Jika rental sebelumnya cancel_requested (refund), update status refund menjadi approved
+            if ($rental['status'] === 'cancel_requested') {
+                $stmtRefund = $db->prepare("UPDATE refunds SET status = 'approved' WHERE rental_id = ? AND status = 'requested'");
+                $stmtRefund->execute([$id]);
+            }
+
             $rentalModel->updateStatus($id, 'cancelled');
             // Ubah status mobil ke available
             $carModel->updateStatus($carId, 'available');
