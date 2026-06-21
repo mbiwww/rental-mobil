@@ -653,6 +653,94 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'delete_bank_account
     exit;
 }
 
+// ==========================================
+// AKSI 17: SETUJUI REFUND DENGAN BUKTI TRANSFER (POST)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'approve_refund') {
+    $id = intval($_POST['rental_id'] ?? 0);
+
+    if ($id <= 0) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('ID rental tidak valid.'));
+        exit;
+    }
+
+    // Ambil data rental
+    $rental = $rentalModel->getById($id);
+    if (!$rental) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Transaksi tidak ditemukan.'));
+        exit;
+    }
+
+    // Pastikan rental berstatus cancel_requested
+    if ($rental['status'] !== 'cancel_requested') {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Transaksi ini tidak dalam status permintaan pembatalan.'));
+        exit;
+    }
+
+    // Validasi file bukti transfer refund (wajib)
+    if (!isset($_FILES['refund_proof']) || $_FILES['refund_proof']['error'] !== UPLOAD_ERR_OK) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Bukti transfer refund wajib diunggah!'));
+        exit;
+    }
+
+    $file = $_FILES['refund_proof'];
+    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    $fileType = mime_content_type($file['tmp_name']);
+
+    if (!in_array($fileType, $allowedTypes)) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Format gambar tidak valid. Hanya JPG, JPEG, dan PNG yang diperbolehkan.'));
+        exit;
+    }
+
+    if ($file['size'] > 5 * 1024 * 1024) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Ukuran file gambar terlalu besar. Maksimal 5MB.'));
+        exit;
+    }
+
+    $uploadDir = '../assets/uploads/refunds/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $newFilename = uniqid('refund_') . '.' . $ext;
+    $targetPath = $uploadDir . $newFilename;
+
+    if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Gagal mengunggah bukti transfer refund.'));
+        exit;
+    }
+
+    $carId = (int)$rental['car_id'];
+    $db->beginTransaction();
+
+    try {
+        // 1. Update refund record: set proof image dan status approved
+        $stmtRefund = $db->prepare("UPDATE refunds SET refund_proof_image = ?, status = 'approved' WHERE rental_id = ? AND status = 'requested'");
+        $stmtRefund->execute([$newFilename, $id]);
+
+        // 2. Update rental status ke cancelled
+        $rentalModel->updateStatus($id, 'cancelled');
+
+        // 3. Ubah status mobil ke available
+        $carModel->updateStatus($carId, 'available');
+
+        // 4. Tolak pembayaran terkait
+        $paymentModel->updateStatus($id, 'rejected');
+
+        $db->commit();
+        header('Location: ../admin/transaksi.php?status=success&msg=' . urlencode('Refund berhasil disetujui dan bukti transfer telah diunggah!'));
+    } catch (Exception $e) {
+        $db->rollBack();
+        // Hapus file yang sudah terupload jika transaksi gagal
+        if (file_exists($targetPath)) {
+            @unlink($targetPath);
+        }
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Gagal memproses refund: ' . $e->getMessage()));
+    }
+    exit;
+}
+
 // Jika request tidak dikenali, redirect kembali
 header('Location: ../admin/armada.php');
 exit;
