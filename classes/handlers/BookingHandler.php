@@ -332,9 +332,17 @@ class BookingHandler extends BaseHandler
         $rentalId     = (int) ($_POST['rental_id'] ?? 0);
         $reasonOption = trim($_POST['reason_option'] ?? '');
         $reasonDetail = trim($_POST['reason_detail'] ?? '');
+        $refundBankName      = trim($_POST['refund_bank_name'] ?? '');
+        $refundAccountNumber = trim($_POST['refund_account_number'] ?? '');
+        $refundAccountHolder = trim($_POST['refund_account_holder'] ?? '');
 
         if (!$rentalId || empty($reasonOption)) {
             $this->flashError('ID rental dan alasan pembatalan wajib diisi.');
+            $this->redirect('../pages/dashboard.php');
+        }
+
+        if (empty($refundBankName) || empty($refundAccountNumber) || empty($refundAccountHolder)) {
+            $this->flashError('Data rekening tujuan refund wajib diisi lengkap (nama nasabah, nama bank, nomor rekening).');
             $this->redirect('../pages/dashboard.php');
         }
 
@@ -355,10 +363,10 @@ class BookingHandler extends BaseHandler
         try {
             // 1. Simpan alasan refund ke tabel refunds
             $stmt = $this->db->prepare("
-                INSERT INTO refunds (rental_id, reason_option, reason_detail, status)
-                VALUES (?, ?, ?, 'requested')
+                INSERT INTO refunds (rental_id, reason_option, reason_detail, refund_bank_name, refund_account_number, refund_account_holder, status)
+                VALUES (?, ?, ?, ?, ?, ?, 'requested')
             ");
-            $stmt->execute([$rentalId, $reasonOption, $reasonDetail]);
+            $stmt->execute([$rentalId, $reasonOption, $reasonDetail, $refundBankName, $refundAccountNumber, $refundAccountHolder]);
 
             // 2. Ubah status rental menjadi cancel_requested
             $this->rentalModel->updateStatus($rentalId, 'cancel_requested');
