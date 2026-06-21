@@ -202,12 +202,23 @@ $activePage = 'transaksi';
             color: #333;
         }
         .proof-img-container {
-            border: 1px dashed #ddd;
-            border-radius: 12px;
-            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
             text-align: center;
             background-color: #f8f9fa;
-            margin-top: 10px;
+            margin-top: 8px;
+        }
+        .proof-img {
+            max-height: 160px;
+            max-width: 100%;
+            object-fit: contain;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease;
+        }
+        .proof-img:hover {
+            transform: scale(1.02);
         }
         
         /* Custom styles for transaction page main tabs */
