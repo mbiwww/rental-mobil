@@ -217,6 +217,22 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                       $days = (int) ((strtotime($r['end_date']) - strtotime($r['start_date'])) / 86400);
                       if ($days <= 0) $days = 1;
 
+                      // Hitung deadline pengembalian kendaraan
+                      $deadlineText = '';
+                      $isOverdue = false;
+                      if (in_array($r['status'], ['cancelled', 'cancel_requested'])) {
+                          // Dibatalkan / refund — tidak ada deadline
+                          $deadlineText = '-';
+                      } elseif (!empty($r['started_at'])) {
+                          // Deadline = started_at + (hari × 24 jam)
+                          $deadlineTimestamp = strtotime($r['started_at']) + ($days * 86400);
+                          $deadlineText = date('d M Y, H:i', $deadlineTimestamp) . ' WIB';
+                          $isOverdue = (time() > $deadlineTimestamp) && in_array($r['status'], ['ongoing']);
+                      } else {
+                          // Belum dimulai — tampilkan end_date pukul 23:59
+                          $deadlineText = date('d M Y', strtotime($r['end_date'])) . ', 23:59 WIB';
+                      }
+
                       // Determine visual configurations based on status
                       // Statuses: 'pending','confirmed','ongoing','completed','cancel_requested','cancelled'
                       $statusConfig = match($r['status']) {
@@ -353,6 +369,8 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                               data-payment-proof="<?= htmlspecialchars($p['proof_image'] ?? '') ?>"
                               data-created-at="<?= date('d M Y H:i', strtotime($r['created_at'])) ?>"
                               data-allow-refund="<?= $statusConfig['allow_refund'] ? '1' : '0' ?>"
+                              data-deadline="<?= htmlspecialchars($deadlineText) ?>"
+                              data-is-overdue="<?= $isOverdue ? '1' : '0' ?>"
                             >
                               Detail
                             </button>
@@ -576,6 +594,13 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                   <span class="material-symbols-outlined text-slate-400" style="font-size:18px">schedule</span>
                   <span class="text-sm text-[#0b2b4a]" id="detailDuration"></span>
                 </div>
+                <div class="flex items-center gap-2 mt-1 pt-2 border-t border-slate-200/60">
+                  <span class="material-symbols-outlined text-amber-500" style="font-size:18px">alarm</span>
+                  <div>
+                    <p class="text-[10px] text-slate-400 leading-none mb-0.5">Deadline Pengembalian</p>
+                    <span class="text-sm font-semibold" id="detailDeadline"></span>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="bg-slate-50 rounded-xl p-4">
@@ -769,6 +794,17 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
           // Dates & Location
           document.getElementById('detailDates').textContent = d.startDate + ' — ' + d.endDate;
           document.getElementById('detailDuration').textContent = d.days + ' Hari';
+
+          // Deadline pengembalian
+          var deadlineEl = document.getElementById('detailDeadline');
+          deadlineEl.textContent = d.deadline;
+          if (d.isOverdue === '1') {
+            deadlineEl.className = 'text-sm font-semibold text-red-500';
+            deadlineEl.textContent = d.deadline + ' (Terlambat!)';
+          } else {
+            deadlineEl.className = 'text-sm font-semibold text-[#0b2b4a]';
+          }
+
           document.getElementById('detailPickup').textContent = d.pickup;
           document.getElementById('detailDropoff').textContent = d.dropoff;
 
