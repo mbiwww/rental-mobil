@@ -384,6 +384,9 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                               data-refund-status="<?= htmlspecialchars($refund['status'] ?? '') ?>"
                               data-refund-date="<?= $refund ? date('d M Y H:i', strtotime($refund['requested_at'])) : '' ?>"
                               data-refund-proof="<?= htmlspecialchars($refund['refund_proof_image'] ?? '') ?>"
+                              data-refund-bank-name="<?= htmlspecialchars($refund['refund_bank_name'] ?? '') ?>"
+                              data-refund-account-number="<?= htmlspecialchars($refund['refund_account_number'] ?? '') ?>"
+                              data-refund-account-holder="<?= htmlspecialchars($refund['refund_account_holder'] ?? '') ?>"
                             >
                               Detail
                             </button>
@@ -675,6 +678,15 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
               <div class="flex justify-between"><span class="text-slate-500">Status Refund</span><span class="font-medium" id="detailRefundStatus"></span></div>
               <div class="flex justify-between"><span class="text-slate-500">Tanggal Pengajuan</span><span class="text-[#0b2b4a] font-medium" id="detailRefundDate"></span></div>
             </div>
+            <!-- Rekening Tujuan Refund -->
+            <div id="detailRefundBankSection" class="mt-3 pt-3 border-t border-amber-200/50 hidden">
+              <p class="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-2">Rekening Tujuan Refund</p>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between"><span class="text-slate-500">Nama Nasabah</span><span class="text-[#0b2b4a] font-medium" id="detailRefundAccountHolder"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Nama Bank</span><span class="text-[#0b2b4a] font-medium" id="detailRefundBankName"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Nomor Rekening</span><span class="text-[#0b2b4a] font-medium" id="detailRefundAccountNumber"></span></div>
+              </div>
+            </div>
             <!-- Bukti Refund (jika admin sudah upload) -->
             <div id="detailRefundProofSection" class="mt-3 pt-3 border-t border-amber-200/50 hidden">
               <p class="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-2">Bukti Pengembalian Dana</p>
@@ -704,10 +716,32 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                 </select>
               </div>
               <div class="mb-4 hidden" id="reasonDetailContainer">
-                <label for="reasonDetail" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Detail Alasan & Rekening Refund <span class="text-red-500">*</span></label>
-                <textarea name="reason_detail" id="reasonDetail" rows="3" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" placeholder="Tulis rincian alasan dan nomor rekening Anda untuk pengembalian dana"></textarea>
+                <label for="reasonDetail" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Detail Alasan <span class="text-red-500">*</span></label>
+                <textarea name="reason_detail" id="reasonDetail" rows="3" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" placeholder="Tulis rincian alasan pembatalan Anda"></textarea>
               </div>
-              <button type="submit" class="w-full px-5 py-3 rounded-xl bg-red-600 text-white font-semibold shadow-md hover:bg-red-700 hover:-translate-y-0.5 transition-all">
+
+              <!-- Tujuan Transfer Refund -->
+              <div class="bg-blue-50 rounded-xl p-4 mb-4 border border-blue-200/50">
+                <h6 class="text-xs font-semibold uppercase tracking-wider text-blue-600 mb-3 flex items-center gap-1.5">
+                  <span class="material-symbols-outlined" style="font-size:16px">account_balance</span>
+                  Tujuan Transfer Refund <span class="text-red-500">*</span>
+                </h6>
+                <p class="text-xs text-slate-500 mb-3">Masukkan rekening Anda untuk penerimaan dana refund</p>
+                <div class="mb-3">
+                  <label for="refundAccountHolder" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Nama Nasabah <span class="text-red-500">*</span></label>
+                  <input type="text" name="refund_account_holder" id="refundAccountHolder" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all refund-transfer-field" placeholder="Contoh: Budi Santoso" required>
+                </div>
+                <div class="mb-3">
+                  <label for="refundBankName" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Nama Bank <span class="text-red-500">*</span></label>
+                  <input type="text" name="refund_bank_name" id="refundBankName" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all refund-transfer-field" placeholder="Contoh: BCA, Mandiri, BNI, BRI" required>
+                </div>
+                <div>
+                  <label for="refundAccountNumber" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Nomor Rekening <span class="text-red-500">*</span></label>
+                  <input type="text" name="refund_account_number" id="refundAccountNumber" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all refund-transfer-field" placeholder="Contoh: 1234567890" required>
+                </div>
+              </div>
+
+              <button type="submit" id="btnSubmitRefund" class="w-full px-5 py-3 rounded-xl bg-red-600 text-white font-semibold shadow-md hover:bg-red-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0" disabled>
                 <i class="bi bi-check2-circle mr-2"></i>Kirim Pengajuan Refund
               </button>
             </form>
@@ -901,6 +935,17 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
             // Tanggal pengajuan
             document.getElementById('detailRefundDate').textContent = d.refundDate;
 
+            // Rekening tujuan refund (tampil jika ada)
+            var refundBankSection = document.getElementById('detailRefundBankSection');
+            if (d.refundBankName && d.refundAccountNumber && d.refundAccountHolder) {
+              document.getElementById('detailRefundAccountHolder').textContent = d.refundAccountHolder;
+              document.getElementById('detailRefundBankName').textContent = d.refundBankName;
+              document.getElementById('detailRefundAccountNumber').textContent = d.refundAccountNumber;
+              refundBankSection.classList.remove('hidden');
+            } else {
+              refundBankSection.classList.add('hidden');
+            }
+
             // Bukti refund (jika admin sudah upload)
             var refundProofSection = document.getElementById('detailRefundProofSection');
             var refundProofImg = document.getElementById('detailRefundProofImage');
@@ -927,6 +972,10 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
           var reasonOption = document.getElementById('reasonOption');
           var reasonDetail = document.getElementById('reasonDetail');
           var reasonDetailContainer = document.getElementById('reasonDetailContainer');
+          var refundAccountHolder = document.getElementById('refundAccountHolder');
+          var refundBankName = document.getElementById('refundBankName');
+          var refundAccountNumber = document.getElementById('refundAccountNumber');
+          var btnSubmitRefund = document.getElementById('btnSubmitRefund');
           if (reasonOption) {
             reasonOption.value = "";
           }
@@ -937,6 +986,10 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
             reasonDetail.value = "";
             reasonDetail.removeAttribute('required');
           }
+          if (refundAccountHolder) refundAccountHolder.value = '';
+          if (refundBankName) refundBankName.value = '';
+          if (refundAccountNumber) refundAccountNumber.value = '';
+          if (btnSubmitRefund) btnSubmitRefund.disabled = true;
 
           detailModal.show();
         });
@@ -959,6 +1012,25 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
           }
         });
       }
+
+      // Enable/disable refund submit button based on transfer fields
+      var refundTransferFields = document.querySelectorAll('.refund-transfer-field');
+      var btnSubmitRefund = document.getElementById('btnSubmitRefund');
+
+      function checkRefundTransferFields() {
+        if (!btnSubmitRefund) return;
+        var allFilled = true;
+        refundTransferFields.forEach(function(field) {
+          if (!field.value.trim()) {
+            allFilled = false;
+          }
+        });
+        btnSubmitRefund.disabled = !allFilled;
+      }
+
+      refundTransferFields.forEach(function(field) {
+        field.addEventListener('input', checkRefundTransferFields);
+      });
     });
 
     // -------------------------------------------------------
