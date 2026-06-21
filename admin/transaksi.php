@@ -355,6 +355,14 @@ $activePage = 'transaksi';
                                     $paymentBank = $p ? ($p['bank_name'] . ' - ' . $p['account_number'] . ' a/n ' . $p['account_holder']) : '';
                                     $paymentProof = $p ? $p['proof_image'] : '';
                                     $paymentPaidAt = $p && $p['paid_at'] ? date('d M Y H:i', strtotime($p['paid_at'])) : '';
+
+                                    // Fetch refund data jika ada
+                                    $refund = null;
+                                    if (in_array($r['status'], ['cancel_requested', 'cancelled'])) {
+                                        $stmtRefund = $db->prepare("SELECT * FROM refunds WHERE rental_id = ? ORDER BY requested_at DESC LIMIT 1");
+                                        $stmtRefund->execute([$r['id']]);
+                                        $refund = $stmtRefund->fetch(PDO::FETCH_ASSOC);
+                                    }
                                     
                                     // Duration calculation
                                     $days = (int) (strtotime($r['end_date']) - strtotime($r['start_date'])) / 86400;
@@ -448,6 +456,14 @@ $activePage = 'transaksi';
                                                data-pay-bank="<?= htmlspecialchars($paymentBank) ?>"
                                                data-pay-proof="<?= htmlspecialchars($paymentProof) ?>"
                                                data-pay-paidat="<?= htmlspecialchars($paymentPaidAt) ?>"
+                                               data-refund-reason="<?= htmlspecialchars($refund['reason_option'] ?? '') ?>"
+                                               data-refund-detail="<?= htmlspecialchars($refund['reason_detail'] ?? '') ?>"
+                                               data-refund-status="<?= htmlspecialchars($refund['status'] ?? '') ?>"
+                                               data-refund-date="<?= $refund ? date('d M Y H:i', strtotime($refund['requested_at'])) : '' ?>"
+                                               data-refund-proof="<?= htmlspecialchars($refund['refund_proof_image'] ?? '') ?>"
+                                               data-refund-bank-name="<?= htmlspecialchars($refund['refund_bank_name'] ?? '') ?>"
+                                               data-refund-account-number="<?= htmlspecialchars($refund['refund_account_number'] ?? '') ?>"
+                                               data-refund-account-holder="<?= htmlspecialchars($refund['refund_account_holder'] ?? '') ?>"
                                             >
                                                <i class="bi bi-eye fs-5"></i>
                                             </button>
@@ -466,7 +482,7 @@ $activePage = 'transaksi';
                                                     <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');"><i class="bi bi-check2-all fs-5"></i></a>
                                                 <?php endif; ?>
                                             <?php elseif ($r['status'] === 'cancel_requested'): ?>
-                                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Setujui Pembatalan" onclick="return confirm('Apakah Anda yakin ingin menyetujui pembatalan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
+                                                <span class="badge bg-warning text-dark px-2 py-1 rounded-pill" style="font-size: 11px;"><i class="bi bi-exclamation-circle me-1"></i>Perlu Proses Refund</span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
@@ -897,6 +913,84 @@ $activePage = 'transaksi';
                             </div>
                         </div>
                     </div>
+
+                    <!-- Refund Info Section (hanya tampil jika ada data refund) -->
+                    <div class="row mt-4" id="refund-info-section" style="display:none;">
+                        <div class="col-12">
+                            <div class="detail-section-title"><i class="bi bi-arrow-return-left me-2"></i>Informasi & Bukti Refund</div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="row">
+                                        <div class="col-12 detail-item">
+                                            <div class="detail-label">Alasan Pembatalan</div>
+                                            <div id="det-refund-reason" class="detail-value">-</div>
+                                        </div>
+                                        <div class="col-12 detail-item" id="det-refund-detail-row">
+                                            <div class="detail-label">Detail Alasan</div>
+                                            <div id="det-refund-detail" class="detail-value">-</div>
+                                        </div>
+                                        <div class="col-6 detail-item">
+                                            <div class="detail-label">Status Refund</div>
+                                            <div id="det-refund-status" class="detail-value">-</div>
+                                        </div>
+                                        <div class="col-6 detail-item">
+                                            <div class="detail-label">Tanggal Pengajuan</div>
+                                            <div id="det-refund-date" class="detail-value">-</div>
+                                        </div>
+                                    </div>
+                                    <!-- Rekening Tujuan Refund -->
+                                    <div class="mt-3 pt-3 border-top" id="det-refund-bank-section">
+                                        <div class="detail-label fw-semibold text-primary mb-2"><i class="bi bi-bank me-1"></i>Rekening Tujuan Refund Pelanggan</div>
+                                        <div class="row">
+                                            <div class="col-12 detail-item">
+                                                <div class="detail-label">Nama Nasabah</div>
+                                                <div id="det-refund-account-holder" class="detail-value">-</div>
+                                            </div>
+                                            <div class="col-6 detail-item">
+                                                <div class="detail-label">Nama Bank</div>
+                                                <div id="det-refund-bank-name" class="detail-value">-</div>
+                                            </div>
+                                            <div class="col-6 detail-item">
+                                                <div class="detail-label">Nomor Rekening</div>
+                                                <div id="det-refund-account-number" class="detail-value fw-bold font-monospace">-</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <!-- Bukti Refund (jika sudah diupload admin) -->
+                                    <div class="detail-label text-start">Bukti Transfer Refund</div>
+                                    <div id="refund-proof-missing" class="py-4 bg-light rounded-3 text-muted border text-center small mt-2">
+                                        <i class="bi bi-image me-1"></i>Bukti transfer refund belum diunggah oleh admin.
+                                    </div>
+                                    <div id="refund-proof-image-container" class="proof-img-container d-none">
+                                        <a id="det-refund-proof-link" href="#" target="_blank" title="Klik untuk memperbesar">
+                                            <img id="det-refund-proof-img" class="proof-img" src="" alt="Bukti Transfer Refund">
+                                        </a>
+                                    </div>
+                                    <!-- Form Upload Bukti Refund (hanya tampil jika cancel_requested & belum ada bukti) -->
+                                    <div id="refund-upload-section" class="mt-3 d-none">
+                                        <form id="formUploadRefundProof" action="../handlers/admin_handler.php" method="POST" enctype="multipart/form-data">
+                                            <input type="hidden" name="action" value="approve_refund">
+                                            <input type="hidden" name="rental_id" id="refund-upload-rental-id" value="">
+                                            <div class="mb-2">
+                                                <label class="form-label fw-semibold text-danger small"><i class="bi bi-upload me-1"></i>Upload Bukti Transfer Refund <span class="text-danger">*</span></label>
+                                                <input type="file" name="refund_proof" class="form-control form-control-sm" accept="image/jpeg,image/jpg,image/png" required id="inputRefundProof">
+                                                <div class="form-text text-muted">Format: JPG, JPEG, PNG. Maks 5MB.</div>
+                                            </div>
+                                            <!-- Preview gambar -->
+                                            <div id="refund-proof-preview" class="mb-2 d-none text-center">
+                                                <img id="refund-proof-preview-img" src="" alt="Preview" class="proof-img" style="max-height:120px;">
+                                            </div>
+                                            <button type="submit" class="btn btn-danger btn-sm w-100 fw-semibold rounded-3" id="btnSubmitRefundProof">
+                                                <i class="bi bi-check-circle me-1"></i>Setujui Refund & Upload Bukti
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <!-- Dynamic Footer Actions inside the Modal -->
                 <div class="modal-footer border-0 bg-light p-4 rounded-bottom-4 gap-2" id="modal-footer-actions">
@@ -965,6 +1059,16 @@ $activePage = 'transaksi';
                     const payBank = this.getAttribute('data-pay-bank');
                     const payProof = this.getAttribute('data-pay-proof');
                     const payPaidAt = this.getAttribute('data-pay-paidat');
+
+                    // Refund data
+                    const refundReason = this.getAttribute('data-refund-reason');
+                    const refundDetail = this.getAttribute('data-refund-detail');
+                    const refundStatus = this.getAttribute('data-refund-status');
+                    const refundDate = this.getAttribute('data-refund-date');
+                    const refundProof = this.getAttribute('data-refund-proof');
+                    const refundBankName = this.getAttribute('data-refund-bank-name');
+                    const refundAccountNumber = this.getAttribute('data-refund-account-number');
+                    const refundAccountHolder = this.getAttribute('data-refund-account-holder');
 
                     // Populate fields — Customer
                     document.getElementById('lbl-trx-id').textContent = trx;
@@ -1109,6 +1213,79 @@ $activePage = 'transaksi';
                         }
                     }
 
+                    // ======= Refund Info Section =======
+                    const refundInfoSection = document.getElementById('refund-info-section');
+                    const refundDetailRow = document.getElementById('det-refund-detail-row');
+                    const refundBankSection = document.getElementById('det-refund-bank-section');
+                    const refundProofMissing = document.getElementById('refund-proof-missing');
+                    const refundProofImageContainer = document.getElementById('refund-proof-image-container');
+                    const refundUploadSection = document.getElementById('refund-upload-section');
+
+                    if (refundReason) {
+                        refundInfoSection.style.display = '';
+
+                        // Populate refund info
+                        document.getElementById('det-refund-reason').textContent = refundReason;
+
+                        if (refundDetail) {
+                            refundDetailRow.style.display = '';
+                            document.getElementById('det-refund-detail').textContent = refundDetail;
+                        } else {
+                            refundDetailRow.style.display = 'none';
+                        }
+
+                        // Status refund badge
+                        const refundStatusEl = document.getElementById('det-refund-status');
+                        refundStatusEl.className = 'detail-value fw-bold ';
+                        if (refundStatus === 'requested') {
+                            refundStatusEl.classList.add('text-warning');
+                            refundStatusEl.textContent = 'MENUNGGU PERSETUJUAN';
+                        } else if (refundStatus === 'approved') {
+                            refundStatusEl.classList.add('text-success');
+                            refundStatusEl.textContent = 'DISETUJUI';
+                        } else if (refundStatus === 'rejected') {
+                            refundStatusEl.classList.add('text-danger');
+                            refundStatusEl.textContent = 'DITOLAK';
+                        } else {
+                            refundStatusEl.textContent = refundStatus || '-';
+                        }
+
+                        document.getElementById('det-refund-date').textContent = refundDate || '-';
+
+                        // Rekening tujuan refund
+                        if (refundBankName || refundAccountNumber || refundAccountHolder) {
+                            refundBankSection.style.display = '';
+                            document.getElementById('det-refund-account-holder').textContent = refundAccountHolder || '-';
+                            document.getElementById('det-refund-bank-name').textContent = refundBankName || '-';
+                            document.getElementById('det-refund-account-number').textContent = refundAccountNumber || '-';
+                        } else {
+                            refundBankSection.style.display = 'none';
+                        }
+
+                        // Bukti refund image
+                        if (refundProof) {
+                            refundProofMissing.classList.add('d-none');
+                            refundProofImageContainer.classList.remove('d-none');
+                            refundUploadSection.classList.add('d-none');
+                            const refundProofPath = '../assets/uploads/refunds/' + refundProof;
+                            document.getElementById('det-refund-proof-img').src = refundProofPath;
+                            document.getElementById('det-refund-proof-link').href = refundProofPath;
+                        } else {
+                            refundProofImageContainer.classList.add('d-none');
+                            // Tampilkan form upload jika status cancel_requested
+                            if (status === 'cancel_requested') {
+                                refundProofMissing.classList.add('d-none');
+                                refundUploadSection.classList.remove('d-none');
+                                document.getElementById('refund-upload-rental-id').value = id;
+                            } else {
+                                refundProofMissing.classList.remove('d-none');
+                                refundUploadSection.classList.add('d-none');
+                            }
+                        }
+                    } else {
+                        refundInfoSection.style.display = 'none';
+                    }
+
                     // Dynamically generate footer action buttons inside modal
                     const footerActions = document.getElementById('modal-footer-actions');
                     footerActions.innerHTML = ''; // Reset
@@ -1148,11 +1325,11 @@ $activePage = 'transaksi';
                             `;
                         }
                     } else if (status === 'cancel_requested') {
-                        footerHtml += `
-                            <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=cancelled" class="btn btn-danger px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menyetujui pembatalan pesanan ini?');">
-                                <i class="bi bi-x-circle me-1"></i> Setujui Pembatalan
-                            </a>
-                        `;
+                        if (!refundProof) {
+                            footerHtml += `
+                                <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Upload bukti transfer refund di atas untuk menyetujui pembatalan.</span>
+                            `;
+                        }
                     }
 
                     footerActions.innerHTML = footerHtml;
@@ -1190,6 +1367,36 @@ $activePage = 'transaksi';
                     const bsAlert = bootstrap.Alert.getOrCreateInstance(alertEl);
                     bsAlert.close();
                 }, 5000);
+            }
+
+            // Refund proof image preview on file select
+            const inputRefundProof = document.getElementById('inputRefundProof');
+            if (inputRefundProof) {
+                inputRefundProof.addEventListener('change', function () {
+                    const previewContainer = document.getElementById('refund-proof-preview');
+                    const previewImg = document.getElementById('refund-proof-preview-img');
+                    if (this.files && this.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            previewImg.src = e.target.result;
+                            previewContainer.classList.remove('d-none');
+                        };
+                        reader.readAsDataURL(this.files[0]);
+                    } else {
+                        previewContainer.classList.add('d-none');
+                        previewImg.src = '';
+                    }
+                });
+            }
+
+            // Confirm before submitting refund approval form
+            const formRefundProof = document.getElementById('formUploadRefundProof');
+            if (formRefundProof) {
+                formRefundProof.addEventListener('submit', function (e) {
+                    if (!confirm('Apakah Anda yakin ingin menyetujui refund dan mengunggah bukti transfer ini?')) {
+                        e.preventDefault();
+                    }
+                });
             }
         });
     </script>
