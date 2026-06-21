@@ -277,11 +277,11 @@ $activePage = 'transaksi';
             </div>
 
             <!-- Notifikasi Alert -->
-            <?php if (isset($_GET['status'])): ?>
+            <?php if (isset($_GET['status']) && in_array($_GET['status'], ['success', 'error']) && isset($_GET['msg'])): ?>
                 <div class="alert alert-<?= $_GET['status'] === 'success' ? 'success' : 'danger' ?> alert-dismissible fade show shadow-sm mb-4" role="alert">
                     <div class="d-flex align-items-center">
                         <i class="bi <?= $_GET['status'] === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger' ?> me-2 fs-5"></i>
-                        <div><?= htmlspecialchars($_GET['msg'] ?? '') ?></div>
+                        <div><?= htmlspecialchars($_GET['msg']) ?></div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
