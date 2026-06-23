@@ -57,6 +57,7 @@ unset($r);
         .table tbody tr:hover { background-color: #f9fbff; }
         .badge-overdue { background: #f8d7da; color: #842029; }
         .badge-ontime { background: #d1e7dd; color: #0f5132; }
+        .badge-ongoing { background: #cfe2ff; color: #084298; }
         .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
         .detail-row:last-child { border-bottom: none; }
         .detail-label { color: #888; font-size: 13px; }
@@ -155,7 +156,7 @@ unset($r);
                                             <span class="badge badge-overdue px-3 py-2 rounded-3"><i class="bi bi-exclamation-triangle me-1"></i>Terlambat <?= $penalty['late_hours'] ?> jam</span>
                                             <br><small class="text-danger fw-bold">Denda: Rp <?= number_format($penalty['penalty_fee'], 0, ',', '.') ?></small>
                                         <?php else: ?>
-                                            <span class="badge badge-ontime px-3 py-2 rounded-3"><i class="bi bi-clock me-1"></i>Tepat Waktu</span>
+                                            <span class="badge badge-ongoing px-3 py-2 rounded-3"><i class="bi bi-hourglass-split me-1"></i>Belum Jatuh Tempo</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="fw-bold text-primary">Rp <?= number_format($r['total_price'], 0, ',', '.') ?></td>
@@ -300,7 +301,7 @@ unset($r);
                     document.getElementById('dr-status').innerHTML = '<span class="badge badge-overdue px-2 py-1 rounded-3">Terlambat ' + this.dataset.lateHours + ' jam</span>';
                     document.getElementById('dr-penalty').innerHTML = '<span class="text-danger fw-bold">Rp ' + this.dataset.penalty + '</span>';
                 } else {
-                    document.getElementById('dr-status').innerHTML = '<span class="badge badge-ontime px-2 py-1 rounded-3">Tepat Waktu</span>';
+                    document.getElementById('dr-status').innerHTML = '<span class="badge badge-ongoing px-2 py-1 rounded-3"><i class="bi bi-hourglass-split me-1"></i>Belum Jatuh Tempo</span>';
                     document.getElementById('dr-penalty').textContent = 'Tidak ada';
                 }
                 new bootstrap.Modal(document.getElementById('modalDetailReturn')).show();
