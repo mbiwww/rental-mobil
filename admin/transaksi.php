@@ -177,6 +177,7 @@ $activePage = 'transaksi';
         .btn-view { color: #0d6efd; }
         .btn-check { color: #198754; }
         .btn-cancel { color: #dc3545; }
+        .btn-reject { color: #ffc107; }
 
         /* Modal Specific Styles */
         .detail-section-title {
@@ -471,6 +472,9 @@ $activePage = 'transaksi';
                                             <!-- Inline Fast Actions -->
                                             <?php if ($r['status'] === 'pending'): ?>
                                                 <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=confirmed" class="btn-action btn-check" title="Konfirmasi Pembayaran" onclick="return confirm('Konfirmasi pembayaran dan setujui pesanan ini?');"><i class="bi bi-check-circle fs-5"></i></a>
+                                                <?php if ($p && $p['status'] === 'pending'): ?>
+                                                    <a href="../handlers/admin_handler.php?action=reject_payment&id=<?= $r['id'] ?>" class="btn-action btn-reject" title="Tolak Pembayaran (Bukti Tidak Sesuai)" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran ini? Pelanggan harus mengunggah bukti baru.');"><i class="bi bi-exclamation-octagon fs-5"></i></a>
+                                                <?php endif; ?>
                                                 <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Batalkan Pesanan" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
                                             <?php elseif ($r['status'] === 'confirmed'): ?>
                                                 <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=ongoing" class="btn-action text-info" title="Mulai Sewa (Mobil Diambil)" onclick="return confirm('Mulai masa sewa mobil? Waktu sewa dimulai dari sekarang.');"><i class="bi bi-play-circle fs-5"></i></a>
@@ -1297,8 +1301,17 @@ $activePage = 'transaksi';
                             <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=confirmed" class="btn btn-success px-4 rounded-3" onclick="return confirm('Konfirmasi pembayaran dan setujui pesanan ini?');">
                                 <i class="bi bi-check-circle me-1"></i> Konfirmasi Bayar & Setujui
                             </a>
+                        `;
+                        if (hasPayment && payStatus === 'pending') {
+                            footerHtml += `
+                                <a href="../handlers/admin_handler.php?action=reject_payment&id=${id}" class="btn btn-warning text-dark px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran ini? Pelanggan harus mengunggah bukti baru.');">
+                                    <i class="bi bi-exclamation-octagon me-1"></i> Tolak Bukti Pembayaran
+                                </a>
+                            `;
+                        }
+                        footerHtml += `
                             <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=cancelled" class="btn btn-danger px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menolak & membatalkan pesanan ini?');">
-                                <i class="bi bi-x-circle me-1"></i> Tolak / Batalkan
+                                <i class="bi bi-x-circle me-1"></i> Tolak & Batalkan Pesanan
                             </a>
                         `;
                     } else if (status === 'confirmed') {

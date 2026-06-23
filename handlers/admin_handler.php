@@ -741,6 +741,45 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'approve_refund') {
     exit;
 }
 
+// ==========================================
+// AKSI 18: TOLAK BUKTI PEMBAYARAN (GET)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'reject_payment') {
+    $id = intval($_GET['id'] ?? 0);
+
+    if ($id <= 0) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('ID rental tidak valid.'));
+        exit;
+    }
+
+    // Ambil data rental
+    $rental = $rentalModel->getById($id);
+    if (!$rental) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Transaksi tidak ditemukan.'));
+        exit;
+    }
+
+    // Pastikan rental berstatus pending
+    if ($rental['status'] !== 'pending') {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Transaksi ini tidak sedang menunggu pembayaran.'));
+        exit;
+    }
+
+    $db->beginTransaction();
+
+    try {
+        // 1. Ubah status pembayaran menjadi rejected
+        $paymentModel->updateStatus($id, 'rejected');
+
+        $db->commit();
+        header('Location: ../admin/transaksi.php?status=success&msg=' . urlencode('Bukti pembayaran berhasil ditolak. Pelanggan harus mengunggah bukti baru.'));
+    } catch (Exception $e) {
+        $db->rollBack();
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Gagal menolak pembayaran: ' . $e->getMessage()));
+    }
+    exit;
+}
+
 // Jika request tidak dikenali, redirect kembali
 header('Location: ../admin/armada.php');
 exit;
