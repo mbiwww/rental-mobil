@@ -155,6 +155,23 @@ unset($r);
                                         <?php if ($penalty['is_overdue']): ?>
                                             <span class="badge badge-overdue px-3 py-2 rounded-3"><i class="bi bi-exclamation-triangle me-1"></i>Terlambat <?= $penalty['late_hours'] ?> jam</span>
                                             <br><small class="text-danger fw-bold">Denda: Rp <?= number_format($penalty['penalty_fee'], 0, ',', '.') ?></small>
+                                            <?php
+                                            $pStatusBadge = match($r['penalty_payment_status']) {
+                                                'unpaid' => 'bg-danger text-white',
+                                                'pending' => 'bg-warning text-dark',
+                                                'confirmed' => 'bg-success text-white',
+                                                'rejected' => 'bg-danger text-white',
+                                                default => 'bg-secondary text-white'
+                                            };
+                                            $pStatusLabel = match($r['penalty_payment_status']) {
+                                                'unpaid' => 'Denda: Belum Dibayar',
+                                                'pending' => 'Denda: Pending Verif',
+                                                'confirmed' => 'Denda: Lunas',
+                                                'rejected' => 'Denda: Ditolak',
+                                                default => 'Denda: Unknown'
+                                            };
+                                            ?>
+                                            <br><span class="badge <?= $pStatusBadge ?> px-2 py-1 rounded-3 mt-1" style="font-size: 11px;"><?= $pStatusLabel ?></span>
                                         <?php else: ?>
                                             <span class="badge badge-ongoing px-3 py-2 rounded-3"><i class="bi bi-hourglass-split me-1"></i>Belum Jatuh Tempo</span>
                                         <?php endif; ?>
@@ -172,13 +189,19 @@ unset($r);
                                             data-penalty="<?= number_format($penalty['penalty_fee'], 0, ',', '.') ?>"
                                             data-total="<?= number_format($r['total_price'], 0, ',', '.') ?>"
                                             data-rental-type="<?= $r['rental_type'] === 'with_driver' ? 'Dengan Sopir' : 'Lepas Kunci' ?>"
+                                            data-penalty-status="<?= htmlspecialchars($r['penalty_payment_status']) ?>"
                                             title="Detail"><i class="bi bi-eye me-1"></i>Detail</button>
-                                        <button type="button" class="btn btn-sm btn-success rounded-3 btn-proses-return"
-                                            data-id="<?= $r['id'] ?>" data-car="<?= htmlspecialchars($r['brand'] . ' ' . $r['model']) ?>"
-                                            data-customer="<?= htmlspecialchars($r['user_name']) ?>"
-                                            data-penalty="<?= number_format($penalty['penalty_fee'], 0, ',', '.') ?>"
-                                            data-overdue="<?= $penalty['is_overdue'] ? '1' : '0' ?>"
-                                            title="Proses Pengembalian"><i class="bi bi-check-lg me-1"></i>Kembalikan</button>
+                                        <?php if ($penalty['is_overdue'] && $r['penalty_payment_status'] !== 'confirmed'): ?>
+                                            <button type="button" class="btn btn-sm btn-secondary rounded-3" disabled
+                                                title="Menunggu Pembayaran & Verifikasi Denda"><i class="bi bi-lock-fill me-1"></i>Kembalikan</button>
+                                        <?php else: ?>
+                                            <button type="button" class="btn btn-sm btn-success rounded-3 btn-proses-return"
+                                                data-id="<?= $r['id'] ?>" data-car="<?= htmlspecialchars($r['brand'] . ' ' . $r['model']) ?>"
+                                                data-customer="<?= htmlspecialchars($r['user_name']) ?>"
+                                                data-penalty="<?= number_format($penalty['penalty_fee'], 0, ',', '.') ?>"
+                                                data-overdue="<?= $penalty['is_overdue'] ? '1' : '0' ?>"
+                                                title="Proses Pengembalian"><i class="bi bi-check-lg me-1"></i>Kembalikan</button>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -297,8 +320,15 @@ unset($r);
                 document.getElementById('dr-deadline').textContent = this.dataset.deadline;
                 document.getElementById('dr-total').textContent = 'Rp ' + this.dataset.total;
                 const isOverdue = this.dataset.overdue === '1';
+                const penaltyStatus = this.dataset.penaltyStatus || 'unpaid';
+                const statusLabels = {
+                    'unpaid': 'Belum Dibayar',
+                    'pending': 'Menunggu Verifikasi',
+                    'confirmed': 'Lunas',
+                    'rejected': 'Ditolak'
+                };
                 if (isOverdue) {
-                    document.getElementById('dr-status').innerHTML = '<span class="badge badge-overdue px-2 py-1 rounded-3">Terlambat ' + this.dataset.lateHours + ' jam</span>';
+                    document.getElementById('dr-status').innerHTML = '<span class="badge badge-overdue px-2 py-1 rounded-3">Terlambat ' + this.dataset.lateHours + ' jam (' + (statusLabels[penaltyStatus] || penaltyStatus) + ')</span>';
                     document.getElementById('dr-penalty').innerHTML = '<span class="text-danger fw-bold">Rp ' + this.dataset.penalty + '</span>';
                 } else {
                     document.getElementById('dr-status').innerHTML = '<span class="badge badge-ongoing px-2 py-1 rounded-3"><i class="bi bi-hourglass-split me-1"></i>Belum Jatuh Tempo</span>';

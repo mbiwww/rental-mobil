@@ -371,7 +371,15 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'update_rental_statu
         } elseif ($status === 'completed') {
             // Selesaikan sewa — hitung denda jika terlambat
             $penaltyInfo = $rentalModel->calculatePenalty($rental);
-            $penaltyFee  = (float) $penaltyInfo['penalty_fee'];
+
+            // Cek jika terlambat (overdue) dan denda belum lunas terverifikasi
+            if ($penaltyInfo['is_overdue'] && $rental['penalty_payment_status'] !== 'confirmed') {
+                $db->rollBack();
+                header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Penyewaan tidak dapat diselesaikan karena customer terlambat mengembalikan mobil dan denda belum lunas diverifikasi.'));
+                exit;
+            }
+
+            $penaltyFee = ($rental['penalty_fee'] > 0) ? (float)$rental['penalty_fee'] : (float)$penaltyInfo['penalty_fee'];
 
             // Simpan status completed + actual_return_at + penalty_fee
             $rentalModel->completeRental($id, $penaltyFee);
@@ -528,7 +536,15 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'return_rental') {
     try {
         // Hitung denda keterlambatan
         $penaltyInfo = $rentalModel->calculatePenalty($rental);
-        $penaltyFee  = (float) $penaltyInfo['penalty_fee'];
+
+        // Cek jika terlambat (overdue) dan denda belum lunas terverifikasi
+        if ($penaltyInfo['is_overdue'] && $rental['penalty_payment_status'] !== 'confirmed') {
+            $db->rollBack();
+            header('Location: ../admin/pengembalian.php?status=error&msg=' . urlencode('Pengembalian tidak dapat diproses karena customer terlambat mengembalikan mobil dan denda belum lunas diverifikasi.'));
+            exit;
+        }
+
+        $penaltyFee = ($rental['penalty_fee'] > 0) ? (float)$rental['penalty_fee'] : (float)$penaltyInfo['penalty_fee'];
 
         // Selesaikan rental
         $rentalModel->completeRental($id, $penaltyFee);

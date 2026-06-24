@@ -418,8 +418,8 @@ $activePage = 'transaksi';
                                             <?php if ($penaltyInfo['is_overdue']): ?>
                                                 <br><span class="badge bg-danger px-2 py-1 rounded-pill mt-1" style="font-size: 11px;"><i class="bi bi-exclamation-triangle me-1"></i>Terlambat <?= $penaltyInfo['late_hours'] ?> Jam</span>
                                             <?php endif; ?>
-                                            <?php if ($r['status'] === 'completed' && (float)$r['penalty_fee'] > 0): ?>
-                                                <br><span class="badge bg-danger px-2 py-1 rounded-pill mt-1" style="font-size: 11px;"><i class="bi bi-cash me-1"></i>Denda: Rp <?= number_format($r['penalty_fee'], 0, ',', '.') ?></span>
+                                            <?php if ($penaltyInfo['is_overdue'] || ($r['status'] === 'completed' && (float)$r['penalty_fee'] > 0)): ?>
+                                                <br><span class="badge bg-danger px-2 py-1 rounded-pill mt-1" style="font-size: 11px;"><i class="bi bi-cash me-1"></i>Denda: Rp <?= number_format($r['status'] === 'completed' ? $r['penalty_fee'] : $penaltyInfo['penalty_fee'], 0, ',', '.') ?></span>
                                                 <?php
                                                 $pStatusBadge = match($r['penalty_payment_status']) {
                                                     'unpaid' => 'bg-danger-subtle text-danger border border-danger-subtle',
@@ -501,7 +501,11 @@ $activePage = 'transaksi';
                                                 <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Batalkan Pesanan" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
                                             <?php elseif ($r['status'] === 'ongoing'): ?>
                                                 <?php if ($penaltyInfo['is_overdue']): ?>
-                                                    <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('⚠️ TERLAMBAT <?= $penaltyInfo['late_hours'] ?> JAM\n\nDenda: Rp <?= number_format($penaltyInfo['penalty_fee'], 0, ',', '.') ?> (<?= $penaltyInfo['late_hours'] ?> jam × Rp <?= number_format($penaltyRate, 0, ',', '.') ?>)\n\nSelesaikan sewa dan terapkan denda?');"><i class="bi bi-check2-all fs-5"></i></a>
+                                                    <?php if ($r['penalty_payment_status'] === 'confirmed'): ?>
+                                                        <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');"><i class="bi bi-check2-all fs-5"></i></a>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill" style="font-size: 11px;" title="Sewa tidak bisa diselesaikan sampai denda dibayar & dikonfirmasi"><i class="bi bi-lock-fill me-1"></i>Denda Belum Lunas</span>
+                                                    <?php endif; ?>
                                                 <?php else: ?>
                                                     <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');"><i class="bi bi-check2-all fs-5"></i></a>
                                                 <?php endif; ?>
@@ -1348,7 +1352,7 @@ $activePage = 'transaksi';
                     const penaltyProofLink = document.getElementById('det-penalty-proof-link');
                     const penaltyPayStatusEl = document.getElementById('det-penalty-pay-status');
 
-                    if (status === 'completed' && penaltyHours > 0) {
+                    if ((status === 'completed' || (status === 'ongoing' && isOverdue)) && penaltyHours > 0) {
                         penaltyProofSection.classList.remove('d-none');
                         
                         penaltyPayStatusEl.className = 'fw-bold';
@@ -1417,11 +1421,26 @@ $activePage = 'transaksi';
                         `;
                     } else if (status === 'ongoing') {
                         if (isOverdue) {
-                            footerHtml += `
-                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=completed" class="btn btn-success px-4 rounded-3" onclick="return confirm('⚠️ TERLAMBAT ${penaltyHours} JAM\\n\\nDenda: ${costPenalty} (${penaltyHours} jam × Rp ${formatRupiah(penaltyRate)})\\n\\nSelesaikan sewa dan terapkan denda?');">
-                                    <i class="bi bi-check2-all me-1"></i> Selesaikan Sewa + Denda
-                                </a>
-                            `;
+                            if (penaltyStatus === 'confirmed') {
+                                footerHtml += `
+                                    <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=completed" class="btn btn-success px-4 rounded-3" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');">
+                                        <i class="bi bi-check2-all me-1"></i> Selesaikan Sewa (Kembali)
+                                    </a>
+                                `;
+                            } else if (penaltyStatus === 'pending') {
+                                footerHtml += `
+                                    <a href="../handlers/admin_handler.php?action=confirm_penalty_payment&id=${id}" class="btn btn-success px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menyetujui pembayaran denda ini?');">
+                                        <i class="bi bi-check-circle me-1"></i> Setujui Denda Lunas
+                                    </a>
+                                    <a href="../handlers/admin_handler.php?action=reject_penalty_payment&id=${id}" class="btn btn-warning text-dark px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran denda ini?');">
+                                        <i class="bi bi-exclamation-octagon me-1"></i> Tolak Bukti Denda
+                                    </a>
+                                `;
+                            } else {
+                                footerHtml += `
+                                    <span class="text-danger small fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Menunggu pembayaran denda keterlambatan dari customer.</span>
+                                `;
+                            }
                         } else {
                             footerHtml += `
                                 <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=completed" class="btn btn-success px-4 rounded-3" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');">

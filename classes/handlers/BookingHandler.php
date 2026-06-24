@@ -405,10 +405,25 @@ class BookingHandler extends BaseHandler
             $this->redirect('../pages/dashboard.php');
         }
 
-        // Validasi status sewa (harus completed) dan penalty_fee > 0
-        if ($rental['status'] !== 'completed' || (float)$rental['penalty_fee'] <= 0) {
-            $this->flashError('Transaksi ini tidak memiliki denda keterlambatan.');
+        // Validasi status sewa (ongoing atau completed) dan denda keterlambatan
+        if ($rental['status'] !== 'completed' && $rental['status'] !== 'ongoing') {
+            $this->flashError('Transaksi ini tidak sedang disewa atau selesai.');
             $this->redirect('../pages/dashboard.php');
+        }
+
+        $penaltyFee = (float)$rental['penalty_fee'];
+        if ($rental['status'] === 'ongoing') {
+            $penaltyInfo = $this->rentalModel->calculatePenalty($rental);
+            if (!$penaltyInfo['is_overdue'] || $penaltyInfo['penalty_fee'] <= 0) {
+                $this->flashError('Transaksi ini tidak memiliki denda keterlambatan.');
+                $this->redirect('../pages/dashboard.php');
+            }
+            $penaltyFee = (float)$penaltyInfo['penalty_fee'];
+        } else {
+            if ($penaltyFee <= 0) {
+                $this->flashError('Transaksi ini tidak memiliki denda keterlambatan.');
+                $this->redirect('../pages/dashboard.php');
+            }
         }
 
         // Validasi status pembayaran denda (hanya unpaid / rejected yang bisa dibayar)
@@ -459,11 +474,15 @@ class BookingHandler extends BaseHandler
             }
         }
 
-        // Update ke database
+        // Update ke database (simpan status pending, gambar bukti, dan nominal denda)
         $stmt = $this->db->prepare(
-            "UPDATE rentals SET penalty_payment_status = 'pending', penalty_proof_image = ? WHERE id = ?"
+            "UPDATE rentals 
+             SET penalty_payment_status = 'pending', 
+                 penalty_proof_image = ?, 
+                 penalty_fee = ? 
+             WHERE id = ?"
         );
-        $result = $stmt->execute([$newFilename, $rentalId]);
+        $result = $stmt->execute([$newFilename, $penaltyFee, $rentalId]);
 
         if ($result) {
             $this->flashSuccess('Bukti transfer denda berhasil diunggah! Pembayaran denda Anda sedang diverifikasi oleh admin.');

@@ -228,17 +228,22 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                           $refund = $stmtRefund->fetch(PDO::FETCH_ASSOC);
                       }
 
-                      // Hitung deadline pengembalian kendaraan
+                      // Hitung deadline pengembalian kendaraan dan denda
+                      $penaltyInfo = $rentalModel->calculatePenalty($r);
+                      $isOverdue = $penaltyInfo['is_overdue'] && ($r['status'] === 'ongoing');
+                      $displayedPenaltyFee = ($r['penalty_fee'] > 0) ? (float)$r['penalty_fee'] : (float)$penaltyInfo['penalty_fee'];
+
                       $deadlineText = '';
-                      $isOverdue = false;
                       if (in_array($r['status'], ['cancelled', 'cancel_requested'])) {
                           // Dibatalkan / refund — tidak ada deadline
                           $deadlineText = '-';
                       } elseif (!empty($r['started_at'])) {
-                          // Deadline = started_at + (hari × 24 jam)
-                          $deadlineTimestamp = strtotime($r['started_at']) + ($days * 86400);
-                          $deadlineText = date('d M Y, H:i', $deadlineTimestamp) . ' WIB';
-                          $isOverdue = (time() > $deadlineTimestamp) && in_array($r['status'], ['ongoing']);
+                          if (!empty($penaltyInfo['deadline'])) {
+                              $deadlineText = date('d M Y, H:i', strtotime($penaltyInfo['deadline'])) . ' WIB';
+                          } else {
+                              $deadlineTimestamp = strtotime($r['started_at']) + ($days * 86400);
+                              $deadlineText = date('d M Y, H:i', $deadlineTimestamp) . ' WIB';
+                          }
                       } else {
                           // Belum dimulai — tampilkan end_date pukul 23:59
                           $deadlineText = date('d M Y', strtotime($r['end_date'])) . ', 23:59 WIB';
@@ -331,6 +336,8 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                           <span class="text-sm font-semibold text-[#0b2b4a]">Rp <?= number_format($r['total_price'], 0, ',', '.') ?></span>
                           <?php if ($r['status'] === 'completed' && (float)$r['penalty_fee'] > 0): ?>
                             <span class="block text-xs text-red-500 font-medium mt-0.5">+ Denda Rp <?= number_format($r['penalty_fee'], 0, ',', '.') ?></span>
+                          <?php elseif ($r['status'] === 'ongoing' && $isOverdue): ?>
+                            <span class="block text-xs text-red-500 font-medium mt-0.5">+ Estimasi Denda Rp <?= number_format($displayedPenaltyFee, 0, ',', '.') ?></span>
                           <?php endif; ?>
                         </td>
                         <!-- Status -->
@@ -339,7 +346,7 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium <?= $statusConfig['bg'] ?>">
                               <?= $statusConfig['label'] ?>
                             </span>
-                            <?php if ($r['status'] === 'completed' && (float)$r['penalty_fee'] > 0): ?>
+                            <?php if (($r['status'] === 'completed' && (float)$r['penalty_fee'] > 0) || ($r['status'] === 'ongoing' && $isOverdue)): ?>
                               <?php
                               $penaltyStatusConfig = match($r['penalty_payment_status']) {
                                   'unpaid' => ['bg' => 'bg-red-500/10 text-red-600', 'label' => 'Denda: Belum Dibayar'],
@@ -387,7 +394,7 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                               data-driver-cost="Rp <?= number_format($r['driver_cost'] ?? 0, 0, ',', '.') ?>"
                               data-pickup-fee="Rp <?= number_format($r['pickup_fee'] ?? 0, 0, ',', '.') ?>"
                               data-dropoff-fee="Rp <?= number_format($r['dropoff_fee'] ?? 0, 0, ',', '.') ?>"
-                              data-penalty="Rp <?= number_format($r['penalty_fee'] ?? 0, 0, ',', '.') ?>"
+                              data-penalty="Rp <?= number_format($displayedPenaltyFee, 0, ',', '.') ?>"
                               data-status="<?= $statusConfig['label'] ?>"
                               data-status-class="<?= $statusConfig['bg'] ?>"
                               data-payment-method="<?= htmlspecialchars($p['method'] ?? '-') ?>"
@@ -696,12 +703,23 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
             <div class="space-y-3 text-sm">
               <div class="flex justify-between"><span class="text-slate-500">Jumlah Denda</span><span class="text-red-600 font-semibold" id="penaltySectionAmount"></span></div>
               <div class="flex justify-between"><span class="text-slate-500">Status Pembayaran Denda</span><span class="font-medium" id="penaltySectionStatus"></span></div>
+
+              <!-- Info Rejection (Only shown if status is rejected) -->
+              <div id="penaltyRejectionInfo" class="bg-red-100/65 border border-red-200 text-red-700 rounded-xl p-3 text-xs leading-relaxed hidden">
+                <div class="flex items-start gap-1.5">
+                  <span class="material-symbols-outlined text-red-600 mt-0.5" style="font-size:16px">error</span>
+                  <div>
+                    <strong>Pembayaran Denda Ditolak:</strong> Foto bukti transfer denda tidak sesuai atau tidak valid. Silakan lakukan transfer kembali dan unggah foto bukti pembayaran yang benar.
+                  </div>
+                </div>
+              </div>
               
               <!-- Form Upload Bukti Denda (Unpaid / Rejected) -->
               <div id="penaltyUploadFormContainer" class="hidden">
                 <hr class="border-red-100 my-3">
                 <p class="text-xs text-slate-600 mb-3 leading-relaxed">
                   Silakan lakukan transfer sebesar jumlah denda ke salah satu rekening bank admin berikut, kemudian unggah bukti transfer di bawah.
+                  <strong class="text-red-600 block mt-1"><i class="bi bi-info-circle-fill"></i> Catatan: Pastikan foto bukti transfer denda yang Anda unggah jelas, asli, dan valid. Admin akan menolak pembayaran denda apabila bukti transfer denda tidak valid.</strong>
                 </p>
                 <div class="bg-white rounded-xl p-3 border border-red-200/60 mb-3 space-y-2">
                   <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rekening Bank Admin:</p>
@@ -718,7 +736,7 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                   <div class="mb-3">
                     <label for="penaltyProofImageInput" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Unggah Bukti Transfer Denda <span class="text-red-500">*</span></label>
                     <input type="file" name="penalty_proof_image" id="penaltyProofImageInput" class="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:border-red-600 outline-none" accept="image/jpeg,image/png,image/jpg" required>
-                    <p class="text-[10px] text-slate-400 mt-1">Format: JPG, JPEG, PNG. Maksimal 5MB.</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Format: JPG, JPEG, PNG. Maksimal 5MB. Pastikan foto bukti transfer denda asli, jelas, dan terbaca dengan baik.</p>
                   </div>
                   <button type="submit" class="w-full px-5 py-2.5 rounded-xl bg-red-600 text-white font-semibold shadow-sm hover:bg-red-700 hover:-translate-y-0.5 transition-all">
                     <i class="bi bi-upload mr-2"></i>Kirim Bukti Pembayaran Denda
@@ -995,7 +1013,7 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
           if (penaltyRentalIdInput) penaltyRentalIdInput.value = '';
           if (penaltyProofImageInput) penaltyProofImageInput.value = '';
 
-          if (d.penalty && d.penalty !== 'Rp 0' && d.status === 'Selesai') {
+          if (d.penalty && d.penalty !== 'Rp 0' && (d.status === 'Selesai' || d.status === 'Sedang Disewa')) {
             penaltySection.classList.remove('hidden');
             document.getElementById('penaltySectionAmount').textContent = d.penalty;
             
@@ -1019,6 +1037,13 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
             penaltyStatusEl.textContent = statusLabels[pStatus] || pStatus;
             penaltyStatusEl.className = 'font-medium ' + (statusClasses[pStatus] || 'text-slate-500');
             
+            var penaltyRejectionInfo = document.getElementById('penaltyRejectionInfo');
+            if (pStatus === 'rejected') {
+              if (penaltyRejectionInfo) penaltyRejectionInfo.classList.remove('hidden');
+            } else {
+              if (penaltyRejectionInfo) penaltyRejectionInfo.classList.add('hidden');
+            }
+
             if (pStatus === 'unpaid' || pStatus === 'rejected') {
               penaltyUploadFormContainer.classList.remove('hidden');
               penaltyProofImageContainer.classList.add('hidden');
@@ -1034,6 +1059,8 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
             }
           } else {
             penaltySection.classList.add('hidden');
+            var penaltyRejectionInfo = document.getElementById('penaltyRejectionInfo');
+            if (penaltyRejectionInfo) penaltyRejectionInfo.classList.add('hidden');
           }
 
           // Refund info section
