@@ -420,6 +420,23 @@ $activePage = 'transaksi';
                                             <?php endif; ?>
                                             <?php if ($r['status'] === 'completed' && (float)$r['penalty_fee'] > 0): ?>
                                                 <br><span class="badge bg-danger px-2 py-1 rounded-pill mt-1" style="font-size: 11px;"><i class="bi bi-cash me-1"></i>Denda: Rp <?= number_format($r['penalty_fee'], 0, ',', '.') ?></span>
+                                                <?php
+                                                $pStatusBadge = match($r['penalty_payment_status']) {
+                                                    'unpaid' => 'bg-danger-subtle text-danger border border-danger-subtle',
+                                                    'pending' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle',
+                                                    'confirmed' => 'bg-success-subtle text-success-emphasis border border-success-subtle',
+                                                    'rejected' => 'bg-danger-subtle text-danger border border-danger-subtle',
+                                                    default => 'bg-secondary-subtle text-secondary-emphasis'
+                                                };
+                                                $pStatusLabel = match($r['penalty_payment_status']) {
+                                                    'unpaid' => 'Denda: Belum Dibayar',
+                                                    'pending' => 'Denda: Pending Verif',
+                                                    'confirmed' => 'Denda: Lunas',
+                                                    'rejected' => 'Denda: Ditolak',
+                                                    default => 'Denda: Unknown'
+                                                };
+                                                ?>
+                                                <br><span class="badge <?= $pStatusBadge ?> px-2 py-1 rounded-pill mt-1" style="font-size: 10px;"><?= $pStatusLabel ?></span>
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-end">
@@ -448,6 +465,8 @@ $activePage = 'transaksi';
                                                data-cost-total="Rp <?= number_format($r['total_price'], 0, ',', '.') ?>"
                                                data-penalty-hours="<?= $r['status'] === 'completed' ? (((float)($r['penalty_fee'] ?? 0) > 0) ? (int)(($r['penalty_fee'] ?? 0) / $penaltyRate) : 0) : $penaltyInfo['late_hours'] ?>"
                                                data-is-overdue="<?= $penaltyInfo['is_overdue'] ? 'true' : 'false' ?>"
+                                               data-penalty-status="<?= htmlspecialchars($r['penalty_payment_status']) ?>"
+                                               data-penalty-proof="<?= htmlspecialchars($r['penalty_proof_image'] ?? '') ?>"
                                                data-started-at="<?= !empty($r['started_at']) ? date('d M Y H:i', strtotime($r['started_at'])) : '' ?>"
                                                data-deadline="<?= $penaltyInfo['deadline'] ? date('d M Y H:i', strtotime($penaltyInfo['deadline'])) : (!empty($r['started_at']) ? date('d M Y H:i', strtotime($r['started_at']) + ($days * 86400)) : '') ?>"
                                                data-actual-return="<?= !empty($r['actual_return_at']) ? date('d M Y H:i', strtotime($r['actual_return_at'])) : '' ?>"
@@ -919,6 +938,34 @@ $activePage = 'transaksi';
                         </div>
                     </div>
 
+                    <!-- Penalty Payment Proof Section (hanya tampil jika ada denda) -->
+                    <div class="row mt-4 d-none" id="penalty-proof-section">
+                        <div class="col-12">
+                            <div class="detail-section-title"><i class="bi bi-wallet2 text-danger me-2"></i>Informasi & Bukti Pembayaran Denda</div>
+                            <div class="row bg-red-50/50 p-3 rounded-3 border border-danger-subtle g-3">
+                                <div class="col-md-6">
+                                    <div class="row">
+                                        <div class="col-12 detail-item">
+                                            <div class="detail-label">Status Pembayaran Denda</div>
+                                            <div id="det-penalty-pay-status" class="fw-bold">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-center">
+                                    <div class="detail-label text-start">Bukti Transfer Denda</div>
+                                    <div id="penalty-proof-missing" class="py-4 bg-light rounded-3 text-muted border text-center small mt-2 d-none">
+                                        <i class="bi bi-image me-1"></i>Bukti transfer denda belum diunggah.
+                                    </div>
+                                    <div id="penalty-proof-image-container" class="proof-img-container d-none">
+                                        <a id="det-penalty-proof-link" href="#" target="_blank" title="Klik untuk memperbesar">
+                                            <img id="det-penalty-proof-img" class="proof-img" src="" alt="Bukti Transfer Denda" style="max-height: 150px; object-fit: contain;">
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Refund Info Section (hanya tampil jika ada data refund) -->
                     <div class="row mt-4" id="refund-info-section" style="display:none;">
                         <div class="col-12">
@@ -1050,6 +1097,8 @@ $activePage = 'transaksi';
                     const costTotal = this.getAttribute('data-cost-total');
                     const penaltyHours = parseInt(this.getAttribute('data-penalty-hours')) || 0;
                     const isOverdue = this.getAttribute('data-is-overdue') === 'true';
+                    const penaltyStatus = this.getAttribute('data-penalty-status');
+                    const penaltyProof = this.getAttribute('data-penalty-proof');
 
                     // Info waktu sewa
                     const startedAt = this.getAttribute('data-started-at');
@@ -1291,6 +1340,48 @@ $activePage = 'transaksi';
                         refundInfoSection.style.display = 'none';
                     }
 
+                    // ======= Penalty Payment Section =======
+                    const penaltyProofSection = document.getElementById('penalty-proof-section');
+                    const penaltyProofMissing = document.getElementById('penalty-proof-missing');
+                    const penaltyProofImageContainer = document.getElementById('penalty-proof-image-container');
+                    const penaltyProofImg = document.getElementById('det-penalty-proof-img');
+                    const penaltyProofLink = document.getElementById('det-penalty-proof-link');
+                    const penaltyPayStatusEl = document.getElementById('det-penalty-pay-status');
+
+                    if (status === 'completed' && penaltyHours > 0) {
+                        penaltyProofSection.classList.remove('d-none');
+                        
+                        penaltyPayStatusEl.className = 'fw-bold';
+                        if (penaltyStatus === 'unpaid') {
+                            penaltyPayStatusEl.classList.add('text-danger');
+                            penaltyPayStatusEl.textContent = 'BELUM DIBAYAR';
+                        } else if (penaltyStatus === 'pending') {
+                            penaltyPayStatusEl.classList.add('text-warning');
+                            penaltyPayStatusEl.textContent = 'PENDING VERIFIKASI';
+                        } else if (penaltyStatus === 'confirmed') {
+                            penaltyPayStatusEl.classList.add('text-success');
+                            penaltyPayStatusEl.textContent = 'LUNAS / TERVERIFIKASI';
+                        } else if (penaltyStatus === 'rejected') {
+                            penaltyPayStatusEl.classList.add('text-danger');
+                            penaltyPayStatusEl.textContent = 'DITOLAK';
+                        } else {
+                            penaltyPayStatusEl.textContent = penaltyStatus || 'BELUM DIBAYAR';
+                        }
+
+                        if (penaltyProof) {
+                            penaltyProofMissing.classList.add('d-none');
+                            penaltyProofImageContainer.classList.remove('d-none');
+                            const penaltyProofPath = '../assets/uploads/payments/' + penaltyProof;
+                            penaltyProofImg.src = penaltyProofPath;
+                            penaltyProofLink.href = penaltyProofPath;
+                        } else {
+                            penaltyProofMissing.classList.remove('d-none');
+                            penaltyProofImageContainer.classList.add('d-none');
+                        }
+                    } else {
+                        penaltyProofSection.classList.add('d-none');
+                    }
+
                     // Dynamically generate footer action buttons inside modal
                     const footerActions = document.getElementById('modal-footer-actions');
                     footerActions.innerHTML = ''; // Reset
@@ -1342,6 +1433,17 @@ $activePage = 'transaksi';
                         if (!refundProof) {
                             footerHtml += `
                                 <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Upload bukti transfer refund di atas untuk menyetujui pembatalan.</span>
+                            `;
+                        }
+                    } else if (status === 'completed' && penaltyHours > 0) {
+                        if (penaltyStatus === 'pending') {
+                            footerHtml += `
+                                <a href="../handlers/admin_handler.php?action=confirm_penalty_payment&id=${id}" class="btn btn-success px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menyetujui pembayaran denda ini?');">
+                                    <i class="bi bi-check-circle me-1"></i> Setujui Denda Lunas
+                                </a>
+                                <a href="../handlers/admin_handler.php?action=reject_penalty_payment&id=${id}" class="btn btn-warning text-dark px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran denda ini?');">
+                                    <i class="bi bi-exclamation-octagon me-1"></i> Tolak Bukti Denda
+                                </a>
                             `;
                         }
                     }

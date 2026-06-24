@@ -40,6 +40,7 @@ class BookingHandler extends BaseHandler
             case 'cancel_booking': $this->cancelBooking(); break;
             case 'pay_rental':     $this->payRental();      break;
             case 'request_refund': $this->requestRefund();  break;
+            case 'pay_penalty':    $this->payPenalty();     break;
             default:               $this->redirect('../pages/katalog.php');
         }
     }
@@ -378,6 +379,100 @@ class BookingHandler extends BaseHandler
             $this->flashError('Gagal memproses pembatalan: ' . $e->getMessage());
         }
 
+        $this->redirect('../pages/dashboard.php');
+    }
+
+    /**
+     * Upload bukti transfer denda keterlambatan pengembalian
+     */
+    private function payPenalty(): void
+    {
+        $this->requireMethod('POST', '../pages/dashboard.php');
+        $this->requireAuth('customer', '../pages/login.php');
+
+        $userId   = (int) $_SESSION['user_id'];
+        $rentalId = (int) ($_POST['rental_id'] ?? 0);
+
+        if (!$rentalId) {
+            $this->flashError('ID rental tidak valid.');
+            $this->redirect('../pages/dashboard.php');
+        }
+
+        // Ambil data rental dan validasi kepemilikan
+        $rental = $this->rentalModel->getById($rentalId);
+        if (!$rental || (int) $rental['user_id'] !== $userId) {
+            $this->flashError('Transaksi tidak ditemukan atau bukan milik Anda.');
+            $this->redirect('../pages/dashboard.php');
+        }
+
+        // Validasi status sewa (harus completed) dan penalty_fee > 0
+        if ($rental['status'] !== 'completed' || (float)$rental['penalty_fee'] <= 0) {
+            $this->flashError('Transaksi ini tidak memiliki denda keterlambatan.');
+            $this->redirect('../pages/dashboard.php');
+        }
+
+        // Validasi status pembayaran denda (hanya unpaid / rejected yang bisa dibayar)
+        if ($rental['penalty_payment_status'] === 'confirmed' || $rental['penalty_payment_status'] === 'pending') {
+            $this->flashError('Pembayaran denda sudah dikirim atau telah lunas.');
+            $this->redirect('../pages/dashboard.php');
+        }
+
+        // File upload handling
+        if (!isset($_FILES['penalty_proof_image']) || $_FILES['penalty_proof_image']['error'] !== UPLOAD_ERR_OK) {
+            $this->flashError('Bukti transfer denda wajib diunggah.');
+            $this->redirect('../pages/dashboard.php');
+        }
+
+        $file = $_FILES['penalty_proof_image'];
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        $fileType = mime_content_type($file['tmp_name']);
+        
+        if (!in_array($fileType, $allowedTypes)) {
+            $this->flashError('Format gambar tidak valid. Hanya JPG, JPEG, dan PNG yang diperbolehkan.');
+            $this->redirect('../pages/dashboard.php');
+        }
+        
+        if ($file['size'] > 5 * 1024 * 1024) {
+            $this->flashError('Ukuran file gambar terlalu besar. Maksimal 5MB.');
+            $this->redirect('../pages/dashboard.php');
+        }
+        
+        $uploadDir = '../assets/uploads/payments/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+        
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $newFilename = uniqid('penalty_proof_') . '.' . $ext;
+        $targetPath = $uploadDir . $newFilename;
+        
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            $this->flashError('Gagal mengunggah bukti pembayaran denda.');
+            $this->redirect('../pages/dashboard.php');
+        }
+
+        // Hapus gambar denda lama jika ada
+        if (!empty($rental['penalty_proof_image'])) {
+            $oldPath = $uploadDir . $rental['penalty_proof_image'];
+            if (file_exists($oldPath)) {
+                @unlink($oldPath);
+            }
+        }
+
+        // Update ke database
+        $stmt = $this->db->prepare(
+            "UPDATE rentals SET penalty_payment_status = 'pending', penalty_proof_image = ? WHERE id = ?"
+        );
+        $result = $stmt->execute([$newFilename, $rentalId]);
+
+        if ($result) {
+            $this->flashSuccess('Bukti transfer denda berhasil diunggah! Pembayaran denda Anda sedang diverifikasi oleh admin.');
+        } else {
+            if (file_exists($targetPath)) {
+                @unlink($targetPath);
+            }
+            $this->flashError('Gagal menyimpan data pembayaran denda. Coba lagi.');
+        }
         $this->redirect('../pages/dashboard.php');
     }
 }

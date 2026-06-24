@@ -7,6 +7,7 @@ require_once '../classes/BaseModel.php';
 require_once '../classes/User.php';
 require_once '../classes/Rental.php';
 require_once '../classes/Payment.php';
+require_once '../classes/BankAccount.php';
 
 // Auth Guard
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'customer') {
@@ -19,6 +20,8 @@ $db = Database::getInstance()->getConnection();
 $userModel = new User($db);
 $rentalModel = new Rental($db);
 $paymentModel = new Payment($db);
+$bankAccountModel = new BankAccount($db);
+$bankAccounts = $bankAccountModel->getActive();
 
 $userId = (int) $_SESSION['user_id'];
 $user = $userModel->findById($userId);
@@ -332,9 +335,25 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                         </td>
                         <!-- Status -->
                         <td class="px-6 py-4">
-                          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium <?= $statusConfig['bg'] ?>">
-                            <?= $statusConfig['label'] ?>
-                          </span>
+                          <div class="flex flex-col gap-1 items-start">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium <?= $statusConfig['bg'] ?>">
+                              <?= $statusConfig['label'] ?>
+                            </span>
+                            <?php if ($r['status'] === 'completed' && (float)$r['penalty_fee'] > 0): ?>
+                              <?php
+                              $penaltyStatusConfig = match($r['penalty_payment_status']) {
+                                  'unpaid' => ['bg' => 'bg-red-500/10 text-red-600', 'label' => 'Denda: Belum Dibayar'],
+                                  'pending' => ['bg' => 'bg-amber-500/10 text-amber-600', 'label' => 'Denda: Menunggu Verifikasi'],
+                                  'confirmed' => ['bg' => 'bg-emerald-500/10 text-emerald-600', 'label' => 'Denda: Lunas'],
+                                  'rejected' => ['bg' => 'bg-red-500/10 text-red-600', 'label' => 'Denda: Pembayaran Ditolak'],
+                                  default => ['bg' => 'bg-slate-500/10 text-slate-600', 'label' => 'Denda: Unknown']
+                              };
+                              ?>
+                              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium <?= $penaltyStatusConfig['bg'] ?>">
+                                <?= $penaltyStatusConfig['label'] ?>
+                              </span>
+                            <?php endif; ?>
+                          </div>
                         </td>
                         <!-- Aksi -->
                         <td class="px-6 py-4 text-right">
@@ -379,6 +398,8 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                               data-allow-refund="<?= $statusConfig['allow_refund'] ? '1' : '0' ?>"
                               data-deadline="<?= htmlspecialchars($deadlineText) ?>"
                               data-is-overdue="<?= $isOverdue ? '1' : '0' ?>"
+                              data-penalty-status="<?= htmlspecialchars($r['penalty_payment_status']) ?>"
+                              data-penalty-proof="<?= htmlspecialchars($r['penalty_proof_image'] ?? '') ?>"
                               data-refund-reason="<?= htmlspecialchars($refund['reason_option'] ?? '') ?>"
                               data-refund-detail="<?= htmlspecialchars($refund['reason_detail'] ?? '') ?>"
                               data-refund-status="<?= htmlspecialchars($refund['status'] ?? '') ?>"
@@ -666,6 +687,57 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
             <p class="text-[10px] text-slate-400 text-center mt-2">Klik gambar untuk melihat ukuran penuh</p>
           </div>
 
+          <!-- Pembayaran Denda Keterlambatan -->
+          <div id="detailPenaltySection" class="bg-red-50/50 rounded-xl p-4 mb-4 border border-red-100 hidden">
+            <h6 class="text-xs font-semibold uppercase tracking-wider text-red-600 mb-3 flex items-center gap-1.5">
+              <span class="material-symbols-outlined" style="font-size:16px">account_balance_wallet</span>
+              Pembayaran Denda Keterlambatan
+            </h6>
+            <div class="space-y-3 text-sm">
+              <div class="flex justify-between"><span class="text-slate-500">Jumlah Denda</span><span class="text-red-600 font-semibold" id="penaltySectionAmount"></span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Status Pembayaran Denda</span><span class="font-medium" id="penaltySectionStatus"></span></div>
+              
+              <!-- Form Upload Bukti Denda (Unpaid / Rejected) -->
+              <div id="penaltyUploadFormContainer" class="hidden">
+                <hr class="border-red-100 my-3">
+                <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+                  Silakan lakukan transfer sebesar jumlah denda ke salah satu rekening bank admin berikut, kemudian unggah bukti transfer di bawah.
+                </p>
+                <div class="bg-white rounded-xl p-3 border border-red-200/60 mb-3 space-y-2">
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rekening Bank Admin:</p>
+                  <?php foreach ($bankAccounts as $bank): ?>
+                    <div class="text-xs text-[#0b2b4a]">
+                      <span class="font-bold"><?= htmlspecialchars($bank['bank_name']) ?></span>: 
+                      <?= htmlspecialchars($bank['account_number']) ?> a/n <?= htmlspecialchars($bank['account_holder']) ?>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+                
+                <form id="penaltyPaymentForm" method="POST" action="../handlers/booking_handler.php?action=pay_penalty" enctype="multipart/form-data">
+                  <input type="hidden" name="rental_id" id="penaltyRentalId" value="">
+                  <div class="mb-3">
+                    <label for="penaltyProofImageInput" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Unggah Bukti Transfer Denda <span class="text-red-500">*</span></label>
+                    <input type="file" name="penalty_proof_image" id="penaltyProofImageInput" class="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:border-red-600 outline-none" accept="image/jpeg,image/png,image/jpg" required>
+                    <p class="text-[10px] text-slate-400 mt-1">Format: JPG, JPEG, PNG. Maksimal 5MB.</p>
+                  </div>
+                  <button type="submit" class="w-full px-5 py-2.5 rounded-xl bg-red-600 text-white font-semibold shadow-sm hover:bg-red-700 hover:-translate-y-0.5 transition-all">
+                    <i class="bi bi-upload mr-2"></i>Kirim Bukti Pembayaran Denda
+                  </button>
+                </form>
+              </div>
+
+              <!-- Menampilkan Bukti Denda (Pending / Confirmed) -->
+              <div id="penaltyProofImageContainer" class="hidden">
+                <hr class="border-red-100 my-3">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Bukti Pembayaran Denda Anda</p>
+                <div class="flex justify-center">
+                  <img id="penaltyProofImageDisplay" src="" alt="Bukti Transfer Denda" class="max-w-full max-h-60 rounded-xl border border-slate-200 shadow-sm cursor-pointer" onclick="window.open(this.src, '_blank')">
+                </div>
+                <p class="text-[10px] text-slate-400 text-center mt-2">Klik gambar untuk melihat ukuran penuh</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Informasi Refund (muncul jika rental di-cancel/refund) -->
           <div id="detailRefundInfoSection" class="bg-amber-50 rounded-xl p-4 mb-4 border border-amber-200/50 hidden">
             <h6 class="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-3 flex items-center gap-1.5">
@@ -909,6 +981,59 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
             proofSection.classList.remove('hidden');
           } else {
             proofSection.classList.add('hidden');
+          }
+
+          // Penalty Payment Section
+          var penaltySection = document.getElementById('detailPenaltySection');
+          var penaltyUploadFormContainer = document.getElementById('penaltyUploadFormContainer');
+          var penaltyProofImageContainer = document.getElementById('penaltyProofImageContainer');
+          var penaltyProofImageDisplay = document.getElementById('penaltyProofImageDisplay');
+          var penaltyRentalIdInput = document.getElementById('penaltyRentalId');
+          var penaltyProofImageInput = document.getElementById('penaltyProofImageInput');
+
+          // Reset fields
+          if (penaltyRentalIdInput) penaltyRentalIdInput.value = '';
+          if (penaltyProofImageInput) penaltyProofImageInput.value = '';
+
+          if (d.penalty && d.penalty !== 'Rp 0' && d.status === 'Selesai') {
+            penaltySection.classList.remove('hidden');
+            document.getElementById('penaltySectionAmount').textContent = d.penalty;
+            
+            var penaltyStatusEl = document.getElementById('penaltySectionStatus');
+            var pStatus = d.penaltyStatus; // unpaid, pending, confirmed, rejected
+            
+            var statusLabels = {
+              'unpaid': 'Belum Dibayar',
+              'pending': 'Menunggu Verifikasi',
+              'confirmed': 'Lunas / Terverifikasi',
+              'rejected': 'Pembayaran Ditolak'
+            };
+            
+            var statusClasses = {
+              'unpaid': 'text-red-500 font-semibold',
+              'pending': 'text-amber-500 font-semibold',
+              'confirmed': 'text-emerald-500 font-semibold',
+              'rejected': 'text-red-500 font-semibold'
+            };
+            
+            penaltyStatusEl.textContent = statusLabels[pStatus] || pStatus;
+            penaltyStatusEl.className = 'font-medium ' + (statusClasses[pStatus] || 'text-slate-500');
+            
+            if (pStatus === 'unpaid' || pStatus === 'rejected') {
+              penaltyUploadFormContainer.classList.remove('hidden');
+              penaltyProofImageContainer.classList.add('hidden');
+              if (penaltyRentalIdInput) penaltyRentalIdInput.value = d.rentalId;
+            } else {
+              penaltyUploadFormContainer.classList.add('hidden');
+              penaltyProofImageContainer.classList.remove('hidden');
+              if (d.penaltyProof) {
+                penaltyProofImageDisplay.src = '../assets/uploads/payments/' + d.penaltyProof;
+              } else {
+                penaltyProofImageContainer.classList.add('hidden');
+              }
+            }
+          } else {
+            penaltySection.classList.add('hidden');
           }
 
           // Refund info section

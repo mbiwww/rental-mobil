@@ -154,7 +154,7 @@ class Rental extends BaseModel
                AND id != ?
                AND status NOT IN ('cancelled')
                AND start_date < ?
-               AND end_date > ?",
+               AND (CASE WHEN status = 'completed' THEN DATE(COALESCE(actual_return_at, end_date)) ELSE end_date END) > ?",
              [$carId, $excludeId, $endDate, $startDate]
         )->fetchColumn();
 

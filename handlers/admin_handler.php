@@ -780,6 +780,73 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'reject_payment') {
     exit;
 }
 
+// ==========================================
+// AKSI 19: SETUJUI PEMBAYARAN DENDA (GET)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'confirm_penalty_payment') {
+    $id = intval($_GET['id'] ?? 0);
+
+    if ($id <= 0) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('ID rental tidak valid.'));
+        exit;
+    }
+
+    $rental = $rentalModel->getById($id);
+    if (!$rental) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Transaksi tidak ditemukan.'));
+        exit;
+    }
+
+    try {
+        $stmt = $db->prepare("UPDATE rentals SET penalty_payment_status = 'confirmed' WHERE id = ?");
+        $stmt->execute([$id]);
+        header('Location: ../admin/transaksi.php?status=success&msg=' . urlencode('Pembayaran denda berhasil diverifikasi dan ditandai lunas!'));
+    } catch (Exception $e) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Gagal memproses persetujuan denda: ' . $e->getMessage()));
+    }
+    exit;
+}
+
+// ==========================================
+// AKSI 20: TOLAK PEMBAYARAN DENDA (GET)
+// ==========================================
+elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'reject_penalty_payment') {
+    $id = intval($_GET['id'] ?? 0);
+
+    if ($id <= 0) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('ID rental tidak valid.'));
+        exit;
+    }
+
+    $rental = $rentalModel->getById($id);
+    if (!$rental) {
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Transaksi tidak ditemukan.'));
+        exit;
+    }
+
+    $db->beginTransaction();
+    try {
+        // Hapus file gambar denda jika ada agar tidak menumpuk, lalu set ke NULL
+        if (!empty($rental['penalty_proof_image'])) {
+            $uploadDir = '../assets/uploads/payments/';
+            $oldPath = $uploadDir . $rental['penalty_proof_image'];
+            if (file_exists($oldPath)) {
+                @unlink($oldPath);
+            }
+        }
+
+        $stmt = $db->prepare("UPDATE rentals SET penalty_payment_status = 'rejected', penalty_proof_image = NULL WHERE id = ?");
+        $stmt->execute([$id]);
+
+        $db->commit();
+        header('Location: ../admin/transaksi.php?status=success&msg=' . urlencode('Bukti pembayaran denda ditolak. Pelanggan dapat mengunggah kembali bukti pembayaran denda yang valid.'));
+    } catch (Exception $e) {
+        $db->rollBack();
+        header('Location: ../admin/transaksi.php?status=error&msg=' . urlencode('Gagal menolak denda: ' . $e->getMessage()));
+    }
+    exit;
+}
+
 // Jika request tidak dikenali, redirect kembali
 header('Location: ../admin/armada.php');
 exit;
