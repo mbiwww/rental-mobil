@@ -33,7 +33,8 @@ if (isset($_GET['status']) && !isset($_GET['tab'])) {
 $penaltyRate = (float) $settingModel->getValueByKey('penalty_fee_per_hour', 20000.0);
 
 // Filter status
-$activeStatus = $_GET['status'] ?? ''; // '' means Semua
+$statusInput = $_GET['status'] ?? '';
+$activeStatus = in_array($statusInput, ['pending', 'confirmed', 'ongoing', 'completed', 'cancelled', 'cancel_requested']) ? $statusInput : '';
 
 // Ambil data rental
 $rentals = $rentalModel->getAll($activeStatus);

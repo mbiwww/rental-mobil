@@ -19,9 +19,10 @@ $typeModel = new CarType($db);
 // Filter Pencarian & Status
 $search = $_GET['search'] ?? '';
 $status = $_GET['status'] ?? '';
+$filterStatus = in_array($status, ['available', 'rented', 'maintenance']) ? $status : '';
 
 // Ambil data dari model
-$cars = $carModel->getAll($search, $status);
+$cars = $carModel->getAll($search, $filterStatus);
 $carTypes = $typeModel->getAll();
 $activePage = 'armada';
 ?>
@@ -198,7 +199,7 @@ $activePage = 'armada';
             </div>
 
             <!-- Notification Alert -->
-            <?php if (isset($_GET['status'])): ?>
+            <?php if (isset($_GET['status']) && in_array($_GET['status'], ['success', 'error']) && isset($_GET['msg'])): ?>
                 <div class="alert alert-<?= $_GET['status'] === 'success' ? 'success' : 'danger' ?> alert-dismissible fade show shadow-sm mb-4" role="alert">
                     <div class="d-flex align-items-center">
                         <i class="bi <?= $_GET['status'] === 'success' ? 'bi-check-circle-fill fs-5' : 'bi-exclamation-triangle-fill fs-5' ?> me-2"></i>
@@ -222,14 +223,14 @@ $activePage = 'armada';
                     <div class="col-md-3">
                         <select name="status" class="form-select status-select">
                             <option value="">Semua Status</option>
-                            <option value="available" <?= $status === 'available' ? 'selected' : '' ?>>Tersedia (Available)</option>
-                            <option value="rented" <?= $status === 'rented' ? 'selected' : '' ?>>Disewa (Rented)</option>
-                            <option value="maintenance" <?= $status === 'maintenance' ? 'selected' : '' ?>>Servis (Maintenance)</option>
+                            <option value="available" <?= $filterStatus === 'available' ? 'selected' : '' ?>>Tersedia (Available)</option>
+                            <option value="rented" <?= $filterStatus === 'rented' ? 'selected' : '' ?>>Disewa (Rented)</option>
+                            <option value="maintenance" <?= $filterStatus === 'maintenance' ? 'selected' : '' ?>>Servis (Maintenance)</option>
                         </select>
                     </div>
                     <div class="col-md-4 d-flex gap-2">
                         <button type="submit" class="btn btn-primary px-4 rounded-3"><i class="bi bi-funnel"></i> Filter</button>
-                        <?php if (!empty($search) || !empty($status)): ?>
+                        <?php if (!empty($search) || !empty($filterStatus)): ?>
                             <a href="armada.php" class="btn btn-outline-secondary px-3 rounded-3 d-flex align-items-center">Reset</a>
                         <?php endif; ?>
                     </div>
