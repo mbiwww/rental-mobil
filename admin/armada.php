@@ -17,12 +17,15 @@ $carModel = new Car($db);
 $typeModel = new CarType($db);
 
 // Filter Pencarian & Status
-$search = $_GET['search'] ?? '';
-$status = $_GET['status'] ?? '';
-$filterStatus = in_array($status, ['available', 'rented', 'maintenance']) ? $status : '';
+$filterSearch       = trim($_GET['search'] ?? '');
+$filterTypeId       = isset($_GET['type_id']) && $_GET['type_id'] !== '' ? (int)$_GET['type_id'] : null;
+$filterTransmission = in_array($_GET['transmission'] ?? '', ['manual', 'automatic'])
+  ? $_GET['transmission'] : '';
+$filterStatus       = in_array($_GET['status'] ?? '', ['available', 'rented', 'maintenance'])
+  ? $_GET['status'] : '';
 
 // Ambil data dari model
-$cars = $carModel->getAll($search, $filterStatus);
+$cars = $carModel->getFiltered('', $filterTypeId, $filterTransmission, $filterStatus);
 $carTypes = $typeModel->getAll();
 $activePage = 'armada';
 ?>
@@ -213,26 +216,73 @@ $activePage = 'armada';
 
             <!-- Filter & Search Section -->
             <div class="table-container shadow-sm mb-4" style="padding: 20px;">
-                <form method="GET" action="armada.php" class="row g-3 align-items-center">
-                    <div class="col-md-5">
-                        <div class="input-group">
-                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" name="search" class="form-control search-input border-start-0 ps-0" placeholder="Cari merk atau model mobil..." value="<?= htmlspecialchars($search) ?>">
+                <form method="GET" action="armada.php" id="filterForm">
+                    <div class="row g-3 align-items-end">
+                        <!-- Input Pencarian -->
+                        <div class="col-12 col-md-3">
+                            <label class="form-label fw-semibold small text-uppercase text-secondary" for="searchInput">Cari Mobil</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0" style="border-radius: 10px 0 0 10px;">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+                                <input
+                                    type="text"
+                                    class="form-control search-input border-start-0 ps-0"
+                                    id="searchInput"
+                                    name="search"
+                                    placeholder="Cari merk, model, plat..."
+                                    value="<?= htmlspecialchars($filterSearch) ?>"
+                                    style="border-radius: 0 10px 10px 0;">
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-3">
-                        <select name="status" class="form-select status-select">
-                            <option value="">Semua Status</option>
-                            <option value="available" <?= $filterStatus === 'available' ? 'selected' : '' ?>>Tersedia (Available)</option>
-                            <option value="rented" <?= $filterStatus === 'rented' ? 'selected' : '' ?>>Disewa (Rented)</option>
-                            <option value="maintenance" <?= $filterStatus === 'maintenance' ? 'selected' : '' ?>>Servis (Maintenance)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary px-4 rounded-3"><i class="bi bi-funnel"></i> Filter</button>
-                        <?php if (!empty($search) || !empty($filterStatus)): ?>
-                            <a href="armada.php" class="btn btn-outline-secondary px-3 rounded-3 d-flex align-items-center">Reset</a>
-                        <?php endif; ?>
+
+                        <!-- Dropdown Tipe Mobil (dinamis dari DB) -->
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold small text-uppercase text-secondary" for="filterType">Tipe Mobil</label>
+                            <select class="form-select status-select" id="filterType" name="type_id">
+                                <option value="">Semua Tipe</option>
+                                <?php foreach ($carTypes as $type): ?>
+                                    <option
+                                        value="<?= (int)$type['id'] ?>"
+                                        <?= $filterTypeId === (int)$type['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($type['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Dropdown Transmisi -->
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold small text-uppercase text-secondary" for="filterTransmisi">Transmisi</label>
+                            <select class="form-select status-select" id="filterTransmisi" name="transmission">
+                                <option value="">Semua Transmisi</option>
+                                <option value="automatic" <?= $filterTransmission === 'automatic' ? 'selected' : '' ?>>Automatic</option>
+                                <option value="manual" <?= $filterTransmission === 'manual'    ? 'selected' : '' ?>>Manual</option>
+                            </select>
+                        </div>
+
+                        <!-- Dropdown Status -->
+                        <div class="col-6 col-md-2">
+                            <label class="form-label fw-semibold small text-uppercase text-secondary" for="filterStatus">Status</label>
+                            <select class="form-select status-select" id="filterStatus" name="status">
+                                <option value="">Semua Status</option>
+                                <option value="available" <?= $filterStatus === 'available'   ? 'selected' : '' ?>>Tersedia</option>
+                                <option value="rented" <?= $filterStatus === 'rented'      ? 'selected' : '' ?>>Disewa</option>
+                                <option value="maintenance" <?= $filterStatus === 'maintenance' ? 'selected' : '' ?>>Servis</option>
+                            </select>
+                        </div>
+
+                        <!-- Tombol Cari & Reset -->
+                        <div class="col-12 col-md-auto d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4 rounded-3 d-flex align-items-center justify-content-center" id="searchBtn" style="height: 48px;">
+                                <i class="bi bi-funnel me-1"></i>Filter
+                            </button>
+                            <?php if ($filterTypeId !== null || !empty($filterTransmission) || !empty($filterStatus) || !empty($filterSearch)): ?>
+                                <a href="armada.php" class="btn btn-outline-secondary px-3 rounded-3 d-flex align-items-center justify-content-center" style="height: 48px;">
+                                    Reset
+                                </a>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -240,7 +290,7 @@ $activePage = 'armada';
             <!-- Table Section -->
             <div class="table-container shadow-sm">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="fw-bold mb-0">Daftar Mobil (<?= count($cars) ?>)</h5>
+                    <h5 class="fw-bold mb-0">Daftar Mobil (<span id="resultCount"><?= count($cars) ?></span>)</h5>
                 </div>
                 
                 <div class="table-responsive">
@@ -257,7 +307,7 @@ $activePage = 'armada';
                         </thead>
                         <tbody>
                             <?php if (empty($cars)): ?>
-                                <tr>
+                                <tr id="serverEmptyState">
                                     <td colspan="6" class="text-center py-5 text-muted">
                                         <i class="bi bi-car-front fs-1 d-block mb-3"></i>
                                         Belum ada data mobil yang cocok dengan pencarian Anda.
@@ -270,7 +320,11 @@ $activePage = 'armada';
                                     $imagePath = '../assets/uploads/cars/' . $car['image'];
                                     $imageSrc = (!empty($car['image']) && file_exists($imagePath)) ? $imagePath : 'https://placehold.co/100x70/eaeaea/666666?text=' . urlencode($car['brand']);
                                     ?>
-                                    <tr>
+                                    <tr class="car-row"
+                                        data-type="<?= strtolower($car['type_name'] ?? 'umum') ?>"
+                                        data-transmisi="<?= $car['transmission'] ?>"
+                                        data-status="<?= $car['status'] ?>"
+                                        data-name="<?= strtolower($car['brand'] . ' ' . $car['model'] . ' ' . $car['year'] . ' ' . ($car['plate_number'] ?? '')) ?>">
                                         <td>
                                             <div class="d-flex align-items-center gap-3">
                                                 <img src="<?= $imageSrc ?>" class="img-mobil shadow-sm" alt="Foto Mobil">
@@ -364,6 +418,18 @@ $activePage = 'armada';
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
+                                
+                                <!-- State kosong client-side: tampil via JS saat pencarian teks tidak ada hasil -->
+                                <tr id="emptyState" style="display:none;">
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="bi bi-search fs-1 d-block mb-3"></i>
+                                        Tidak ada mobil dengan nama/plat "<span id="emptyKeyword"></span>".
+                                        <br>
+                                        <button type="button" class="btn btn-outline-primary btn-sm mt-3" onclick="document.getElementById('searchInput').value=''; document.getElementById('searchInput').dispatchEvent(new Event('input'));">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i>Hapus Pencarian
+                                        </button>
+                                    </td>
+                                </tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
@@ -743,6 +809,56 @@ $activePage = 'armada';
                     const modal = new bootstrap.Modal(document.getElementById('modalEditCar'));
                     modal.show();
                 });
+            });
+
+            // ==========================================
+            // LOGIKA FILTER & PENCARIAN REAL-TIME
+            // ==========================================
+            const form = document.getElementById('filterForm');
+            const searchInput = document.getElementById('searchInput');
+            const carRows = document.querySelectorAll('.car-row');
+            const emptyState = document.getElementById('emptyState');
+
+            function applySearch() {
+                const keyword = searchInput ? searchInput.value.toLowerCase().trim() : '';
+                const emptyKw = document.getElementById('emptyKeyword');
+                const resultCount = document.getElementById('resultCount');
+                let visible = 0;
+
+                carRows.forEach(function(row) {
+                    const name = row.getAttribute('data-name') || '';
+                    const matched = name.includes(keyword);
+                    row.style.display = matched ? '' : 'none';
+                    if (matched) visible++;
+                });
+
+                // Update angka jumlah hasil secara real-time
+                if (resultCount) resultCount.textContent = visible;
+
+                // Tampilkan / sembunyikan state kosong client-side
+                if (emptyState) {
+                    if (carRows.length > 0 && visible === 0) {
+                        emptyState.style.display = '';
+                    } else {
+                        emptyState.style.display = 'none';
+                    }
+                    if (emptyKw) emptyKw.textContent = searchInput ? searchInput.value.trim() : '';
+                }
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', applySearch);
+                applySearch(); // terapkan nilai awal jika ada (misalnya dari URL)
+            }
+
+            // Auto-submit langsung saat dropdown berubah (server-side filter)
+            ['filterType', 'filterTransmisi', 'filterStatus'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', function() {
+                        form.submit();
+                    });
+                }
             });
         });
     </script>
