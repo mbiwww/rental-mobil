@@ -758,7 +758,7 @@ $activePage = 'transaksi';
     MODAL DETAIL TRANSAKSI
     ========================================== -->
     <div class="modal fade" id="modalDetailRental" tabindex="-1" aria-labelledby="modalDetailRentalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content border-0 rounded-4 shadow">
                 <div class="modal-header border-0 pb-0 px-4 pt-4">
                     <h5 class="modal-title fw-bold" id="modalDetailRentalLabel">
@@ -768,8 +768,8 @@ $activePage = 'transaksi';
                 </div>
                 <div class="modal-body p-4">
                     <div class="row g-4">
-                        <!-- Left Column: Customer and Car Spec -->
-                        <div class="col-md-6">
+                        <!-- Column 1: Customer and Car Spec -->
+                        <div class="col-lg-4 col-md-6">
                             <!-- Customer Info -->
                             <div class="detail-section-title"><i class="bi bi-person me-2"></i>Data Penyewa</div>
                             <div class="row">
@@ -802,27 +802,27 @@ $activePage = 'transaksi';
                                     <div class="detail-label">Nama Kendaraan</div>
                                     <div id="det-car-name" class="detail-value">-</div>
                                 </div>
-                                <div class="col-6 detail-item">
+                                <div class="col-sm-6 col-12 detail-item">
                                     <div class="detail-label">Spesifikasi Mesin & Transmisi</div>
                                     <div id="det-car-spec" class="detail-value">-</div>
                                 </div>
-                                <div class="col-6 detail-item">
+                                <div class="col-sm-6 col-12 detail-item">
                                     <div class="detail-label">Harga Sewa / Hari</div>
                                     <div id="det-car-price" class="detail-value">-</div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Right Column: Rental info and Billing -->
-                        <div class="col-md-6">
+                        <!-- Column 2: Rental info and Timing Info -->
+                        <div class="col-lg-4 col-md-6">
                             <!-- Rental Info -->
                             <div class="detail-section-title"><i class="bi bi-calendar-event me-2"></i>Detail Penyewaan</div>
                             <div class="row">
-                                <div class="col-6 detail-item">
+                                <div class="col-sm-6 col-12 detail-item">
                                     <div class="detail-label">Tipe Sewa</div>
                                     <div id="det-rent-type" class="detail-value">-</div>
                                 </div>
-                                <div class="col-6 detail-item">
+                                <div class="col-sm-6 col-12 detail-item">
                                     <div class="detail-label">Durasi</div>
                                     <div id="det-rent-duration" class="detail-value">-</div>
                                 </div>
@@ -840,8 +840,34 @@ $activePage = 'transaksi';
                                 </div>
                             </div>
 
+                            <!-- Waktu Sewa (hanya tampil jika sudah started) -->
+                            <div id="det-timing-section" class="d-none">
+                                <div class="detail-section-title mt-4"><i class="bi bi-clock-history me-2"></i>Waktu Sewa</div>
+                                <div class="row">
+                                    <div class="col-sm-6 col-12 detail-item">
+                                        <div class="detail-label">Mulai Sewa</div>
+                                        <div id="det-started-at" class="detail-value">-</div>
+                                    </div>
+                                    <div class="col-sm-6 col-12 detail-item">
+                                        <div class="detail-label">Batas Pengembalian</div>
+                                        <div id="det-deadline" class="detail-value">-</div>
+                                    </div>
+                                    <div id="det-return-row" class="col-sm-6 col-12 detail-item d-none">
+                                        <div class="detail-label">Waktu Dikembalikan</div>
+                                        <div id="det-actual-return" class="detail-value">-</div>
+                                    </div>
+                                    <div id="det-overdue-row" class="col-sm-6 col-12 detail-item d-none">
+                                        <div class="detail-label">Status Waktu</div>
+                                        <div id="det-overdue-status" class="detail-value">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Column 3: Billing & Cost -->
+                        <div class="col-lg-4 col-md-12">
                             <!-- Cost & Billing -->
-                            <div class="detail-section-title mt-4"><i class="bi bi-wallet2 me-2"></i>Rincian Biaya</div>
+                            <div class="detail-section-title"><i class="bi bi-wallet2 me-2"></i>Rincian Biaya</div>
                             <div class="bg-light p-3 rounded-3 border">
                                 <div class="d-flex justify-content-between mb-1">
                                     <span class="text-muted small">Biaya Sewa Mobil</span>
@@ -873,29 +899,6 @@ $activePage = 'transaksi';
                                     <span id="det-status-badge" class="badge rounded-pill ms-2">-</span>
                                 </div>
                             </div>
-
-                            <!-- Waktu Sewa (hanya tampil jika sudah started) -->
-                            <div id="det-timing-section" class="d-none">
-                                <div class="detail-section-title mt-4"><i class="bi bi-clock-history me-2"></i>Waktu Sewa</div>
-                                <div class="row">
-                                    <div class="col-6 detail-item">
-                                        <div class="detail-label">Mulai Sewa</div>
-                                        <div id="det-started-at" class="detail-value">-</div>
-                                    </div>
-                                    <div class="col-6 detail-item">
-                                        <div class="detail-label">Batas Pengembalian</div>
-                                        <div id="det-deadline" class="detail-value">-</div>
-                                    </div>
-                                    <div id="det-return-row" class="col-6 detail-item d-none">
-                                        <div class="detail-label">Waktu Dikembalikan</div>
-                                        <div id="det-actual-return" class="detail-value">-</div>
-                                    </div>
-                                    <div id="det-overdue-row" class="col-6 detail-item d-none">
-                                        <div class="detail-label">Status Waktu</div>
-                                        <div id="det-overdue-status" class="detail-value">-</div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -909,11 +912,11 @@ $activePage = 'transaksi';
                             <div id="pay-info-container" class="row">
                                 <div class="col-md-6">
                                     <div class="row">
-                                        <div class="col-6 detail-item">
+                                        <div class="col-sm-6 col-12 detail-item">
                                             <div class="detail-label">Metode Pembayaran</div>
                                             <div id="det-pay-method" class="detail-value text-uppercase">-</div>
                                         </div>
-                                        <div class="col-6 detail-item">
+                                        <div class="col-sm-6 col-12 detail-item">
                                             <div class="detail-label">Status Verifikasi</div>
                                             <div id="det-pay-status" class="detail-value">-</div>
                                         </div>
@@ -927,7 +930,7 @@ $activePage = 'transaksi';
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6 text-center">
+                                <div class="col-md-6 text-center mt-3 mt-md-0">
                                     <div class="detail-label text-start">Bukti Transfer</div>
                                     <div id="pay-proof-missing" class="py-4 bg-light rounded-3 text-muted border text-center small mt-2">
                                         <i class="bi bi-image me-1"></i>Bukti transfer belum diunggah.
@@ -955,7 +958,7 @@ $activePage = 'transaksi';
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6 text-center">
+                                <div class="col-md-6 text-center mt-3 mt-md-0">
                                     <div class="detail-label text-start">Bukti Transfer Denda</div>
                                     <div id="penalty-proof-missing" class="py-4 bg-light rounded-3 text-muted border text-center small mt-2 d-none">
                                         <i class="bi bi-image me-1"></i>Bukti transfer denda belum diunggah.
@@ -985,11 +988,11 @@ $activePage = 'transaksi';
                                             <div class="detail-label">Detail Alasan</div>
                                             <div id="det-refund-detail" class="detail-value">-</div>
                                         </div>
-                                        <div class="col-6 detail-item">
+                                        <div class="col-sm-6 col-12 detail-item">
                                             <div class="detail-label">Status Refund</div>
                                             <div id="det-refund-status" class="detail-value">-</div>
                                         </div>
-                                        <div class="col-6 detail-item">
+                                        <div class="col-sm-6 col-12 detail-item">
                                             <div class="detail-label">Tanggal Pengajuan</div>
                                             <div id="det-refund-date" class="detail-value">-</div>
                                         </div>
@@ -1002,18 +1005,18 @@ $activePage = 'transaksi';
                                                 <div class="detail-label">Nama Nasabah</div>
                                                 <div id="det-refund-account-holder" class="detail-value">-</div>
                                             </div>
-                                            <div class="col-6 detail-item">
+                                            <div class="col-sm-6 col-12 detail-item">
                                                 <div class="detail-label">Nama Bank</div>
                                                 <div id="det-refund-bank-name" class="detail-value">-</div>
                                             </div>
-                                            <div class="col-6 detail-item">
+                                            <div class="col-sm-6 col-12 detail-item">
                                                 <div class="detail-label">Nomor Rekening</div>
                                                 <div id="det-refund-account-number" class="detail-value fw-bold font-monospace">-</div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-6 mt-3 mt-md-0">
                                     <!-- Bukti Refund (jika sudah diupload admin) -->
                                     <div class="detail-label text-start">Bukti Transfer Refund</div>
                                     <div id="refund-proof-missing" class="py-4 bg-light rounded-3 text-muted border text-center small mt-2">

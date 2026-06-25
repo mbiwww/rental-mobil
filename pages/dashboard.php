@@ -35,6 +35,14 @@ if (!$user) {
 // Fetch rentals
 $rentals = $rentalModel->getByUserId($userId);
 
+// Fetch penalty rate per hour setting
+$stmtRate = $db->prepare("SELECT value FROM settings WHERE key_name = 'penalty_fee_per_hour'");
+$stmtRate->execute();
+$penaltyRate = (float) $stmtRate->fetchColumn();
+if ($penaltyRate <= 0) {
+    $penaltyRate = 20000.0; // fallback
+}
+
 // Calculate stats
 $totalSewa = count($rentals);
 $totalDuration = 0;
@@ -233,6 +241,13 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                       $isOverdue = $penaltyInfo['is_overdue'] && ($r['status'] === 'ongoing');
                       $displayedPenaltyFee = ($r['penalty_fee'] > 0) ? (float)$r['penalty_fee'] : (float)$penaltyInfo['penalty_fee'];
 
+                      // Hitung jam terlambat
+                      if ($r['status'] === 'completed') {
+                          $lateHours = ((float)$r['penalty_fee'] > 0) ? (int)(($r['penalty_fee'] ?? 0) / $penaltyRate) : 0;
+                      } else {
+                          $lateHours = $penaltyInfo['late_hours'];
+                      }
+
                       $deadlineText = '';
                       if (in_array($r['status'], ['cancelled', 'cancel_requested'])) {
                           // Dibatalkan / refund — tidak ada deadline
@@ -335,9 +350,15 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                         <td class="px-6 py-4">
                           <span class="text-sm font-semibold text-[#0b2b4a]">Rp <?= number_format($r['total_price'], 0, ',', '.') ?></span>
                           <?php if ($r['status'] === 'completed' && (float)$r['penalty_fee'] > 0): ?>
-                            <span class="block text-xs text-red-500 font-medium mt-0.5">+ Denda Rp <?= number_format($r['penalty_fee'], 0, ',', '.') ?></span>
+                            <span class="block text-xs text-red-500 font-medium mt-0.5">
+                              + Denda Rp <?= number_format($r['penalty_fee'], 0, ',', '.') ?>
+                              <span class="block text-[10px] text-slate-400 font-normal mt-0.5">(<?= $lateHours ?> jam × Rp <?= number_format($penaltyRate, 0, ',', '.') ?>)</span>
+                            </span>
                           <?php elseif ($r['status'] === 'ongoing' && $isOverdue): ?>
-                            <span class="block text-xs text-red-500 font-medium mt-0.5">+ Estimasi Denda Rp <?= number_format($displayedPenaltyFee, 0, ',', '.') ?></span>
+                            <span class="block text-xs text-red-500 font-medium mt-0.5">
+                              + Estimasi Denda Rp <?= number_format($displayedPenaltyFee, 0, ',', '.') ?>
+                              <span class="block text-[10px] text-slate-400 font-normal mt-0.5">(<?= $lateHours ?> jam × Rp <?= number_format($penaltyRate, 0, ',', '.') ?>)</span>
+                            </span>
                           <?php endif; ?>
                         </td>
                         <!-- Status -->
@@ -395,6 +416,13 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                               data-pickup-fee="Rp <?= number_format($r['pickup_fee'] ?? 0, 0, ',', '.') ?>"
                               data-dropoff-fee="Rp <?= number_format($r['dropoff_fee'] ?? 0, 0, ',', '.') ?>"
                               data-penalty="Rp <?= number_format($displayedPenaltyFee, 0, ',', '.') ?>"
+                              data-price-per-day="<?= (float)($r['price_per_day'] ?? 0) ?>"
+                              data-driver-cost-raw="<?= (float)($r['driver_cost'] ?? 0) ?>"
+                              data-pickup-fee-raw="<?= (float)($r['pickup_fee'] ?? 0) ?>"
+                              data-dropoff-fee-raw="<?= (float)($r['dropoff_fee'] ?? 0) ?>"
+                              data-penalty-raw="<?= (float)$displayedPenaltyFee ?>"
+                              data-penalty-hours="<?= $lateHours ?>"
+                              data-penalty-rate="<?= $penaltyRate ?>"
                               data-status="<?= $statusConfig['label'] ?>"
                               data-status-class="<?= $statusConfig['bg'] ?>"
                               data-payment-method="<?= htmlspecialchars($p['method'] ?? '-') ?>"
@@ -594,7 +622,7 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
 
   <!-- Modal Detail Pesanan -->
   <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content rounded-2xl shadow-lg border-0">
         <div class="modal-header border-0 px-5 pt-5 pb-0">
           <div>
@@ -610,234 +638,253 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
             <span id="detailStatusBadge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"></span>
           </div>
 
-          <!-- Informasi Mobil -->
-          <div class="bg-slate-50 rounded-xl p-4 mb-4">
-            <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Informasi Mobil</h6>
-            <div class="flex items-center gap-4">
-              <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
-                <img id="detailCarImage" src="" alt="" class="w-full h-full object-cover hidden">
-                <span id="detailCarIcon" class="material-symbols-outlined text-slate-300" style="font-size:32px">directions_car</span>
-              </div>
-              <div>
-                <p class="font-semibold text-[#0b2b4a] text-base" id="detailCarName"></p>
-                <p class="text-sm text-slate-400" id="detailRentalType"></p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Jadwal & Lokasi -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div class="bg-slate-50 rounded-xl p-4">
-              <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Jadwal Sewa</h6>
-              <div class="space-y-2">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-slate-400" style="font-size:18px">calendar_today</span>
-                  <span class="text-sm text-[#0b2b4a]" id="detailDates"></span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-slate-400" style="font-size:18px">schedule</span>
-                  <span class="text-sm text-[#0b2b4a]" id="detailDuration"></span>
-                </div>
-                <div class="flex items-center gap-2 mt-1 pt-2 border-t border-slate-200/60">
-                  <span class="material-symbols-outlined text-amber-500" style="font-size:18px">alarm</span>
+          <div class="flex flex-col lg:flex-row gap-6 items-start">
+            <!-- Left Column (and Mobile main container) -->
+            <div id="colLeft" class="w-full lg:w-1/2 space-y-4">
+              <!-- 1. Informasi Mobil -->
+              <div id="cardMobil" class="bg-slate-50 rounded-xl p-4 w-full">
+                <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Informasi Mobil</h6>
+                <div class="flex items-center gap-4">
+                  <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
+                    <img id="detailCarImage" src="" alt="" class="w-full h-full object-cover hidden">
+                    <span id="detailCarIcon" class="material-symbols-outlined text-slate-300" style="font-size:32px">directions_car</span>
+                  </div>
                   <div>
-                    <p class="text-[10px] text-slate-400 leading-none mb-0.5">Deadline Pengembalian</p>
-                    <span class="text-sm font-semibold" id="detailDeadline"></span>
+                    <p class="font-semibold text-[#0b2b4a] text-base" id="detailCarName"></p>
+                    <p class="text-sm text-slate-400" id="detailRentalType"></p>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="bg-slate-50 rounded-xl p-4">
-              <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Lokasi</h6>
-              <div class="space-y-2">
-                <div class="flex items-start gap-2">
-                  <span class="material-symbols-outlined text-emerald-500 shrink-0" style="font-size:18px">trip_origin</span>
-                  <div><p class="text-[10px] text-slate-400">Pengambilan</p><p class="text-sm text-[#0b2b4a]" id="detailPickup"></p></div>
-                </div>
-                <div class="flex items-start gap-2">
-                  <span class="material-symbols-outlined text-red-400 shrink-0" style="font-size:18px">location_on</span>
-                  <div><p class="text-[10px] text-slate-400">Pengembalian</p><p class="text-sm text-[#0b2b4a]" id="detailDropoff"></p></div>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <!-- Rincian Biaya -->
-          <div class="bg-slate-50 rounded-xl p-4 mb-4">
-            <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Rincian Biaya</h6>
-            <div class="space-y-2 text-sm">
-              <div class="flex justify-between"><span class="text-slate-500">Biaya Sopir</span><span class="text-[#0b2b4a] font-medium" id="detailDriverCost"></span></div>
-              <div class="flex justify-between"><span class="text-slate-500">Biaya Antar</span><span class="text-[#0b2b4a] font-medium" id="detailPickupFee"></span></div>
-              <div class="flex justify-between"><span class="text-slate-500">Biaya Jemput</span><span class="text-[#0b2b4a] font-medium" id="detailDropoffFee"></span></div>
-              <div class="flex justify-between" id="detailPenaltyRow"><span class="text-red-500">Denda Keterlambatan</span><span class="text-red-500 font-medium" id="detailPenalty"></span></div>
-              <hr class="border-slate-200">
-              <div class="flex justify-between font-semibold text-base"><span class="text-[#0b2b4a]">Total</span><span class="text-[#00288e]" id="detailTotal"></span></div>
-            </div>
-          </div>
-
-          <!-- Pembayaran -->
-          <div class="bg-slate-50 rounded-xl p-4 mb-4">
-            <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Informasi Pembayaran</h6>
-            <div class="space-y-2 text-sm">
-              <div class="flex justify-between"><span class="text-slate-500">Metode</span><span class="text-[#0b2b4a] font-medium" id="detailPayMethod"></span></div>
-              <div class="flex justify-between"><span class="text-slate-500">Rekening Tujuan</span><span class="text-[#0b2b4a] font-medium text-right" id="detailPayBank" style="max-width:60%"></span></div>
-              <div class="flex justify-between"><span class="text-slate-500">Status Pembayaran</span><span class="font-medium" id="detailPayStatus"></span></div>
-            </div>
-          </div>
-
-          <!-- Bukti Transfer -->
-          <div id="detailProofSection" class="bg-slate-50 rounded-xl p-4 mb-4 hidden">
-            <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Bukti Transfer</h6>
-            <div class="flex justify-center">
-              <img id="detailProofImage" src="" alt="Bukti Transfer" class="max-w-full max-h-80 rounded-xl border border-slate-200 shadow-sm cursor-pointer" onclick="window.open(this.src, '_blank')">
-            </div>
-            <p class="text-[10px] text-slate-400 text-center mt-2">Klik gambar untuk melihat ukuran penuh</p>
-          </div>
-
-          <!-- Pembayaran Denda Keterlambatan -->
-          <div id="detailPenaltySection" class="bg-red-50/50 rounded-xl p-4 mb-4 border border-red-100 hidden">
-            <h6 class="text-xs font-semibold uppercase tracking-wider text-red-600 mb-3 flex items-center gap-1.5">
-              <span class="material-symbols-outlined" style="font-size:16px">account_balance_wallet</span>
-              Pembayaran Denda Keterlambatan
-            </h6>
-            <div class="space-y-3 text-sm">
-              <div class="flex justify-between"><span class="text-slate-500">Jumlah Denda</span><span class="text-red-600 font-semibold" id="penaltySectionAmount"></span></div>
-              <div class="flex justify-between"><span class="text-slate-500">Status Pembayaran Denda</span><span class="font-medium" id="penaltySectionStatus"></span></div>
-
-              <!-- Info Rejection (Only shown if status is rejected) -->
-              <div id="penaltyRejectionInfo" class="bg-red-100/65 border border-red-200 text-red-700 rounded-xl p-3 text-xs leading-relaxed hidden">
-                <div class="flex items-start gap-1.5">
-                  <span class="material-symbols-outlined text-red-600 mt-0.5" style="font-size:16px">error</span>
-                  <div>
-                    <strong>Pembayaran Denda Ditolak:</strong> Foto bukti transfer denda tidak sesuai atau tidak valid. Silakan lakukan transfer kembali dan unggah foto bukti pembayaran yang benar.
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Form Upload Bukti Denda (Unpaid / Rejected) -->
-              <div id="penaltyUploadFormContainer" class="hidden">
-                <hr class="border-red-100 my-3">
-                <p class="text-xs text-slate-600 mb-3 leading-relaxed">
-                  Silakan lakukan transfer sebesar jumlah denda ke salah satu rekening bank admin berikut, kemudian unggah bukti transfer di bawah.
-                  <strong class="text-red-600 block mt-1"><i class="bi bi-info-circle-fill"></i> Catatan: Pastikan foto bukti transfer denda yang Anda unggah jelas, asli, dan valid. Admin akan menolak pembayaran denda apabila bukti transfer denda tidak valid.</strong>
-                </p>
-                <div class="bg-white rounded-xl p-3 border border-red-200/60 mb-3 space-y-2">
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rekening Bank Admin:</p>
-                  <?php foreach ($bankAccounts as $bank): ?>
-                    <div class="text-xs text-[#0b2b4a]">
-                      <span class="font-bold"><?= htmlspecialchars($bank['bank_name']) ?></span>: 
-                      <?= htmlspecialchars($bank['account_number']) ?> a/n <?= htmlspecialchars($bank['account_holder']) ?>
+              <!-- 2. Jadwal & Lokasi -->
+              <div id="cardJadwal" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                <div class="bg-slate-50 rounded-xl p-4">
+                  <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Jadwal Sewa</h6>
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-slate-400" style="font-size:18px">calendar_today</span>
+                      <span class="text-sm text-[#0b2b4a]" id="detailDates"></span>
                     </div>
-                  <?php endforeach; ?>
-                </div>
-                
-                <form id="penaltyPaymentForm" method="POST" action="../handlers/booking_handler.php?action=pay_penalty" enctype="multipart/form-data">
-                  <input type="hidden" name="rental_id" id="penaltyRentalId" value="">
-                  <div class="mb-3">
-                    <label for="penaltyProofImageInput" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Unggah Bukti Transfer Denda <span class="text-red-500">*</span></label>
-                    <input type="file" name="penalty_proof_image" id="penaltyProofImageInput" class="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:border-red-600 outline-none" accept="image/jpeg,image/png,image/jpg" required>
-                    <p class="text-[10px] text-slate-400 mt-1">Format: JPG, JPEG, PNG. Maksimal 5MB. Pastikan foto bukti transfer denda asli, jelas, dan terbaca dengan baik.</p>
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-slate-400" style="font-size:18px">schedule</span>
+                      <span class="text-sm text-[#0b2b4a]" id="detailDuration"></span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-1 pt-2 border-t border-slate-200/60">
+                      <span class="material-symbols-outlined text-amber-500" style="font-size:18px">alarm</span>
+                      <div>
+                        <p class="text-[10px] text-slate-400 leading-none mb-0.5">Deadline Pengembalian</p>
+                        <span class="text-sm font-semibold" id="detailDeadline"></span>
+                      </div>
+                    </div>
                   </div>
-                  <button type="submit" class="w-full px-5 py-2.5 rounded-xl bg-red-600 text-white font-semibold shadow-sm hover:bg-red-700 hover:-translate-y-0.5 transition-all">
-                    <i class="bi bi-upload mr-2"></i>Kirim Bukti Pembayaran Denda
-                  </button>
-                </form>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-4">
+                  <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Lokasi</h6>
+                  <div class="space-y-2">
+                    <div class="flex items-start gap-2">
+                      <span class="material-symbols-outlined text-emerald-500 shrink-0" style="font-size:18px">trip_origin</span>
+                      <div><p class="text-[10px] text-slate-400">Pengambilan</p><p class="text-sm text-[#0b2b4a]" id="detailPickup"></p></div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                      <span class="material-symbols-outlined text-red-400 shrink-0" style="font-size:18px">location_on</span>
+                      <div><p class="text-[10px] text-slate-400">Pengembalian</p><p class="text-sm text-[#0b2b4a]" id="detailDropoff"></p></div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <!-- Menampilkan Bukti Denda (Pending / Confirmed) -->
-              <div id="penaltyProofImageContainer" class="hidden">
-                <hr class="border-red-100 my-3">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Bukti Pembayaran Denda Anda</p>
+              <!-- 3. Rincian Biaya -->
+              <div id="cardRincian" class="bg-slate-50 rounded-xl p-4 w-full">
+                <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Rincian Biaya</h6>
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between"><span class="text-slate-500" id="detailCarCostLabel">Sewa Mobil</span><span class="text-[#0b2b4a] font-medium" id="detailCarCost"></span></div>
+                  <div class="flex justify-between"><span class="text-slate-500">Biaya Sopir</span><span class="text-[#0b2b4a] font-medium" id="detailDriverCost"></span></div>
+                  <div class="flex justify-between"><span class="text-slate-500">Biaya Antar</span><span class="text-[#0b2b4a] font-medium" id="detailPickupFee"></span></div>
+                  <div class="flex justify-between"><span class="text-slate-500">Biaya Jemput</span><span class="text-[#0b2b4a] font-medium" id="detailDropoffFee"></span></div>
+                  <div class="flex justify-between" id="detailPenaltyRow"><span class="text-red-500" id="detailPenaltyLabel">Denda Keterlambatan</span><span class="text-red-500 font-medium" id="detailPenalty"></span></div>
+                  <hr class="border-slate-200">
+                  <div class="flex justify-between font-semibold text-base"><span class="text-[#0b2b4a]">Total</span><span class="text-[#00288e]" id="detailTotal"></span></div>
+                </div>
+              </div>
+
+              <!-- 4. Pembayaran Denda Keterlambatan -->
+              <div id="detailPenaltySection" class="bg-red-50/50 rounded-xl p-4 border border-red-100 hidden w-full">
+                <h6 class="text-xs font-semibold uppercase tracking-wider text-red-600 mb-3 flex items-center gap-1.5">
+                  <span class="material-symbols-outlined" style="font-size:16px">account_balance_wallet</span>
+                  Pembayaran Denda Keterlambatan
+                </h6>
+                <div class="space-y-3 text-sm">
+                  <div class="flex justify-between">
+                    <div>
+                      <span class="text-slate-500">Jumlah Denda</span>
+                      <span class="text-[10px] text-slate-400 block font-normal mt-0.5" id="penaltySectionAmountDetail"></span>
+                    </div>
+                    <span class="text-red-600 font-semibold align-self-center" id="penaltySectionAmount"></span>
+                  </div>
+                  <div class="flex justify-between"><span class="text-slate-500">Status Pembayaran Denda</span><span class="font-medium" id="penaltySectionStatus"></span></div>
+
+                  <!-- Info Rejection (Only shown if status is rejected) -->
+                  <div id="penaltyRejectionInfo" class="bg-red-100/65 border border-red-200 text-red-700 rounded-xl p-3 text-xs leading-relaxed hidden">
+                    <div class="flex items-start gap-1.5">
+                      <span class="material-symbols-outlined text-red-600 mt-0.5" style="font-size:16px">error</span>
+                      <div>
+                        <strong>Pembayaran Denda Ditolak:</strong> Foto bukti transfer denda tidak sesuai atau tidak valid. Silakan lakukan transfer kembali dan unggah foto bukti pembayaran yang benar.
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Form Upload Bukti Denda (Unpaid / Rejected) -->
+                  <div id="penaltyUploadFormContainer" class="hidden">
+                    <hr class="border-red-100 my-3">
+                    <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+                      Silakan lakukan transfer sebesar jumlah denda ke salah satu rekening bank admin berikut, kemudian unggah bukti transfer di bawah.
+                      <strong class="text-red-600 block mt-1"><i class="bi bi-info-circle-fill"></i> Catatan: Pastikan foto bukti transfer denda yang Anda unggah jelas, asli, dan valid. Admin akan menolak pembayaran denda apabila bukti transfer denda tidak valid.</strong>
+                    </p>
+                    <div class="bg-white rounded-xl p-3 border border-red-200/60 mb-3 space-y-2">
+                      <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rekening Bank Admin:</p>
+                      <?php foreach ($bankAccounts as $bank): ?>
+                        <div class="text-xs text-[#0b2b4a]">
+                          <span class="font-bold"><?= htmlspecialchars($bank['bank_name']) ?></span>: 
+                          <?= htmlspecialchars($bank['account_number']) ?> a/n <?= htmlspecialchars($bank['account_holder']) ?>
+                        </div>
+                      <?php endforeach; ?>
+                    </div>
+                    
+                    <form id="penaltyPaymentForm" method="POST" action="../handlers/booking_handler.php?action=pay_penalty" enctype="multipart/form-data">
+                      <input type="hidden" name="rental_id" id="penaltyRentalId" value="">
+                      <div class="mb-3">
+                        <label for="penaltyProofImageInput" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Unggah Bukti Transfer Denda <span class="text-red-500">*</span></label>
+                        <input type="file" name="penalty_proof_image" id="penaltyProofImageInput" class="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:border-red-600 outline-none" accept="image/jpeg,image/png,image/jpg" required>
+                        <p class="text-[10px] text-slate-400 mt-1">Format: JPG, JPEG, PNG. Maksimal 5MB. Pastikan foto bukti transfer denda asli, jelas, dan terbaca dengan baik.</p>
+                      </div>
+                      <button type="submit" class="w-full px-5 py-2.5 rounded-xl bg-red-600 text-white font-semibold shadow-sm hover:bg-red-700 hover:-translate-y-0.5 transition-all">
+                        <i class="bi bi-upload mr-2"></i>Kirim Bukti Pembayaran Denda
+                      </button>
+                    </form>
+                  </div>
+
+                  <!-- Menampilkan Bukti Denda (Pending / Confirmed) -->
+                  <div id="penaltyProofImageContainer" class="hidden">
+                    <hr class="border-red-100 my-3">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Bukti Pembayaran Denda Anda</p>
+                    <div class="flex justify-center">
+                      <img id="penaltyProofImageDisplay" src="" alt="Bukti Transfer Denda" class="max-w-full max-h-60 rounded-xl border border-slate-200 shadow-sm cursor-pointer" onclick="window.open(this.src, '_blank')">
+                    </div>
+                    <p class="text-[10px] text-slate-400 text-center mt-2">Klik gambar untuk melihat ukuran penuh</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 5. Informasi Pembayaran -->
+              <div id="cardPembayaran" class="bg-slate-50 rounded-xl p-4 w-full">
+                <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Informasi Pembayaran</h6>
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between"><span class="text-slate-500">Metode</span><span class="text-[#0b2b4a] font-medium" id="detailPayMethod"></span></div>
+                  <div class="flex justify-between"><span class="text-slate-500">Rekening Tujuan</span><span class="text-[#0b2b4a] font-medium text-right" id="detailPayBank" style="max-width:60%"></span></div>
+                  <div class="flex justify-between"><span class="text-slate-500">Status Pembayaran</span><span class="font-medium" id="detailPayStatus"></span></div>
+                </div>
+              </div>
+
+              <!-- 6. Bukti Transfer -->
+              <div id="detailProofSection" class="bg-slate-50 rounded-xl p-4 hidden w-full">
+                <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Bukti Transfer</h6>
                 <div class="flex justify-center">
-                  <img id="penaltyProofImageDisplay" src="" alt="Bukti Transfer Denda" class="max-w-full max-h-60 rounded-xl border border-slate-200 shadow-sm cursor-pointer" onclick="window.open(this.src, '_blank')">
+                  <img id="detailProofImage" src="" alt="Bukti Transfer" class="max-w-full max-h-60 rounded-xl border border-slate-200 shadow-sm cursor-pointer" onclick="window.open(this.src, '_blank')">
                 </div>
                 <p class="text-[10px] text-slate-400 text-center mt-2">Klik gambar untuk melihat ukuran penuh</p>
               </div>
-            </div>
-          </div>
 
-          <!-- Informasi Refund (muncul jika rental di-cancel/refund) -->
-          <div id="detailRefundInfoSection" class="bg-amber-50 rounded-xl p-4 mb-4 border border-amber-200/50 hidden">
-            <h6 class="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-3 flex items-center gap-1.5">
-              <span class="material-symbols-outlined" style="font-size:16px">currency_exchange</span>
-              Informasi Pengembalian Dana
-            </h6>
-            <div class="space-y-2 text-sm">
-              <div class="flex justify-between"><span class="text-slate-500">Alasan Pembatalan</span><span class="text-[#0b2b4a] font-medium text-right" id="detailRefundReason" style="max-width:60%"></span></div>
-              <div class="flex justify-between" id="detailRefundDetailRow"><span class="text-slate-500">Detail Alasan</span><span class="text-[#0b2b4a] font-medium text-right" id="detailRefundDetail" style="max-width:60%"></span></div>
-              <div class="flex justify-between"><span class="text-slate-500">Status Refund</span><span class="font-medium" id="detailRefundStatus"></span></div>
-              <div class="flex justify-between"><span class="text-slate-500">Tanggal Pengajuan</span><span class="text-[#0b2b4a] font-medium" id="detailRefundDate"></span></div>
-            </div>
-            <!-- Rekening Tujuan Refund -->
-            <div id="detailRefundBankSection" class="mt-3 pt-3 border-t border-amber-200/50 hidden">
-              <p class="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-2">Rekening Tujuan Refund</p>
-              <div class="space-y-2 text-sm">
-                <div class="flex justify-between"><span class="text-slate-500">Nama Nasabah</span><span class="text-[#0b2b4a] font-medium" id="detailRefundAccountHolder"></span></div>
-                <div class="flex justify-between"><span class="text-slate-500">Nama Bank</span><span class="text-[#0b2b4a] font-medium" id="detailRefundBankName"></span></div>
-                <div class="flex justify-between"><span class="text-slate-500">Nomor Rekening</span><span class="text-[#0b2b4a] font-medium" id="detailRefundAccountNumber"></span></div>
-              </div>
-            </div>
-            <!-- Bukti Refund (jika admin sudah upload) -->
-            <div id="detailRefundProofSection" class="mt-3 pt-3 border-t border-amber-200/50 hidden">
-              <p class="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-2">Bukti Pengembalian Dana</p>
-              <div class="flex justify-center">
-                <img id="detailRefundProofImage" src="" alt="Bukti Refund" class="max-w-full max-h-60 rounded-xl border border-amber-200 shadow-sm cursor-pointer" onclick="window.open(this.src, '_blank')">
-              </div>
-              <p class="text-[10px] text-slate-400 text-center mt-2">Klik gambar untuk melihat ukuran penuh</p>
-            </div>
-          </div>
-
-          <!-- Refund Section (hanya muncul jika allow_refund) -->
-          <div id="detailRefundSection" class="hidden">
-            <hr class="border-slate-200 my-4">
-            <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Ajukan Pembatalan & Refund</h6>
-            <form id="refundForm" method="POST" action="../handlers/booking_handler.php?action=request_refund">
-              <input type="hidden" name="rental_id" id="refundRentalId" value="">
-              <div class="mb-3">
-                <label for="reasonOption" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Alasan Utama <span class="text-red-500">*</span></label>
-                <select name="reason_option" id="reasonOption" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" required>
-                  <option value="" disabled selected>-- Pilih Alasan Pembatalan --</option>
-                  <option value="Perubahan rencana perjalanan">Perubahan rencana perjalanan</option>
-                  <option value="Kondisi darurat keluarga">Kondisi darurat keluarga</option>
-                  <option value="Mobil tidak sesuai ekspektasi">Mobil tidak sesuai ekspektasi</option>
-                  <option value="Menemukan harga lebih murah">Menemukan harga lebih murah</option>
-                  <option value="Masalah pembayaran">Masalah pembayaran</option>
-                  <option value="Lainnya">Lainnya</option>
-                </select>
-              </div>
-              <div class="mb-4 hidden" id="reasonDetailContainer">
-                <label for="reasonDetail" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Detail Alasan <span class="text-red-500">*</span></label>
-                <textarea name="reason_detail" id="reasonDetail" rows="3" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" placeholder="Tulis rincian alasan pembatalan Anda"></textarea>
-              </div>
-
-              <!-- Tujuan Transfer Refund -->
-              <div class="bg-blue-50 rounded-xl p-4 mb-4 border border-blue-200/50">
-                <h6 class="text-xs font-semibold uppercase tracking-wider text-blue-600 mb-3 flex items-center gap-1.5">
-                  <span class="material-symbols-outlined" style="font-size:16px">account_balance</span>
-                  Tujuan Transfer Refund <span class="text-red-500">*</span>
+              <!-- 7. Informasi Refund -->
+              <div id="detailRefundInfoSection" class="bg-amber-50 rounded-xl p-4 border border-amber-200/50 hidden w-full">
+                <h6 class="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-3 flex items-center gap-1.5">
+                  <span class="material-symbols-outlined" style="font-size:16px">currency_exchange</span>
+                  Informasi Pengembalian Dana
                 </h6>
-                <p class="text-xs text-slate-500 mb-3">Masukkan rekening Anda untuk penerimaan dana refund</p>
-                <div class="mb-3">
-                  <label for="refundAccountHolder" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Nama Nasabah <span class="text-red-500">*</span></label>
-                  <input type="text" name="refund_account_holder" id="refundAccountHolder" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all refund-transfer-field" placeholder="Contoh: Budi Santoso" required>
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between"><span class="text-slate-500">Alasan Pembatalan</span><span class="text-[#0b2b4a] font-medium text-right" id="detailRefundReason" style="max-width:60%"></span></div>
+                  <div class="flex justify-between" id="detailRefundDetailRow"><span class="text-slate-500">Detail Alasan</span><span class="text-[#0b2b4a] font-medium text-right" id="detailRefundDetail" style="max-width:60%"></span></div>
+                  <div class="flex justify-between"><span class="text-slate-500">Status Refund</span><span class="font-medium" id="detailRefundStatus"></span></div>
+                  <div class="flex justify-between"><span class="text-slate-500">Tanggal Pengajuan</span><span class="text-[#0b2b4a] font-medium" id="detailRefundDate"></span></div>
                 </div>
-                <div class="mb-3">
-                  <label for="refundBankName" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Nama Bank <span class="text-red-500">*</span></label>
-                  <input type="text" name="refund_bank_name" id="refundBankName" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all refund-transfer-field" placeholder="Contoh: BCA, Mandiri, BNI, BRI" required>
+                <!-- Rekening Tujuan Refund -->
+                <div id="detailRefundBankSection" class="mt-3 pt-3 border-t border-amber-200/50 hidden">
+                  <p class="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-2">Rekening Tujuan Refund</p>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex justify-between"><span class="text-slate-500">Nama Nasabah</span><span class="text-[#0b2b4a] font-medium" id="detailRefundAccountHolder"></span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Nama Bank</span><span class="text-[#0b2b4a] font-medium" id="detailRefundBankName"></span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Nomor Rekening</span><span class="text-[#0b2b4a] font-medium" id="detailRefundAccountNumber"></span></div>
+                  </div>
                 </div>
-                <div>
-                  <label for="refundAccountNumber" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Nomor Rekening <span class="text-red-500">*</span></label>
-                  <input type="text" name="refund_account_number" id="refundAccountNumber" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all refund-transfer-field" placeholder="Contoh: 1234567890" required>
+                <!-- Bukti Refund -->
+                <div id="detailRefundProofSection" class="mt-3 pt-3 border-t border-amber-200/50 hidden">
+                  <p class="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-2">Bukti Pengembalian Dana</p>
+                  <div class="flex justify-center">
+                    <img id="detailRefundProofImage" src="" alt="Bukti Refund" class="max-w-full max-h-60 rounded-xl border border-amber-200 shadow-sm cursor-pointer" onclick="window.open(this.src, '_blank')">
+                  </div>
+                  <p class="text-[10px] text-slate-400 text-center mt-2">Klik gambar untuk melihat ukuran penuh</p>
                 </div>
               </div>
 
-              <button type="submit" id="btnSubmitRefund" class="w-full px-5 py-3 rounded-xl bg-red-600 text-white font-semibold shadow-md hover:bg-red-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0" disabled>
-                <i class="bi bi-check2-circle mr-2"></i>Kirim Pengajuan Refund
-              </button>
-            </form>
+              <!-- 8. Refund Section -->
+              <div id="detailRefundSection" class="hidden w-full">
+                <hr class="border-slate-200 my-4">
+                <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Ajukan Pembatalan & Refund</h6>
+                <form id="refundForm" method="POST" action="../handlers/booking_handler.php?action=request_refund">
+                  <input type="hidden" name="rental_id" id="refundRentalId" value="">
+                  <div class="mb-3">
+                    <label for="reasonOption" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Alasan Utama <span class="text-red-500">*</span></label>
+                    <select name="reason_option" id="reasonOption" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" required>
+                      <option value="" disabled selected>-- Pilih Alasan Pembatalan --</option>
+                      <option value="Perubahan rencana perjalanan">Perubahan rencana perjalanan</option>
+                      <option value="Kondisi darurat keluarga">Kondisi darurat keluarga</option>
+                      <option value="Mobil tidak sesuai ekspektasi">Mobil tidak sesuai ekspektasi</option>
+                      <option value="Menemukan harga lebih murah">Menemukan harga lebih murah</option>
+                      <option value="Masalah pembayaran">Masalah pembayaran</option>
+                      <option value="Lainnya">Lainnya</option>
+                    </select>
+                  </div>
+                  <div class="mb-4 hidden" id="reasonDetailContainer">
+                    <label for="reasonDetail" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Detail Alasan <span class="text-red-500">*</span></label>
+                    <textarea name="reason_detail" id="reasonDetail" rows="3" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all" placeholder="Tulis rincian alasan pembatalan Anda"></textarea>
+                  </div>
+
+                  <!-- Tujuan Transfer Refund -->
+                  <div class="bg-blue-50 rounded-xl p-4 mb-4 border border-blue-200/50">
+                    <h6 class="text-xs font-semibold uppercase tracking-wider text-blue-600 mb-3 flex items-center gap-1.5">
+                      <span class="material-symbols-outlined" style="font-size:16px">account_balance</span>
+                      Tujuan Transfer Refund <span class="text-red-500">*</span>
+                    </h6>
+                    <p class="text-xs text-slate-500 mb-3">Masukkan rekening Anda untuk penerimaan dana refund</p>
+                    <div class="mb-3">
+                      <label for="refundAccountHolder" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Nama Nasabah <span class="text-red-500">*</span></label>
+                      <input type="text" name="refund_account_holder" id="refundAccountHolder" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all refund-transfer-field" placeholder="Contoh: Budi Santoso" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="refundBankName" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Nama Bank <span class="text-red-500">*</span></label>
+                      <input type="text" name="refund_bank_name" id="refundBankName" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all refund-transfer-field" placeholder="Contoh: BCA, Mandiri, BNI, BRI" required>
+                    </div>
+                    <div>
+                      <label for="refundAccountNumber" class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">Nomor Rekening <span class="text-red-500">*</span></label>
+                      <input type="text" name="refund_account_number" id="refundAccountNumber" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all refund-transfer-field" placeholder="Contoh: 1234567890" required>
+                    </div>
+                  </div>
+
+                  <button type="submit" id="btnSubmitRefund" class="w-full px-5 py-3 rounded-xl bg-red-600 text-white font-semibold shadow-md hover:bg-red-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0" disabled>
+                    <i class="bi bi-check2-circle mr-2"></i>Kirim Pengajuan Refund
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Right Column (Desktop only container) -->
+            <div id="colRight" class="w-full lg:w-1/2 space-y-4 hidden lg:block">
+            </div>
           </div>
 
         </div>
+      </div>
+    </div>
+  </div>
       </div>
     </div>
   </div>
@@ -968,13 +1015,36 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
           document.getElementById('detailDropoff').textContent = d.dropoff;
 
           // Costs
-          document.getElementById('detailDriverCost').textContent = d.driverCost;
-          document.getElementById('detailPickupFee').textContent = d.pickupFee;
-          document.getElementById('detailDropoffFee').textContent = d.dropoffFee;
-          document.getElementById('detailTotal').textContent = d.total;
+          var pricePerDay = parseFloat(d.pricePerDay) || 0;
+          var days = parseInt(d.days) || 0;
+          var carCost = pricePerDay * days;
+          var driverCost = parseFloat(d.driverCostRaw) || 0;
+          var pickupFee = parseFloat(d.pickupFeeRaw) || 0;
+          var dropoffFee = parseFloat(d.dropoffFeeRaw) || 0;
+          var penaltyFee = parseFloat(d.penaltyRaw) || 0;
+
+          var totalCost = carCost + driverCost + pickupFee + dropoffFee + penaltyFee;
+
+          function formatRupiah(num) {
+            return 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
+          }
+
+          document.getElementById('detailCarCostLabel').textContent = 'Sewa Mobil (' + formatRupiah(pricePerDay) + ' x ' + days + ' Hari)';
+          document.getElementById('detailCarCost').textContent = formatRupiah(carCost);
+          document.getElementById('detailDriverCost').textContent = formatRupiah(driverCost);
+          document.getElementById('detailPickupFee').textContent = formatRupiah(pickupFee);
+          document.getElementById('detailDropoffFee').textContent = formatRupiah(dropoffFee);
+          document.getElementById('detailTotal').textContent = formatRupiah(totalCost);
+
           var penaltyRow = document.getElementById('detailPenaltyRow');
-          if (d.penalty && d.penalty !== 'Rp 0') {
-            document.getElementById('detailPenalty').textContent = d.penalty;
+          var penaltyLabel = document.getElementById('detailPenaltyLabel');
+          if (penaltyFee > 0) {
+            document.getElementById('detailPenalty').textContent = formatRupiah(penaltyFee);
+            var penaltyHours = parseInt(d.penaltyHours) || 0;
+            var penaltyRate = parseFloat(d.penaltyRate) || 0;
+            if (penaltyLabel) {
+              penaltyLabel.textContent = 'Denda Keterlambatan (' + penaltyHours + ' jam × ' + formatRupiah(penaltyRate) + ')';
+            }
             penaltyRow.classList.remove('hidden');
           } else {
             penaltyRow.classList.add('hidden');
@@ -1013,9 +1083,15 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
           if (penaltyRentalIdInput) penaltyRentalIdInput.value = '';
           if (penaltyProofImageInput) penaltyProofImageInput.value = '';
 
-          if (d.penalty && d.penalty !== 'Rp 0' && (d.status === 'Selesai' || d.status === 'Sedang Disewa')) {
+          if (penaltyFee > 0 && (d.status === 'Selesai' || d.status === 'Sedang Disewa')) {
             penaltySection.classList.remove('hidden');
-            document.getElementById('penaltySectionAmount').textContent = d.penalty;
+            document.getElementById('penaltySectionAmount').textContent = formatRupiah(penaltyFee);
+            var penaltyHours = parseInt(d.penaltyHours) || 0;
+            var penaltyRate = parseFloat(d.penaltyRate) || 0;
+            var detailEl = document.getElementById('penaltySectionAmountDetail');
+            if (detailEl) {
+              detailEl.textContent = '(' + penaltyHours + ' jam × ' + formatRupiah(penaltyRate) + ')';
+            }
             
             var penaltyStatusEl = document.getElementById('penaltySectionStatus');
             var pStatus = d.penaltyStatus; // unpaid, pending, confirmed, rejected
@@ -1183,6 +1259,52 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
       refundTransferFields.forEach(function(field) {
         field.addEventListener('input', checkRefundTransferFields);
       });
+
+      // Dynamic layout rearrangement for detail modal columns
+      var colLeft = document.getElementById('colLeft');
+      var colRight = document.getElementById('colRight');
+      var cardMobil = document.getElementById('cardMobil');
+      var cardJadwal = document.getElementById('cardJadwal');
+      var cardRincian = document.getElementById('cardRincian');
+      var cardDenda = document.getElementById('detailPenaltySection');
+      var cardPembayaran = document.getElementById('cardPembayaran');
+      var cardBukti = document.getElementById('detailProofSection');
+      var cardRefundInfo = document.getElementById('detailRefundInfoSection');
+      var cardRefundForm = document.getElementById('detailRefundSection');
+
+      var layoutMediaQuery = window.matchMedia('(min-width: 1024px)');
+      function handleLayoutRearrange(e) {
+        if (!colLeft || !colRight) return;
+        if (e.matches) {
+          // Desktop: Col Left = Mobil, Jadwal, Pembayaran, Bukti
+          if (cardMobil) colLeft.appendChild(cardMobil);
+          if (cardJadwal) colLeft.appendChild(cardJadwal);
+          if (cardPembayaran) colLeft.appendChild(cardPembayaran);
+          if (cardBukti) colLeft.appendChild(cardBukti);
+
+          // Desktop: Col Right = Rincian, Denda, RefundInfo, RefundForm
+          if (cardRincian) colRight.appendChild(cardRincian);
+          if (cardDenda) colRight.appendChild(cardDenda);
+          if (cardRefundInfo) colRight.appendChild(cardRefundInfo);
+          if (cardRefundForm) colRight.appendChild(cardRefundForm);
+        } else {
+          // Mobile: Stack all in colLeft in mobile order
+          if (cardMobil) colLeft.appendChild(cardMobil);
+          if (cardJadwal) colLeft.appendChild(cardJadwal);
+          if (cardRincian) colLeft.appendChild(cardRincian);
+          if (cardDenda) colLeft.appendChild(cardDenda);
+          if (cardPembayaran) colLeft.appendChild(cardPembayaran);
+          if (cardBukti) colLeft.appendChild(cardBukti);
+          if (cardRefundInfo) colLeft.appendChild(cardRefundInfo);
+          if (cardRefundForm) colLeft.appendChild(cardRefundForm);
+        }
+      }
+      if (layoutMediaQuery.addEventListener) {
+        layoutMediaQuery.addEventListener('change', handleLayoutRearrange);
+      } else {
+        layoutMediaQuery.addListener(handleLayoutRearrange);
+      }
+      handleLayoutRearrange(layoutMediaQuery);
     });
 
     // -------------------------------------------------------

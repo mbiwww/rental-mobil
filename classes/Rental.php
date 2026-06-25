@@ -52,7 +52,7 @@ class Rental extends BaseModel
     public function getByUserId(int $userId): array
     {
         return $this->query(
-            "SELECT r.*, c.brand, c.model, c.year, c.image
+            "SELECT r.*, c.brand, c.model, c.year, c.image, c.price_per_day
              FROM rentals r
              JOIN cars c ON r.car_id = c.id
              WHERE r.user_id = ?
