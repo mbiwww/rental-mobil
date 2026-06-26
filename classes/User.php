@@ -223,7 +223,7 @@ class User
         try {
             $sql = "
                 SELECT u.id, u.name, u.nik, u.email, u.phone, u.address, u.profile_image, u.created_at,
-                       COUNT(r.id) AS total_rentals,
+                       SUM(CASE WHEN r.status = 'completed' THEN 1 ELSE 0 END) AS total_rentals,
                        SUM(CASE WHEN r.status IN ('ongoing', 'confirmed', 'pending') THEN 1 ELSE 0 END) AS active_rentals,
                        COALESCE(SUM(CASE WHEN r.status = 'completed' THEN r.total_price + COALESCE(r.penalty_fee, 0) ELSE 0 END), 0) AS total_spent
                 FROM users u
@@ -260,7 +260,7 @@ class User
             // Data dasar customer
             $stmt = $this->db->prepare("
                 SELECT u.*,
-                       COUNT(r.id) AS total_rentals,
+                       SUM(CASE WHEN r.status = 'completed' THEN 1 ELSE 0 END) AS total_rentals,
                        COALESCE(SUM(CASE WHEN r.status = 'completed' THEN r.total_price + COALESCE(r.penalty_fee, 0) ELSE 0 END), 0) AS total_spent
                 FROM users u
                 LEFT JOIN rentals r ON u.id = r.user_id

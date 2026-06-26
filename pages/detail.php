@@ -212,7 +212,6 @@ $isAvailable = $car['status'] === 'available';
                 <!-- Hidden input total untuk dikirim ke server -->
                 <input type="hidden" name="total_price" id="totalPriceHidden" value="<?= $pricePerDay ?>">
                 <input type="hidden" name="driver_cost" id="driverCostHidden" value="0">
-                <div class="price-detail" id="totalDetail"></div>
               </div>
 
               <div class="form-check mb-3">
@@ -265,7 +264,6 @@ $isAvailable = $car['status'] === 'available';
       const totalHidden = document.getElementById('totalPriceHidden');
       const driverCostHidden = document.getElementById('driverCostHidden');
       const priceDetail = document.getElementById('priceDetail');
-      const totalDetail = document.getElementById('totalDetail');
 
       // Jika tidak ada form booking (belum login / tidak tersedia), hentikan
       if (!startDateInput) return;
@@ -344,7 +342,6 @@ $isAvailable = $car['status'] === 'available';
           totalHidden.value = '0';
           driverCostHidden.value = '0';
           priceDetail.textContent = '';
-          totalDetail.textContent = '';
           return;
         }
 
@@ -376,15 +373,6 @@ $isAvailable = $car['status'] === 'available';
 
         // Detail harga per hari
         priceDetail.textContent = withDriver ? '(termasuk supir + pickup & dropoff)' : '';
-
-        // Detail rincian total
-        const extras = [];
-        if (pickup > 0) extras.push('Pickup Rp ' + formatRupiah(pickup));
-        if (dropoff > 0) extras.push('Dropoff Rp ' + formatRupiah(dropoff));
-        let detail = '';
-        if (withDriver) detail += `Mobil Rp ${formatRupiah(basePrice * days)} + Supir Rp ${formatRupiah(driverCost)}`;
-        if (extras.length) detail += (detail ? ' + ' : '') + extras.join(' + ');
-        totalDetail.textContent = detail;
       }
 
       // ── Render section pickup & dropoff ──────────────────────────────────────

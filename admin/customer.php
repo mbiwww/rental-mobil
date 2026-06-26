@@ -14,11 +14,11 @@ require_once '../classes/User.php';
 $db        = Database::getInstance()->getConnection();
 $userModel = new User($db);
 
-// Filter Pencarian
-$search = $_GET['search'] ?? '';
+// Filter Pencarian (client-side)
+$search = trim($_GET['search'] ?? '');
 
-// Ambil data dari model
-$customers       = $userModel->getAllCustomersWithRentalCount($search);
+// Ambil data dari model - kirim string kosong agar data tidak di-filter oleh query database
+$customers       = $userModel->getAllCustomersWithRentalCount('');
 $totalCustomers  = $userModel->countCustomers();
 $activeCustomers = $userModel->countActiveCustomers();
 $withRentals     = $userModel->countCustomersWithRentals();
@@ -154,20 +154,18 @@ $activePage      = 'customer';
 
             <!-- Search -->
             <div class="table-container shadow-sm mb-4" style="padding: 20px;">
-                <form method="GET" action="customer.php" class="row g-3 align-items-center">
+                <form method="GET" action="customer.php" id="searchForm" class="row g-3 align-items-center">
                     <div class="col-md-8">
                         <div class="input-group">
                             <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" name="search" class="form-control search-input border-start-0 ps-0"
+                            <input type="text" name="search" id="searchInput" class="form-control search-input border-start-0 ps-0"
                                    placeholder="Cari nama, email, NIK, atau no. telepon customer..."
                                    value="<?= htmlspecialchars($search) ?>">
                         </div>
                     </div>
                     <div class="col-md-4 d-flex gap-2">
                         <button type="submit" class="btn btn-primary px-4 rounded-3"><i class="bi bi-search me-1"></i> Cari</button>
-                        <?php if (!empty($search)): ?>
-                            <a href="customer.php" class="btn btn-outline-secondary px-3 rounded-3 d-flex align-items-center">Reset</a>
-                        <?php endif; ?>
+                        <a href="customer.php" id="resetBtn" class="btn btn-outline-secondary px-3 rounded-3 d-flex align-items-center" style="<?= empty($search) ? 'display: none !important;' : '' ?>">Reset</a>
                     </div>
                 </form>
             </div>
@@ -177,24 +175,18 @@ $activePage      = 'customer';
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h5 class="fw-bold mb-0">
                         Daftar Customer
-                        <span class="badge bg-light text-secondary fw-normal ms-1"><?= count($customers) ?></span>
+                        <span class="badge bg-light text-secondary fw-normal ms-1" id="resultCount"><?= count($customers) ?></span>
                     </h5>
-                    <?php if (!empty($search)): ?>
-                        <small class="text-muted">Hasil pencarian: "<?= htmlspecialchars($search) ?>"</small>
-                    <?php endif; ?>
+                    <small class="text-muted" id="searchFeedback" style="display: none;">Hasil pencarian: "<span id="searchKeywordLabel"></span>"</small>
                 </div>
 
                 <?php if (empty($customers)): ?>
                     <div class="text-center py-5 text-muted">
                         <i class="bi bi-people fs-1 d-block mb-3 text-secondary"></i>
-                        <?php if (!empty($search)): ?>
-                            <p>Tidak ada customer yang cocok dengan pencarian "<strong><?= htmlspecialchars($search) ?></strong>".</p>
-                        <?php else: ?>
-                            <p>Belum ada customer yang terdaftar di sistem.</p>
-                        <?php endif; ?>
+                        <p>Belum ada customer yang terdaftar di sistem.</p>
                     </div>
                 <?php else: ?>
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="customerTableContainer">
                         <table class="table align-middle">
                             <thead>
                                 <tr>
@@ -215,7 +207,11 @@ $activePage      = 'customer';
                                     $bgColor = $colors[$i % count($colors)];
                                     $activeRentals = (int)($cust['active_rentals'] ?? 0);
                                 ?>
-                                    <tr>
+                                    <tr class="customer-row"
+                                        data-name="<?= htmlspecialchars(strtolower($cust['name'] ?? '')) ?>"
+                                        data-email="<?= htmlspecialchars(strtolower($cust['email'] ?? '')) ?>"
+                                        data-nik="<?= htmlspecialchars(strtolower($cust['nik'] ?? '')) ?>"
+                                        data-phone="<?= htmlspecialchars(strtolower($cust['phone'] ?? '')) ?>">
                                         <td class="text-muted fw-semibold">#<?= $cust['id'] ?></td>
                                         <td>
                                             <div class="d-flex align-items-center gap-3">
@@ -293,6 +289,15 @@ $activePage      = 'customer';
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- State kosong client-side: tampil via JS saat pencarian teks tidak ada hasil -->
+                    <div class="text-center py-5 text-muted" id="emptyState" style="display: none;">
+                        <i class="bi bi-search fs-1 d-block mb-3 text-secondary"></i>
+                        <p>Tidak ada customer yang cocok dengan pencarian "<strong id="emptyKeyword"></strong>".</p>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="document.getElementById('searchInput').value=''; document.getElementById('searchInput').dispatchEvent(new Event('input'));">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Hapus Pencarian
+                        </button>
                     </div>
                 <?php endif; ?>
             </div>
@@ -393,6 +398,86 @@ $activePage      = 'customer';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+
+            // ==========================================
+            // CLIENT-SIDE SEARCH LOGIC (LIKE KATALOG)
+            // ==========================================
+            const searchInput = document.getElementById('searchInput');
+            const customerRows = document.querySelectorAll('.customer-row');
+            const customerTableContainer = document.getElementById('customerTableContainer');
+            const emptyState = document.getElementById('emptyState');
+            const emptyKeyword = document.getElementById('emptyKeyword');
+            const resultCount = document.getElementById('resultCount');
+            const searchFeedback = document.getElementById('searchFeedback');
+            const searchKeywordLabel = document.getElementById('searchKeywordLabel');
+            const resetBtn = document.getElementById('resetBtn');
+
+            function applySearch() {
+                const keyword = searchInput ? searchInput.value.toLowerCase().trim() : '';
+                let visible = 0;
+
+                customerRows.forEach(function (row) {
+                    const name = row.getAttribute('data-name') || '';
+                    const email = row.getAttribute('data-email') || '';
+                    const nik = row.getAttribute('data-nik') || '';
+                    const phone = row.getAttribute('data-phone') || '';
+
+                    const matched = name.includes(keyword) || 
+                                    email.includes(keyword) || 
+                                    nik.includes(keyword) || 
+                                    phone.includes(keyword);
+
+                    row.style.display = matched ? '' : 'none';
+                    if (matched) visible++;
+                });
+
+                // Update result count real-time
+                if (resultCount) {
+                    resultCount.textContent = visible;
+                }
+
+                // Show/hide reset button based on input content
+                if (resetBtn) {
+                    if (keyword !== '') {
+                        resetBtn.style.setProperty('display', 'flex', 'important');
+                    } else {
+                        resetBtn.style.setProperty('display', 'none', 'important');
+                    }
+                }
+
+                // Show/hide empty state
+                if (emptyState) {
+                    if (visible === 0 && customerRows.length > 0) {
+                        emptyState.style.display = 'block';
+                        if (customerTableContainer) {
+                            customerTableContainer.style.display = 'none';
+                        }
+                        if (emptyKeyword) {
+                            emptyKeyword.textContent = searchInput ? searchInput.value.trim() : '';
+                        }
+                    } else {
+                        emptyState.style.display = 'none';
+                        if (customerTableContainer) {
+                            customerTableContainer.style.display = 'block';
+                        }
+                    }
+                }
+
+                // Update search feedback
+                if (searchFeedback && searchKeywordLabel) {
+                    if (keyword !== '') {
+                        searchFeedback.style.display = 'block';
+                        searchKeywordLabel.textContent = searchInput ? searchInput.value.trim() : '';
+                    } else {
+                        searchFeedback.style.display = 'none';
+                    }
+                }
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', applySearch);
+                applySearch(); // Run initially on load
+            }
 
             // ==========================================
             // MODAL DETAIL CUSTOMER
