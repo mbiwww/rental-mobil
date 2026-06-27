@@ -59,7 +59,7 @@ $old = [
 <body>
   <div class="container py-4 py-sm-5">
     <div class="row justify-content-center">
-      <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
+      <div class="col-12 col-sm-10 col-md-10 col-lg-8">
 
         <div class="card rental-card p-3 p-md-4 p-xl-5">
           <div class="card-body">
@@ -87,78 +87,82 @@ $old = [
                 <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirectUrl) ?>">
               <?php endif; ?>
 
-              <div class="mb-3">
-                <label for="reg-name" class="form-label fw-semibold small text-uppercase tracking-wide text-secondary">Nama Lengkap</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent pe-2">
-                    <i class="bi bi-person"></i>
-                  </span>
-                  <input
-                    type="text"
-                    id="reg-name"
-                    name="name"
-                    class="form-control ps-2"
-                    placeholder="Masukan Nama Lengkap"
-                    value="<?= $old['name'] ?>"
-                    required
-                    autocomplete="name">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="reg-name" class="form-label fw-semibold small text-uppercase tracking-wide text-secondary">Nama Lengkap</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-transparent pe-2">
+                      <i class="bi bi-person"></i>
+                    </span>
+                    <input
+                      type="text"
+                      id="reg-name"
+                      name="name"
+                      class="form-control ps-2"
+                      placeholder="Masukan Nama Lengkap"
+                      value="<?= $old['name'] ?>"
+                      required
+                      autocomplete="name">
+                  </div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="reg-nik" class="form-label fw-semibold small text-uppercase tracking-wide text-secondary">NIK</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-transparent pe-2">
+                      <i class="bi bi-person-vcard"></i>
+                    </span>
+                    <input
+                      type="text"
+                      id="reg-nik"
+                      name="nik"
+                      class="form-control ps-2"
+                      placeholder="Masukan NIK (16 digit)"
+                      value="<?= $old['nik'] ?>"
+                      maxlength="16"
+                      inputmode="numeric"
+                      pattern="[0-9]{16}"
+                      required>
+                  </div>
                 </div>
               </div>
 
-              <div class="mb-3">
-                <label for="reg-nik" class="form-label fw-semibold small text-uppercase tracking-wide text-secondary">NIK</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent pe-2">
-                    <i class="bi bi-person-vcard"></i>
-                  </span>
-                  <input
-                    type="text"
-                    id="reg-nik"
-                    name="nik"
-                    class="form-control ps-2"
-                    placeholder="Masukan NIK (16 digit)"
-                    value="<?= $old['nik'] ?>"
-                    maxlength="16"
-                    inputmode="numeric"
-                    pattern="[0-9]{16}"
-                    required>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="reg-email" class="form-label fw-semibold small text-uppercase tracking-wide text-secondary">Email</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-transparent pe-2">
+                      <i class="bi bi-envelope"></i>
+                    </span>
+                    <input
+                      type="email"
+                      id="reg-email"
+                      name="email"
+                      class="form-control ps-2"
+                      placeholder="Masukan Email Aktif"
+                      value="<?= $old['email'] ?>"
+                      required
+                      autocomplete="email">
+                  </div>
                 </div>
-              </div>
 
-              <div class="mb-3">
-                <label for="reg-email" class="form-label fw-semibold small text-uppercase tracking-wide text-secondary">Email</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent pe-2">
-                    <i class="bi bi-envelope"></i>
-                  </span>
-                  <input
-                    type="email"
-                    id="reg-email"
-                    name="email"
-                    class="form-control ps-2"
-                    placeholder="Masukan Email Aktif"
-                    value="<?= $old['email'] ?>"
-                    required
-                    autocomplete="email">
-                </div>
-              </div>
-
-              <div class="mb-3">
-                <label for="reg-phone" class="form-label fw-semibold small text-uppercase tracking-wide text-secondary">Nomor HP</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent pe-2">
-                    <i class="bi bi-telephone"></i>
-                  </span>
-                  <input
-                    type="tel"
-                    id="reg-phone"
-                    name="phone"
-                    class="form-control ps-2"
-                    placeholder="Masukan Nomor Aktif"
-                    value="<?= $old['phone'] ?>"
-                    inputmode="numeric"
-                    required
-                    autocomplete="tel">
+                <div class="col-md-6 mb-3">
+                  <label for="reg-phone" class="form-label fw-semibold small text-uppercase tracking-wide text-secondary">Nomor HP</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-transparent pe-2">
+                      <i class="bi bi-telephone"></i>
+                    </span>
+                    <input
+                      type="tel"
+                      id="reg-phone"
+                      name="phone"
+                      class="form-control ps-2"
+                      placeholder="Masukan Nomor Aktif"
+                      value="<?= $old['phone'] ?>"
+                      inputmode="numeric"
+                      required
+                      autocomplete="tel">
+                  </div>
                 </div>
               </div>
 
@@ -180,68 +184,70 @@ $old = [
                 </div>
               </div>
 
-              <div class="mb-3">
-                <label for="reg-password" class="form-label fw-semibold small text-uppercase tracking-wide text-secondary">Password</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent pe-2">
-                    <i class="bi bi-lock"></i>
-                  </span>
-                  <input
-                    type="password"
-                    id="reg-password"
-                    name="password"
-                    class="form-control ps-2"
-                    placeholder="Minimal 8 karakter"
-                    required
-                    autocomplete="new-password">
-                  <button
-                    type="button"
-                    class="btn-toggle-password input-group-text bg-transparent"
-                    id="toggle-password"
-                    aria-label="Tampilkan/sembunyikan password"
-                    title="Tampilkan password">
-                    <i class="bi bi-eye" id="icon-eye"></i>
-                  </button>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="reg-password" class="form-label fw-semibold small text-uppercase tracking-wide text-secondary">Password</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-transparent pe-2">
+                      <i class="bi bi-lock"></i>
+                    </span>
+                    <input
+                      type="password"
+                      id="reg-password"
+                      name="password"
+                      class="form-control ps-2"
+                      placeholder="Minimal 8 karakter"
+                      required
+                      autocomplete="new-password">
+                    <button
+                      type="button"
+                      class="btn-toggle-password input-group-text bg-transparent"
+                      id="toggle-password"
+                      aria-label="Tampilkan/sembunyikan password"
+                      title="Tampilkan password">
+                      <i class="bi bi-eye" id="icon-eye"></i>
+                    </button>
+                  </div>
+
+                  <!-- Panel syarat password — tampil saat user mulai mengetik -->
+                  <div id="password-rules" class="mt-2 d-none">
+                    <p class="mb-1 small text-secondary fw-semibold">Syarat password:</p>
+                    <ul class="list-unstyled mb-0 small" style="line-height: 1.8;">
+                      <li id="rule-length" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Minimal 8 karakter <span class="text-body-tertiary">(12+ lebih aman)</span></li>
+                      <li id="rule-upper" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung huruf besar (A–Z)</li>
+                      <li id="rule-lower" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung huruf kecil (a–z)</li>
+                      <li id="rule-number" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung angka (0–9)</li>
+                      <li id="rule-special" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung karakter khusus (!&nbsp;@&nbsp;#&nbsp;$&nbsp;%&nbsp;^&nbsp;&amp;&nbsp;*)</li>
+                    </ul>
+                  </div>
                 </div>
 
-                <!-- Panel syarat password — tampil saat user mulai mengetik -->
-                <div id="password-rules" class="mt-2 d-none">
-                  <p class="mb-1 small text-secondary fw-semibold">Syarat password:</p>
-                  <ul class="list-unstyled mb-0 small" style="line-height: 1.8;">
-                    <li id="rule-length" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Minimal 8 karakter <span class="text-body-tertiary">(12+ lebih aman)</span></li>
-                    <li id="rule-upper" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung huruf besar (A–Z)</li>
-                    <li id="rule-lower" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung huruf kecil (a–z)</li>
-                    <li id="rule-number" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung angka (0–9)</li>
-                    <li id="rule-special" class="rule-item"><i class="bi bi-x-circle-fill me-1"></i>Mengandung karakter khusus (!&nbsp;@&nbsp;#&nbsp;$&nbsp;%&nbsp;^&nbsp;&amp;&nbsp;*)</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div class="mb-4">
-                <label for="reg-konfirmasi" class="form-label fw-semibold small text-uppercase tracking-wide text-secondary">Konfirmasi Password</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent pe-2">
-                    <i class="bi bi-lock-fill"></i>
-                  </span>
-                  <input
-                    type="password"
-                    id="reg-konfirmasi"
-                    name="konfirmasi_password"
-                    class="form-control ps-2"
-                    placeholder="Ulangi Password Baru"
-                    required
-                    autocomplete="new-password">
-                  <button
-                    type="button"
-                    class="btn-toggle-password input-group-text bg-transparent"
-                    id="toggle-konfirmasi"
-                    aria-label="Tampilkan/sembunyikan konfirmasi password"
-                    title="Tampilkan password">
-                    <i class="bi bi-eye" id="icon-eye-konfirm"></i>
-                  </button>
-                </div>
-                <div id="konfirm-feedback" class="form-text text-danger d-none">
-                  <i class="bi bi-x-circle me-1"></i>Password tidak cocok
+                <div class="col-md-6 mb-4">
+                  <label for="reg-konfirmasi" class="form-label fw-semibold small text-uppercase tracking-wide text-secondary">Konfirmasi Password</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-transparent pe-2">
+                      <i class="bi bi-lock-fill"></i>
+                    </span>
+                    <input
+                      type="password"
+                      id="reg-konfirmasi"
+                      name="konfirmasi_password"
+                      class="form-control ps-2"
+                      placeholder="Ulangi Password Baru"
+                      required
+                      autocomplete="new-password">
+                    <button
+                      type="button"
+                      class="btn-toggle-password input-group-text bg-transparent"
+                      id="toggle-konfirmasi"
+                      aria-label="Tampilkan/sembunyikan konfirmasi password"
+                      title="Tampilkan password">
+                      <i class="bi bi-eye" id="icon-eye-konfirm"></i>
+                    </button>
+                  </div>
+                  <div id="konfirm-feedback" class="form-text text-danger d-none">
+                    <i class="bi bi-x-circle me-1"></i>Password tidak cocok
+                  </div>
                 </div>
               </div>
 
