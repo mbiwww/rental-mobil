@@ -342,7 +342,7 @@ unset($r);
             btn.addEventListener('click', function () {
                 document.getElementById('return-car').textContent = this.dataset.car;
                 document.getElementById('return-customer').textContent = 'Customer: ' + this.dataset.customer;
-                document.getElementById('return-konfirmasi-link').href = '../handlers/admin_handler.php?action=return_rental&id=' + this.dataset.id;
+                document.getElementById('return-konfirmasi-link').href = '../handlers/rental_handler.php?action=return_rental&id=' + this.dataset.id;
                 const penaltyInfo = document.getElementById('return-penalty-info');
                 if (this.dataset.overdue === '1') {
                     penaltyInfo.classList.remove('d-none');

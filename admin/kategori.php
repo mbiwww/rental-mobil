@@ -373,7 +373,7 @@ $activePage = 'kategori';
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="../handlers/admin_handler.php" method="POST">
+                <form action="../handlers/car_type_handler.php" method="POST">
                     <input type="hidden" name="action" value="add_kategori">
                     <div class="modal-body p-4">
                         <div class="mb-3">
@@ -407,7 +407,7 @@ $activePage = 'kategori';
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="../handlers/admin_handler.php" method="POST">
+                <form action="../handlers/car_type_handler.php" method="POST">
                     <input type="hidden" name="action" value="edit_kategori">
                     <input type="hidden" name="id" id="edit-id">
                     <div class="modal-body p-4">
@@ -472,7 +472,7 @@ $activePage = 'kategori';
                     // Set href link konfirmasi ke handler
                     hapusLinkEl.setAttribute(
                         'href',
-                        '../handlers/admin_handler.php?action=delete_kategori&id=' + id
+                        '../handlers/car_type_handler.php?action=delete_kategori&id=' + id
                     );
 
                     // Tampilkan modal konfirmasi

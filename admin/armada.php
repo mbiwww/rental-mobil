@@ -357,9 +357,9 @@ $activePage = 'armada';
                                                 </button>
                                                 <ul class="dropdown-menu shadow border-0 rounded-3 text-sm">
                                                     <li><h6 class="dropdown-header text-xs text-uppercase font-semibold">Ubah Status Ke:</h6></li>
-                                                    <li><a class="dropdown-item" href="../handlers/admin_handler.php?action=update_status&id=<?= $car['id'] ?>&status=available"><i class="bi bi-check-circle-fill text-success me-2"></i>Tersedia</a></li>
-                                                    <li><a class="dropdown-item" href="../handlers/admin_handler.php?action=update_status&id=<?= $car['id'] ?>&status=rented"><i class="bi bi-arrow-right-circle-fill text-warning me-2"></i>Disewa</a></li>
-                                                    <li><a class="dropdown-item" href="../handlers/admin_handler.php?action=update_status&id=<?= $car['id'] ?>&status=maintenance"><i class="bi bi-wrench-adjustable text-danger me-2"></i>Servis (Maint.)</a></li>
+                                                    <li><a class="dropdown-item" href="../handlers/car_handler.php?action=update_status&id=<?= $car['id'] ?>&status=available"><i class="bi bi-check-circle-fill text-success me-2"></i>Tersedia</a></li>
+                                                    <li><a class="dropdown-item" href="../handlers/car_handler.php?action=update_status&id=<?= $car['id'] ?>&status=rented"><i class="bi bi-arrow-right-circle-fill text-warning me-2"></i>Disewa</a></li>
+                                                    <li><a class="dropdown-item" href="../handlers/car_handler.php?action=update_status&id=<?= $car['id'] ?>&status=maintenance"><i class="bi bi-wrench-adjustable text-danger me-2"></i>Servis (Maint.)</a></li>
                                                 </ul>
                                             </div>
                                         </td>
@@ -408,7 +408,7 @@ $activePage = 'armada';
                                                 </button>
 
                                                 <!-- Delete Button -->
-                                                <a href="../handlers/admin_handler.php?action=delete_car&id=<?= $car['id'] ?>" 
+                                                <a href="../handlers/car_handler.php?action=delete_car&id=<?= $car['id'] ?>" 
                                                    class="btn btn-link text-danger p-1 btn-delete" 
                                                    onclick="return confirm('Apakah Anda yakin ingin menghapus mobil <?= htmlspecialchars($car['brand'] . ' ' . $car['model']) ?> secara permanen?');"
                                                    title="Hapus Mobil">
@@ -448,7 +448,7 @@ $activePage = 'armada';
                     <h5 class="modal-title fw-bold" id="modalAddCarLabel"><i class="bi bi-car-front-fill text-primary me-2"></i>Tambah Mobil Baru</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="../handlers/admin_handler.php" method="POST" enctype="multipart/form-data">
+                <form action="../handlers/car_handler.php" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="add_car">
                     <div class="modal-body p-4">
                         <div class="row g-3">
@@ -541,7 +541,7 @@ $activePage = 'armada';
                     <h5 class="modal-title fw-bold" id="modalEditCarLabel"><i class="bi bi-pencil-square text-warning me-2"></i>Ubah Data Mobil</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="../handlers/admin_handler.php" method="POST" enctype="multipart/form-data">
+                <form action="../handlers/car_handler.php" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="edit_car">
                     <input type="hidden" name="id" id="edit-id">
                     <div class="modal-body p-4">

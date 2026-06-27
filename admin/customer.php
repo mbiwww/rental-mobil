@@ -513,7 +513,7 @@ $activePage      = 'customer';
                 btn.addEventListener('click', function () {
                     hapusNamaEl.textContent = this.dataset.name;
                     hapusLinkEl.setAttribute('href',
-                        '../handlers/admin_handler.php?action=delete_customer&id=' + this.dataset.id
+                        '../handlers/customer_handler.php?action=delete_customer&id=' + this.dataset.id
                     );
                     new bootstrap.Modal(document.getElementById('modalHapusCustomer')).show();
                 });

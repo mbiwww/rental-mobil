@@ -491,23 +491,23 @@ $activePage = 'transaksi';
 
                                             <!-- Inline Fast Actions -->
                                             <?php if ($r['status'] === 'pending'): ?>
-                                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=confirmed" class="btn-action btn-check" title="Konfirmasi Pembayaran" onclick="return confirm('Konfirmasi pembayaran dan setujui pesanan ini?');"><i class="bi bi-check-circle fs-5"></i></a>
+                                                <a href="../handlers/rental_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=confirmed" class="btn-action btn-check" title="Konfirmasi Pembayaran" onclick="return confirm('Konfirmasi pembayaran dan setujui pesanan ini?');"><i class="bi bi-check-circle fs-5"></i></a>
                                                 <?php if ($p && $p['status'] === 'pending'): ?>
-                                                    <a href="../handlers/admin_handler.php?action=reject_payment&id=<?= $r['id'] ?>" class="btn-action btn-reject" title="Tolak Pembayaran (Bukti Tidak Sesuai)" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran ini? Pelanggan harus mengunggah bukti baru.');"><i class="bi bi-exclamation-octagon fs-5"></i></a>
+                                                    <a href="../handlers/payment_handler.php?action=reject_payment&id=<?= $r['id'] ?>" class="btn-action btn-reject" title="Tolak Pembayaran (Bukti Tidak Sesuai)" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran ini? Pelanggan harus mengunggah bukti baru.');"><i class="bi bi-exclamation-octagon fs-5"></i></a>
                                                 <?php endif; ?>
-                                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Batalkan Pesanan" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
+                                                <a href="../handlers/rental_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Batalkan Pesanan" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
                                             <?php elseif ($r['status'] === 'confirmed'): ?>
-                                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=ongoing" class="btn-action text-info" title="Mulai Sewa (Mobil Diambil)" onclick="return confirm('Mulai masa sewa mobil? Waktu sewa dimulai dari sekarang.');"><i class="bi bi-play-circle fs-5"></i></a>
-                                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Batalkan Pesanan" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
+                                                <a href="../handlers/rental_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=ongoing" class="btn-action text-info" title="Mulai Sewa (Mobil Diambil)" onclick="return confirm('Mulai masa sewa mobil? Waktu sewa dimulai dari sekarang.');"><i class="bi bi-play-circle fs-5"></i></a>
+                                                <a href="../handlers/rental_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Batalkan Pesanan" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
                                             <?php elseif ($r['status'] === 'ongoing'): ?>
                                                 <?php if ($penaltyInfo['is_overdue']): ?>
                                                     <?php if ($r['penalty_payment_status'] === 'confirmed'): ?>
-                                                        <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');"><i class="bi bi-check2-all fs-5"></i></a>
+                                                        <a href="../handlers/rental_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');"><i class="bi bi-check2-all fs-5"></i></a>
                                                     <?php else: ?>
                                                         <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill" style="font-size: 11px;" title="Sewa tidak bisa diselesaikan sampai denda dibayar & dikonfirmasi"><i class="bi bi-lock-fill me-1"></i>Denda Belum Lunas</span>
                                                     <?php endif; ?>
                                                 <?php else: ?>
-                                                    <a href="../handlers/admin_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');"><i class="bi bi-check2-all fs-5"></i></a>
+                                                    <a href="../handlers/rental_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');"><i class="bi bi-check2-all fs-5"></i></a>
                                                 <?php endif; ?>
                                             <?php elseif ($r['status'] === 'cancel_requested'): ?>
                                                 <span class="badge bg-warning text-dark px-2 py-1 rounded-pill" style="font-size: 11px;"><i class="bi bi-exclamation-circle me-1"></i>Perlu Proses Refund</span>
@@ -581,7 +581,7 @@ $activePage = 'transaksi';
                                                 <div class="fw-bold text-primary">Rp <?= number_format($c['price_per_day'], 0, ',', '.') ?></div>
                                             </td>
                                             <td>
-                                                <form action="../handlers/admin_handler.php" method="POST" class="d-inline">
+                                                <form action="../handlers/car_handler.php" method="POST" class="d-inline">
                                                     <input type="hidden" name="action" value="update_car_price">
                                                     <input type="hidden" name="car_id" value="<?= $c['id'] ?>">
                                                     <div class="input-group">
@@ -617,7 +617,7 @@ $activePage = 'transaksi';
                                 <p class="mb-0 text-white-50 small">Atur tarif biaya supir, pick up, drop off, dan denda keterlambatan secara global.</p>
                             </div>
                             <div class="card-body p-5">
-                                <form action="../handlers/admin_handler.php" method="POST">
+                                <form action="../handlers/setting_handler.php" method="POST">
                                     <input type="hidden" name="action" value="update_settings">
                                     
                                     <!-- Harga Driver -->
@@ -728,7 +728,7 @@ $activePage = 'transaksi';
                                                 <?php endif; ?>
                                             </td>
                                             <td class="text-end">
-                                                <a href="../handlers/admin_handler.php?action=toggle_bank_account_status&id=<?= $bank['id'] ?>" class="btn-action <?= $bank['is_active'] == 1 ? 'text-warning' : 'text-success' ?>" title="<?= $bank['is_active'] == 1 ? 'Nonaktifkan' : 'Aktifkan' ?>">
+                                                <a href="../handlers/bank_account_handler.php?action=toggle_bank_account_status&id=<?= $bank['id'] ?>" class="btn-action <?= $bank['is_active'] == 1 ? 'text-warning' : 'text-success' ?>" title="<?= $bank['is_active'] == 1 ? 'Nonaktifkan' : 'Aktifkan' ?>">
                                                     <i class="bi <?= $bank['is_active'] == 1 ? 'bi-toggle-on' : 'bi-toggle-off' ?> fs-5"></i>
                                                 </a>
                                                 <button type="button" class="btn-action btn-view btn-edit-bank" title="Edit Rekening"
@@ -739,7 +739,7 @@ $activePage = 'transaksi';
                                                         data-is-active="<?= $bank['is_active'] ?>">
                                                     <i class="bi bi-pencil-square fs-5"></i>
                                                 </button>
-                                                <a href="../handlers/admin_handler.php?action=delete_bank_account&id=<?= $bank['id'] ?>" class="btn-action btn-cancel" title="Hapus Rekening" onclick="return confirm('Apakah Anda yakin ingin menghapus rekening bank ini?');">
+                                                <a href="../handlers/bank_account_handler.php?action=delete_bank_account&id=<?= $bank['id'] ?>" class="btn-action btn-cancel" title="Hapus Rekening" onclick="return confirm('Apakah Anda yakin ingin menghapus rekening bank ini?');">
                                                     <i class="bi bi-trash fs-5"></i>
                                                 </a>
                                             </td>
@@ -1029,7 +1029,7 @@ $activePage = 'transaksi';
                                     </div>
                                     <!-- Form Upload Bukti Refund (hanya tampil jika cancel_requested & belum ada bukti) -->
                                     <div id="refund-upload-section" class="mt-3 d-none">
-                                        <form id="formUploadRefundProof" action="../handlers/admin_handler.php" method="POST" enctype="multipart/form-data">
+                                        <form id="formUploadRefundProof" action="../handlers/rental_handler.php" method="POST" enctype="multipart/form-data">
                                             <input type="hidden" name="action" value="approve_refund">
                                             <input type="hidden" name="rental_id" id="refund-upload-rental-id" value="">
                                             <div class="mb-2">
@@ -1397,28 +1397,28 @@ $activePage = 'transaksi';
 
                     if (status === 'pending') {
                         footerHtml += `
-                            <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=confirmed" class="btn btn-success px-4 rounded-3" onclick="return confirm('Konfirmasi pembayaran dan setujui pesanan ini?');">
+                            <a href="../handlers/rental_handler.php?action=update_rental_status&id=${id}&status=confirmed" class="btn btn-success px-4 rounded-3" onclick="return confirm('Konfirmasi pembayaran dan setujui pesanan ini?');">
                                 <i class="bi bi-check-circle me-1"></i> Konfirmasi Bayar & Setujui
                             </a>
                         `;
                         if (hasPayment && payStatus === 'pending') {
                             footerHtml += `
-                                <a href="../handlers/admin_handler.php?action=reject_payment&id=${id}" class="btn btn-warning text-dark px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran ini? Pelanggan harus mengunggah bukti baru.');">
+                                <a href="../handlers/payment_handler.php?action=reject_payment&id=${id}" class="btn btn-warning text-dark px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran ini? Pelanggan harus mengunggah bukti baru.');">
                                     <i class="bi bi-exclamation-octagon me-1"></i> Tolak Bukti Pembayaran
                                 </a>
                             `;
                         }
                         footerHtml += `
-                            <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=cancelled" class="btn btn-danger px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menolak & membatalkan pesanan ini?');">
+                            <a href="../handlers/rental_handler.php?action=update_rental_status&id=${id}&status=cancelled" class="btn btn-danger px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menolak & membatalkan pesanan ini?');">
                                 <i class="bi bi-x-circle me-1"></i> Tolak & Batalkan Pesanan
                             </a>
                         `;
                     } else if (status === 'confirmed') {
                         footerHtml += `
-                            <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=ongoing" class="btn btn-info text-dark px-4 rounded-3" onclick="return confirm('Mulai masa sewa mobil? Waktu sewa dimulai dari sekarang.');">
+                            <a href="../handlers/rental_handler.php?action=update_rental_status&id=${id}&status=ongoing" class="btn btn-info text-dark px-4 rounded-3" onclick="return confirm('Mulai masa sewa mobil? Waktu sewa dimulai dari sekarang.');">
                                 <i class="bi bi-play-circle me-1"></i> Mulai Sewa (Diambil)
                             </a>
-                            <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=cancelled" class="btn btn-danger px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');">
+                            <a href="../handlers/rental_handler.php?action=update_rental_status&id=${id}&status=cancelled" class="btn btn-danger px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');">
                                 <i class="bi bi-x-circle me-1"></i> Batalkan Pesanan
                             </a>
                         `;
@@ -1426,16 +1426,16 @@ $activePage = 'transaksi';
                         if (isOverdue) {
                             if (penaltyStatus === 'confirmed') {
                                 footerHtml += `
-                                    <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=completed" class="btn btn-success px-4 rounded-3" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');">
+                                    <a href="../handlers/rental_handler.php?action=update_rental_status&id=${id}&status=completed" class="btn btn-success px-4 rounded-3" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');">
                                         <i class="bi bi-check2-all me-1"></i> Selesaikan Sewa (Kembali)
                                     </a>
                                 `;
-                            } else if (penaltyStatus === 'pending') {
+                                } else if (penaltyStatus === 'pending') {
                                 footerHtml += `
-                                    <a href="../handlers/admin_handler.php?action=confirm_penalty_payment&id=${id}" class="btn btn-success px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menyetujui pembayaran denda ini?');">
+                                    <a href="../handlers/payment_handler.php?action=confirm_penalty_payment&id=${id}" class="btn btn-success px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menyetujui pembayaran denda ini?');">
                                         <i class="bi bi-check-circle me-1"></i> Setujui Denda Lunas
                                     </a>
-                                    <a href="../handlers/admin_handler.php?action=reject_penalty_payment&id=${id}" class="btn btn-warning text-dark px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran denda ini?');">
+                                    <a href="../handlers/payment_handler.php?action=reject_penalty_payment&id=${id}" class="btn btn-warning text-dark px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran denda ini?');">
                                         <i class="bi bi-exclamation-octagon me-1"></i> Tolak Bukti Denda
                                     </a>
                                 `;
@@ -1446,7 +1446,7 @@ $activePage = 'transaksi';
                             }
                         } else {
                             footerHtml += `
-                                <a href="../handlers/admin_handler.php?action=update_rental_status&id=${id}&status=completed" class="btn btn-success px-4 rounded-3" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');">
+                                <a href="../handlers/rental_handler.php?action=update_rental_status&id=${id}&status=completed" class="btn btn-success px-4 rounded-3" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');">
                                     <i class="bi bi-check2-all me-1"></i> Selesaikan Sewa (Kembali)
                                 </a>
                             `;
@@ -1460,10 +1460,10 @@ $activePage = 'transaksi';
                     } else if (status === 'completed' && penaltyHours > 0) {
                         if (penaltyStatus === 'pending') {
                             footerHtml += `
-                                <a href="../handlers/admin_handler.php?action=confirm_penalty_payment&id=${id}" class="btn btn-success px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menyetujui pembayaran denda ini?');">
+                                <a href="../handlers/payment_handler.php?action=confirm_penalty_payment&id=${id}" class="btn btn-success px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menyetujui pembayaran denda ini?');">
                                     <i class="bi bi-check-circle me-1"></i> Setujui Denda Lunas
                                 </a>
-                                <a href="../handlers/admin_handler.php?action=reject_penalty_payment&id=${id}" class="btn btn-warning text-dark px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran denda ini?');">
+                                <a href="../handlers/payment_handler.php?action=reject_penalty_payment&id=${id}" class="btn btn-warning text-dark px-4 rounded-3" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran denda ini?');">
                                     <i class="bi bi-exclamation-octagon me-1"></i> Tolak Bukti Denda
                                 </a>
                             `;
@@ -1549,7 +1549,7 @@ $activePage = 'transaksi';
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="../handlers/admin_handler.php" method="POST">
+                <form action="../handlers/bank_account_handler.php" method="POST">
                     <input type="hidden" name="action" value="add_bank_account">
                     <div class="modal-body p-4">
                         <div class="mb-3">
@@ -1591,7 +1591,7 @@ $activePage = 'transaksi';
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="../handlers/admin_handler.php" method="POST">
+                <form action="../handlers/bank_account_handler.php" method="POST">
                     <input type="hidden" name="action" value="edit_bank_account">
                     <input type="hidden" id="edit_bank_id" name="id" value="">
                     <div class="modal-body p-4">
