@@ -98,9 +98,14 @@ $statusLabels = [
                     <h1 class="fw-bold mb-1">Laporan</h1>
                     <p class="text-muted">Laporan transaksi dan pendapatan sistem</p>
                 </div>
-                <button class="btn btn-dark d-flex align-items-center gap-2 rounded-3 no-print" onclick="window.print()">
-                    <i class="bi bi-printer"></i> Cetak Laporan
-                </button>
+                <div class="d-flex gap-2">
+                    <a href="export_excel.php?start_date=<?= urlencode($startDate) ?>&end_date=<?= urlencode($endDate) ?>&filter_status=<?= urlencode($filterStatus) ?>" class="btn btn-success d-flex align-items-center gap-2 rounded-3 no-print">
+                        <i class="bi bi-file-earmark-excel"></i> Export Excel
+                    </a>
+                    <button class="btn btn-dark d-flex align-items-center gap-2 rounded-3 no-print" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Cetak Laporan
+                    </button>
+                </div>
             </div>
 
             <!-- Filter -->
