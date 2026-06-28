@@ -25,7 +25,7 @@
           <h5 class="footer-title">Tentang Kami</h5>
           <ul class="footer-links">
             <li><a href="../pages/syarat-ketentuan.php"><i class="bi bi-book-half"></i> Syarat dan Ketentuan</a></li>
-            <li><a href="#"><i class="bi bi-building"></i> Profil Perusahaan</a></li>
+            <li><a href="../pages/profil-perusahaan.php"><i class="bi bi-building"></i> Profil Perusahaan</a></li>
           </ul>
         </div>
 
