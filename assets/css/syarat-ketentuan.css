@@ -1,0 +1,673 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   syarat-ketentuan.css — Halaman Syarat dan Ketentuan RentalKu
+   Consistent with detail.css, index.css color palette & card patterns
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f5f7fa;
+  color: #1e293b;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Hero Banner ─────────────────────────────────────────────────────────── */
+.tnc-hero {
+  background: linear-gradient(135deg, #0b2b4a 0%, #1e3a6f 50%, #2563eb 100%);
+  padding: 3.5rem 0 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.tnc-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.tnc-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.tnc-hero-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.tnc-hero-icon {
+  width: 70px;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.2rem;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.tnc-hero-icon i {
+  font-size: 2rem;
+  color: #fff;
+}
+
+.tnc-hero-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: white;
+  margin: 0 0 0.5rem;
+}
+
+.tnc-hero-desc {
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ── Container ───────────────────────────────────────────────────────────── */
+.tnc-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-top: 2rem;
+  padding-bottom: 3rem;
+}
+
+/* ── Last Updated ────────────────────────────────────────────────────────── */
+.tnc-last-updated {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+.tnc-sidebar {
+  background: white;
+  border-radius: 28px;
+  box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+  position: sticky;
+  top: 90px;
+}
+
+.tnc-sidebar-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1.5px solid #f1f5f9;
+}
+
+.tnc-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tnc-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #475569;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.tnc-nav-link i {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+  color: #94a3b8;
+  transition: color 0.2s;
+}
+
+.tnc-nav-link:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.tnc-nav-link:hover i {
+  color: #2563eb;
+}
+
+.tnc-nav-link.active {
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.tnc-nav-link.active i {
+  color: #2563eb;
+}
+
+/* ── Section Cards ───────────────────────────────────────────────────────── */
+.tnc-section {
+  scroll-margin-top: 90px;
+}
+
+.tnc-card {
+  background: white;
+  border: none;
+  border-radius: 28px;
+  box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.06);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  transition: box-shadow 0.2s;
+}
+
+.tnc-card:hover {
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+}
+
+.tnc-section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.tnc-section-number {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  background: linear-gradient(135deg, #2563eb, #1e3a6f);
+  color: white;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.tnc-section-title {
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: #0b2b4a;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+/* ── Content Lists ───────────────────────────────────────────────────────── */
+.tnc-content {
+  color: #334155;
+  line-height: 1.75;
+}
+
+.tnc-list {
+  padding-left: 1.2rem;
+  margin: 0;
+}
+
+.tnc-list > li {
+  margin-bottom: 0.8rem;
+  padding-left: 0.3rem;
+}
+
+.tnc-list > li::marker {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.tnc-list ul {
+  margin-top: 0.5rem;
+  padding-left: 1.2rem;
+}
+
+.tnc-list ul li {
+  margin-bottom: 0.3rem;
+  color: #475569;
+}
+
+.tnc-list ul li::marker {
+  color: #94a3b8;
+}
+
+/* ── Info & Warning Boxes ────────────────────────────────────────────────── */
+.tnc-info-box {
+  background: #eff6ff;
+  border-left: 4px solid #2563eb;
+  border-radius: 0 16px 16px 0;
+  padding: 1rem 1.2rem;
+  margin-top: 1.2rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  font-size: 0.9rem;
+  color: #1e40af;
+}
+
+.tnc-info-box i {
+  font-size: 1.1rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.tnc-warning-box {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 0 16px 16px 0;
+  padding: 1rem 1.2rem;
+  margin-top: 1.2rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  font-size: 0.9rem;
+  color: #92400e;
+}
+
+.tnc-warning-box i {
+  font-size: 1.1rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Option Grid (Pickup/Dropoff) ────────────────────────────────────────── */
+.tnc-option-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.tnc-option-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  background: #fafbfc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1rem;
+  transition: border-color 0.2s;
+}
+
+.tnc-option-card:hover {
+  border-color: #cbd5e1;
+}
+
+.tnc-option-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  background: rgba(37, 99, 235, 0.08);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tnc-option-icon i {
+  font-size: 1.1rem;
+  color: #2563eb;
+}
+
+.tnc-option-card strong {
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.tnc-option-card p {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0.2rem 0 0;
+  line-height: 1.4;
+}
+
+.tnc-badge-free {
+  display: inline-block;
+  background: #dcfce7;
+  color: #16a34a;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: 20px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+.tnc-badge-fee {
+  display: inline-block;
+  background: #fef3c7;
+  color: #b45309;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: 20px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+/* ── Highlight Box (Denda) ───────────────────────────────────────────────── */
+.tnc-highlight-box {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  background: linear-gradient(135deg, #fef2f2, #fff1f2);
+  border: 1.5px solid #fecaca;
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tnc-highlight-icon {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  background: #ef4444;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tnc-highlight-icon i {
+  font-size: 1.5rem;
+  color: white;
+}
+
+.tnc-highlight-content h5 {
+  font-weight: 700;
+  color: #991b1b;
+  margin: 0 0 0.3rem;
+  font-size: 0.95rem;
+}
+
+.tnc-highlight-amount {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #dc2626;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.tnc-highlight-amount span {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #991b1b;
+}
+
+.tnc-highlight-note {
+  font-size: 0.82rem;
+  color: #7f1d1d;
+  margin: 0.3rem 0 0;
+}
+
+/* ── Contact Grid ────────────────────────────────────────────────────────── */
+.tnc-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.tnc-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: #fafbfc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1rem;
+  transition: border-color 0.2s;
+}
+
+.tnc-contact-item:hover {
+  border-color: #2563eb;
+}
+
+.tnc-contact-icon {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  background: linear-gradient(135deg, #2563eb, #1e3a6f);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tnc-contact-icon i {
+  font-size: 1.1rem;
+  color: white;
+}
+
+.tnc-contact-item strong {
+  display: block;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.tnc-contact-item a,
+.tnc-contact-item span {
+  font-size: 0.9rem;
+  color: #1e293b;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.tnc-contact-item a:hover {
+  color: #2563eb;
+}
+
+/* ── CTA ─────────────────────────────────────────────────────────────────── */
+.tnc-cta {
+  text-align: center;
+  padding: 2rem;
+  margin-top: 0.5rem;
+}
+
+.tnc-cta p {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin-bottom: 1.2rem;
+}
+
+.btn-rental {
+  border-radius: 40px;
+  padding: 0.8rem 1.5rem;
+  font-weight: 600;
+  background: #0b2b4a;
+  border: none;
+  color: white;
+  box-shadow: 0 6px 14px rgba(11, 43, 74, 0.2);
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-rental:hover {
+  background: #1e3a6f;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -8px rgba(11, 43, 74, 0.3);
+  color: white;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 991.98px) {
+  .tnc-hero {
+    padding: 2.5rem 0 2rem;
+  }
+
+  .tnc-hero-title {
+    font-size: 1.8rem;
+  }
+
+  .tnc-hero-desc {
+    font-size: 0.95rem;
+  }
+
+  .tnc-sidebar {
+    position: static;
+    border-radius: 20px;
+    margin-bottom: 1rem;
+  }
+
+  .tnc-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tnc-nav-link {
+    font-size: 0.78rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  .tnc-nav-link i {
+    display: none;
+  }
+
+  .tnc-card {
+    padding: 1.5rem;
+    border-radius: 20px;
+  }
+
+  .tnc-section-title {
+    font-size: 1.15rem;
+  }
+
+  .tnc-option-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tnc-contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .tnc-hero {
+    padding: 2rem 0 1.5rem;
+  }
+
+  .tnc-hero-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+  }
+
+  .tnc-hero-icon i {
+    font-size: 1.5rem;
+  }
+
+  .tnc-hero-title {
+    font-size: 1.5rem;
+  }
+
+  .tnc-hero-desc {
+    font-size: 0.88rem;
+  }
+
+  .tnc-container {
+    padding-top: 1.2rem;
+    padding-bottom: 2rem;
+  }
+
+  .tnc-card {
+    padding: 1.2rem;
+    border-radius: 18px;
+    margin-bottom: 1rem;
+  }
+
+  .tnc-section-header {
+    gap: 0.7rem;
+    margin-bottom: 1rem;
+  }
+
+  .tnc-section-number {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+  }
+
+  .tnc-section-title {
+    font-size: 1.05rem;
+  }
+
+  .tnc-content {
+    font-size: 0.9rem;
+  }
+
+  .tnc-list {
+    padding-left: 1rem;
+  }
+
+  .tnc-highlight-box {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.8rem;
+    padding: 1.2rem;
+  }
+
+  .tnc-highlight-icon {
+    margin: 0 auto;
+  }
+
+  .tnc-highlight-content {
+    text-align: center;
+  }
+
+  .tnc-sidebar {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+
+  .tnc-sidebar-title {
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .tnc-nav-link {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.55rem;
+  }
+
+  .tnc-option-card {
+    padding: 0.8rem;
+    border-radius: 12px;
+  }
+
+  .tnc-contact-item {
+    padding: 0.8rem;
+    border-radius: 12px;
+  }
+}

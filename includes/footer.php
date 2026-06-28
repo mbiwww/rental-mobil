@@ -24,7 +24,7 @@
         <div class="col-6 col-md-3 col-lg-2">
           <h5 class="footer-title">Tentang Kami</h5>
           <ul class="footer-links">
-            <li><a href="#"><i class="bi bi-book-half"></i> Cara Pesan</a></li>
+            <li><a href="../pages/syarat-ketentuan.php"><i class="bi bi-book-half"></i> Syarat dan Ketentuan</a></li>
             <li><a href="#"><i class="bi bi-building"></i> Profil Perusahaan</a></li>
           </ul>
         </div>

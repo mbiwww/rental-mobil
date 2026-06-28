@@ -217,7 +217,7 @@ $isAvailable = $car['status'] === 'available';
               <div class="form-check mb-3">
                 <input class="form-check-input" type="checkbox" id="agreeTerms" required>
                 <label class="form-check-label small text-secondary" for="agreeTerms">
-                  Saya setuju dengan <a href="#" target="_blank">syarat dan ketentuan</a> yang berlaku
+                  Saya setuju dengan <a href="syarat-ketentuan.php" target="_blank">syarat dan ketentuan</a> yang berlaku
                 </label>
               </div>
 
