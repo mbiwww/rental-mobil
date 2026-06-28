@@ -47,8 +47,15 @@ $pertumbuhan = $rentalModel->getPertumbuhanBulanan();
 $totalCustomer = $userModel->countCustomers();
 
 // Data chart
-$trenRental    = $rentalModel->getTrenRental6Bulan();
-$trenPendapatan = $rentalModel->getPendapatan6Bulan();
+$timeframes = ['1_day', '1_week', '1_month', '3_months', '6_months'];
+$chartDataByTimeframe = [];
+foreach ($timeframes as $tf) {
+    $chartDataByTimeframe[$tf] = $rentalModel->getChartDataForTimeframe($tf);
+}
+
+// Keep defaults for compatibility checks
+$trenRental    = $chartDataByTimeframe['6_months'];
+$trenPendapatan = $chartDataByTimeframe['6_months'];
 
 // Transaksi terbaru
 $recentTransaksi = $rentalModel->getRecentTransaksi(8);
@@ -83,10 +90,14 @@ function badgeStatus(string $status): string {
 }
 
 // Siapkan data chart untuk JavaScript
-$chartLabels   = array_map(fn($r) => $r['bulan'], $trenRental);
-$chartJumlah   = array_map(fn($r) => (int)$r['jumlah'], $trenRental);
-$incLabels     = array_map(fn($r) => $r['bulan'], $trenPendapatan);
-$incTotals     = array_map(fn($r) => (float)$r['total'], $trenPendapatan);
+$chartDataJSON = [];
+foreach ($chartDataByTimeframe as $tf => $rows) {
+    $chartDataJSON[$tf] = [
+        'labels' => array_map(fn($r) => $r['label'], $rows),
+        'jumlah' => array_map(fn($r) => (int)$r['jumlah'], $rows),
+        'total'  => array_map(fn($r) => (float)$r['total'], $rows),
+    ];
+}
 
 // Set active page untuk sidebar
 $activePage = 'dashboard';
@@ -235,7 +246,18 @@ $activePage = 'dashboard';
             <div class="row g-4 mb-4">
                 <div class="col-md-6">
                     <div class="stat-card">
-                        <h6 class="fw-bold mb-4">Tren Penyewaan (6 Bulan Terakhir)</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h6 id="rentTrendTitle" class="fw-bold mb-0">Tren Penyewaan (6 Bulan Terakhir)</h6>
+                            <?php if (!empty($trenRental)): ?>
+                            <select id="rentTrendTimeframe" class="form-select form-select-sm border-0 bg-light fw-semibold" style="width: auto; cursor: pointer;">
+                                <option value="1_day">1 Hari</option>
+                                <option value="1_week">1 Minggu</option>
+                                <option value="1_month">1 Bulan</option>
+                                <option value="3_months">3 Bulan</option>
+                                <option value="6_months" selected>6 Bulan</option>
+                            </select>
+                            <?php endif; ?>
+                        </div>
                         <?php if (empty($trenRental)): ?>
                             <div class="empty-state"><i class="bi bi-bar-chart"></i><p>Belum ada data rental</p></div>
                         <?php else: ?>
@@ -245,7 +267,18 @@ $activePage = 'dashboard';
                 </div>
                 <div class="col-md-6">
                     <div class="stat-card">
-                        <h6 class="fw-bold mb-4">Pendapatan Bulanan (6 Bulan Terakhir)</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h6 id="incomeTitle" class="fw-bold mb-0">Pendapatan Bulanan (6 Bulan Terakhir)</h6>
+                            <?php if (!empty($trenPendapatan)): ?>
+                            <select id="incomeTimeframe" class="form-select form-select-sm border-0 bg-light fw-semibold" style="width: auto; cursor: pointer;">
+                                <option value="1_day">1 Hari</option>
+                                <option value="1_week">1 Minggu</option>
+                                <option value="1_month">1 Bulan</option>
+                                <option value="3_months">3 Bulan</option>
+                                <option value="6_months" selected>6 Bulan</option>
+                            </select>
+                            <?php endif; ?>
+                        </div>
                         <?php if (empty($trenPendapatan)): ?>
                             <div class="empty-state"><i class="bi bi-graph-up"></i><p>Belum ada data pendapatan</p></div>
                         <?php else: ?>
@@ -300,14 +333,35 @@ $activePage = 'dashboard';
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+    const chartDataByTimeframe = <?= json_encode($chartDataJSON) ?>;
+
+    function formatRupiahJs(value) {
+        if (value >= 1000000000) {
+            return 'Rp ' + (value / 1000000000).toFixed(1).replace('.', ',') + 'M';
+        } else if (value >= 1000000) {
+            return 'Rp ' + (value / 1000000).toFixed(1).replace('.', ',') + 'jt';
+        } else if (value >= 1000) {
+            return 'Rp ' + (value / 1000).toFixed(0) + 'rb';
+        }
+        return 'Rp ' + value;
+    }
+
+    const timeframeTitles = {
+        '1_day': '24 Jam Terakhir',
+        '1_week': '7 Hari Terakhir',
+        '1_month': '30 Hari Terakhir',
+        '3_months': '3 Bulan Terakhir',
+        '6_months': '6 Bulan Terakhir'
+    };
+
     <?php if (!empty($trenRental)): ?>
-    new Chart(document.getElementById('rentTrendChart'), {
+    const rentTrendChartInstance = new Chart(document.getElementById('rentTrendChart'), {
         type: 'bar',
         data: {
-            labels: <?= json_encode($chartLabels) ?>,
+            labels: chartDataByTimeframe['6_months'].labels,
             datasets: [{
                 label: 'Total Sewa',
-                data: <?= json_encode($chartJumlah) ?>,
+                data: chartDataByTimeframe['6_months'].jumlah,
                 backgroundColor: '#4e89ff',
                 borderRadius: 6
             }]
@@ -320,16 +374,29 @@ $activePage = 'dashboard';
             }
         }
     });
+
+    document.getElementById('rentTrendTimeframe').addEventListener('change', function(e) {
+        const tf = e.target.value;
+        const data = chartDataByTimeframe[tf];
+        
+        // Update Chart
+        rentTrendChartInstance.data.labels = data.labels;
+        rentTrendChartInstance.data.datasets[0].data = data.jumlah;
+        rentTrendChartInstance.update();
+        
+        // Update Title
+        document.getElementById('rentTrendTitle').innerText = 'Tren Penyewaan (' + timeframeTitles[tf] + ')';
+    });
     <?php endif; ?>
 
     <?php if (!empty($trenPendapatan)): ?>
-    new Chart(document.getElementById('incomeChart'), {
+    const incomeChartInstance = new Chart(document.getElementById('incomeChart'), {
         type: 'line',
         data: {
-            labels: <?= json_encode($incLabels) ?>,
+            labels: chartDataByTimeframe['6_months'].labels,
             datasets: [{
                 label: 'Pendapatan',
-                data: <?= json_encode($incTotals) ?>,
+                data: chartDataByTimeframe['6_months'].total,
                 borderColor: '#4bc0c0',
                 backgroundColor: 'rgba(75,192,192,0.1)',
                 fill: true,
@@ -342,11 +409,27 @@ $activePage = 'dashboard';
         options: {
             plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: true, grid: { color: '#f0f0f0' },
-                    ticks: { callback: v => 'Rp ' + (v/1000000).toFixed(1) + 'jt' } },
+                y: { 
+                    beginAtZero: true, 
+                    grid: { color: '#f0f0f0' },
+                    ticks: { callback: v => formatRupiahJs(v) } 
+                },
                 x: { grid: { display: false } }
             }
         }
+    });
+
+    document.getElementById('incomeTimeframe').addEventListener('change', function(e) {
+        const tf = e.target.value;
+        const data = chartDataByTimeframe[tf];
+        
+        // Update Chart
+        incomeChartInstance.data.labels = data.labels;
+        incomeChartInstance.data.datasets[0].data = data.total;
+        incomeChartInstance.update();
+        
+        // Update Title
+        document.getElementById('incomeTitle').innerText = 'Pendapatan Bulanan (' + timeframeTitles[tf] + ')';
     });
     <?php endif; ?>
     </script>

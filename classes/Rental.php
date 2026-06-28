@@ -544,4 +544,69 @@ class Rental extends BaseModel
 
         return $row ?: ['total_transaksi'=>0,'total_completed'=>0,'total_pendapatan'=>0,'total_denda'=>0,'rata_rata_hari'=>0];
     }
+
+    /**
+     * Ambil data tren rental & pendapatan berdasarkan opsi timeframe
+     *
+     * @param string $timeframe Opsi: '1_day', '1_week', '1_month', '3_months', '6_months'
+     * @return array Array dengan label, jumlah rental (tren), dan total pendapatan
+     */
+    public function getChartDataForTimeframe(string $timeframe): array
+    {
+        $queries = [
+            '1_day' => "SELECT 
+                DATE_FORMAT(created_at, '%H:00') AS label,
+                DATE_FORMAT(created_at, '%Y-%m-%d %H') AS sort_col,
+                COUNT(*) AS jumlah,
+                COALESCE(SUM(CASE WHEN status = 'completed' THEN total_price + COALESCE(penalty_fee, 0) ELSE 0 END), 0) AS total
+            FROM rentals
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+            GROUP BY sort_col, label
+            ORDER BY sort_col ASC",
+            
+            '1_week' => "SELECT 
+                DATE_FORMAT(created_at, '%d %b') AS label,
+                DATE(created_at) AS sort_col,
+                COUNT(*) AS jumlah,
+                COALESCE(SUM(CASE WHEN status = 'completed' THEN total_price + COALESCE(penalty_fee, 0) ELSE 0 END), 0) AS total
+            FROM rentals
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+            GROUP BY sort_col, label
+            ORDER BY sort_col ASC",
+            
+            '1_month' => "SELECT 
+                DATE_FORMAT(created_at, '%d %b') AS label,
+                DATE(created_at) AS sort_col,
+                COUNT(*) AS jumlah,
+                COALESCE(SUM(CASE WHEN status = 'completed' THEN total_price + COALESCE(penalty_fee, 0) ELSE 0 END), 0) AS total
+            FROM rentals
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+            GROUP BY sort_col, label
+            ORDER BY sort_col ASC",
+            
+            '3_months' => "SELECT 
+                DATE_FORMAT(DATE_SUB(created_at, INTERVAL WEEKDAY(created_at) DAY), '%d %b') AS label,
+                DATE(DATE_SUB(created_at, INTERVAL WEEKDAY(created_at) DAY)) AS sort_col,
+                COUNT(*) AS jumlah,
+                COALESCE(SUM(CASE WHEN status = 'completed' THEN total_price + COALESCE(penalty_fee, 0) ELSE 0 END), 0) AS total
+            FROM rentals
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+            GROUP BY sort_col, label
+            ORDER BY sort_col ASC",
+            
+            '6_months' => "SELECT 
+                DATE_FORMAT(created_at, '%b %Y') AS label,
+                DATE_FORMAT(created_at, '%Y-%m') AS sort_col,
+                COUNT(*) AS jumlah,
+                COALESCE(SUM(CASE WHEN status = 'completed' THEN total_price + COALESCE(penalty_fee, 0) ELSE 0 END), 0) AS total
+            FROM rentals
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+            GROUP BY sort_col, label
+            ORDER BY sort_col ASC"
+        ];
+
+        $sql = $queries[$timeframe] ?? $queries['6_months'];
+        return $this->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
+

@@ -335,7 +335,7 @@ $activePage = 'transaksi';
                                 <th>Mobil</th>
                                 <th>Total</th>
                                 <th>Status</th>
-                                <th class="text-end" width="160">Aksi</th>
+                                <th class="text-end" width="100">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -441,7 +441,7 @@ $activePage = 'transaksi';
                                         </td>
                                         <td class="text-end">
                                             <!-- Detail Button -->
-                                            <button type="button" class="btn-action btn-view btn-show-detail" title="Detail"
+                                            <button type="button" class="btn btn-outline-primary btn-sm btn-show-detail d-inline-flex align-items-center" title="Detail"
                                                data-id="<?= $r['id'] ?>"
                                                data-trx="#TRX-<?= str_pad($r['id'], 4, '0', STR_PAD_LEFT) ?>"
                                                data-cust-name="<?= htmlspecialchars($r['user_name']) ?>"
@@ -486,32 +486,8 @@ $activePage = 'transaksi';
                                                data-refund-account-number="<?= htmlspecialchars($refund['refund_account_number'] ?? '') ?>"
                                                data-refund-account-holder="<?= htmlspecialchars($refund['refund_account_holder'] ?? '') ?>"
                                             >
-                                               <i class="bi bi-eye fs-5"></i>
+                                               <i class="bi bi-eye me-1"></i> Detail
                                             </button>
-
-                                            <!-- Inline Fast Actions -->
-                                            <?php if ($r['status'] === 'pending'): ?>
-                                                <a href="../handlers/rental_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=confirmed" class="btn-action btn-check" title="Konfirmasi Pembayaran" onclick="return confirm('Konfirmasi pembayaran dan setujui pesanan ini?');"><i class="bi bi-check-circle fs-5"></i></a>
-                                                <?php if ($p && $p['status'] === 'pending'): ?>
-                                                    <a href="../handlers/payment_handler.php?action=reject_payment&id=<?= $r['id'] ?>" class="btn-action btn-reject" title="Tolak Pembayaran (Bukti Tidak Sesuai)" onclick="return confirm('Apakah Anda yakin ingin menolak bukti pembayaran ini? Pelanggan harus mengunggah bukti baru.');"><i class="bi bi-exclamation-octagon fs-5"></i></a>
-                                                <?php endif; ?>
-                                                <a href="../handlers/rental_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Batalkan Pesanan" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
-                                            <?php elseif ($r['status'] === 'confirmed'): ?>
-                                                <a href="../handlers/rental_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=ongoing" class="btn-action text-info" title="Mulai Sewa (Mobil Diambil)" onclick="return confirm('Mulai masa sewa mobil? Waktu sewa dimulai dari sekarang.');"><i class="bi bi-play-circle fs-5"></i></a>
-                                                <a href="../handlers/rental_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=cancelled" class="btn-action btn-cancel" title="Batalkan Pesanan" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?');"><i class="bi bi-x-circle fs-5"></i></a>
-                                            <?php elseif ($r['status'] === 'ongoing'): ?>
-                                                <?php if ($penaltyInfo['is_overdue']): ?>
-                                                    <?php if ($r['penalty_payment_status'] === 'confirmed'): ?>
-                                                        <a href="../handlers/rental_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');"><i class="bi bi-check2-all fs-5"></i></a>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill" style="font-size: 11px;" title="Sewa tidak bisa diselesaikan sampai denda dibayar & dikonfirmasi"><i class="bi bi-lock-fill me-1"></i>Denda Belum Lunas</span>
-                                                    <?php endif; ?>
-                                                <?php else: ?>
-                                                    <a href="../handlers/rental_handler.php?action=update_rental_status&id=<?= $r['id'] ?>&status=completed" class="btn-action text-success" title="Selesaikan Sewa (Mobil Kembali)" onclick="return confirm('Selesaikan masa sewa mobil? Status mobil akan kembali menjadi Tersedia.');"><i class="bi bi-check2-all fs-5"></i></a>
-                                                <?php endif; ?>
-                                            <?php elseif ($r['status'] === 'cancel_requested'): ?>
-                                                <span class="badge bg-warning text-dark px-2 py-1 rounded-pill" style="font-size: 11px;"><i class="bi bi-exclamation-circle me-1"></i>Perlu Proses Refund</span>
-                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

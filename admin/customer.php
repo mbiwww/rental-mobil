@@ -196,7 +196,7 @@ $activePage      = 'customer';
                                     <th>Total Sewa</th>
                                     <th>Total Belanja</th>
                                     <th>Bergabung</th>
-                                    <th class="text-end" width="130">Aksi</th>
+                                    <th class="text-end" width="90">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -252,7 +252,7 @@ $activePage      = 'customer';
                                         <td class="text-end">
                                             <!-- Tombol Detail -->
                                             <button type="button"
-                                                    class="btn btn-sm btn-outline-info rounded-3 me-1 btn-detail"
+                                                    class="btn btn-sm btn-outline-info rounded-3 btn-detail"
                                                     data-id="<?= $cust['id'] ?>"
                                                     data-name="<?= htmlspecialchars($cust['name']) ?>"
                                                     data-nik="<?= htmlspecialchars($cust['nik']) ?>"
@@ -266,24 +266,6 @@ $activePage      = 'customer';
                                                     title="Lihat Detail">
                                                 <i class="bi bi-eye me-1"></i> Detail
                                             </button>
-
-                                            <!-- Tombol Hapus -->
-                                            <?php if ($activeRentals > 0): ?>
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-secondary rounded-3"
-                                                        disabled
-                                                        title="Tidak bisa dihapus — masih memiliki <?= $activeRentals ?> rental aktif">
-                                                    <i class="bi bi-lock me-1"></i> Hapus
-                                                </button>
-                                            <?php else: ?>
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-danger rounded-3 btn-hapus"
-                                                        data-id="<?= $cust['id'] ?>"
-                                                        data-name="<?= htmlspecialchars($cust['name'], ENT_QUOTES, 'UTF-8') ?>"
-                                                        title="Hapus Customer">
-                                                    <i class="bi bi-trash me-1"></i> Hapus
-                                                </button>
-                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -368,32 +350,7 @@ $activePage      = 'customer';
         </div>
     </div>
 
-    <!-- ==========================================
-    MODAL: KONFIRMASI HAPUS
-    ========================================== -->
-    <div class="modal fade" id="modalHapusCustomer" tabindex="-1" aria-labelledby="modalHapusCustLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content border-0 rounded-4 shadow">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-danger" id="modalHapusCustLabel">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Konfirmasi Hapus
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body px-4 pt-2 pb-3">
-                    <p class="text-muted mb-1">Anda yakin ingin menghapus customer:</p>
-                    <p class="fw-bold fs-5 mb-0" id="hapus-nama-customer">-</p>
-                    <small class="text-danger"><i class="bi bi-info-circle me-1"></i>Aksi ini tidak bisa dibatalkan.</small>
-                </div>
-                <div class="modal-footer border-0 pt-0 px-4 pb-4 gap-2">
-                    <button type="button" class="btn btn-light rounded-3 flex-fill" data-bs-dismiss="modal">Batal</button>
-                    <a href="#" id="hapus-konfirmasi-link" class="btn btn-danger rounded-3 flex-fill">
-                        <i class="bi bi-trash me-1"></i> Ya, Hapus
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -500,22 +457,6 @@ $activePage      = 'customer';
                     document.getElementById('detail-rental-badge').textContent = this.dataset.totalRentals + ' Rental';
 
                     new bootstrap.Modal(document.getElementById('modalDetailCustomer')).show();
-                });
-            });
-
-            // ==========================================
-            // MODAL KONFIRMASI HAPUS
-            // ==========================================
-            const hapusNamaEl = document.getElementById('hapus-nama-customer');
-            const hapusLinkEl = document.getElementById('hapus-konfirmasi-link');
-
-            document.querySelectorAll('.btn-hapus').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    hapusNamaEl.textContent = this.dataset.name;
-                    hapusLinkEl.setAttribute('href',
-                        '../handlers/customer_handler.php?action=delete_customer&id=' + this.dataset.id
-                    );
-                    new bootstrap.Modal(document.getElementById('modalHapusCustomer')).show();
                 });
             });
 
