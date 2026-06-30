@@ -217,7 +217,7 @@ class CarHandler extends BaseHandler
         $targetPath = '../assets/uploads/cars/' . $newFilename;
 
         if (!is_dir('../assets/uploads/cars/')) {
-            mkdir('../assets/uploads/cars/', 0777, true);
+            mkdir('../assets/uploads/cars/', 0755, true);
         }
 
         return move_uploaded_file($file['tmp_name'], $targetPath) ? $newFilename : ['error' => 'Gagal mengunggah file ke server.'];
