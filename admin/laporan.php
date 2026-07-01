@@ -70,11 +70,6 @@ $statusLabels = [
         .table tbody tr:last-child td { border-bottom: none; }
         .table tbody tr:hover { background-color: #f9fbff; }
         .filter-container { background: white; border-radius: 20px; padding: 25px 30px; border: 1px solid #efefef; }
-        @media print {
-            .sidebar, .top-header, .filter-container, .no-print { display: none !important; }
-            .main-content { margin-left: 0 !important; }
-            .table-container { box-shadow: none !important; border: 1px solid #ddd !important; }
-        }
     </style>
 </head>
 <body>
@@ -99,17 +94,14 @@ $statusLabels = [
                     <p class="text-muted">Laporan transaksi dan pendapatan sistem</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="export_excel.php?start_date=<?= urlencode($startDate) ?>&end_date=<?= urlencode($endDate) ?>&filter_status=<?= urlencode($filterStatus) ?>" class="btn btn-success d-flex align-items-center gap-2 rounded-3 no-print">
+                    <a href="export_excel.php?start_date=<?= urlencode($startDate) ?>&end_date=<?= urlencode($endDate) ?>&filter_status=<?= urlencode($filterStatus) ?>" class="btn btn-success d-flex align-items-center gap-2 rounded-3">
                         <i class="bi bi-file-earmark-excel"></i> Export Excel
                     </a>
-                    <button class="btn btn-dark d-flex align-items-center gap-2 rounded-3 no-print" onclick="window.print()">
-                        <i class="bi bi-printer"></i> Cetak Laporan
-                    </button>
                 </div>
             </div>
 
             <!-- Filter -->
-            <div class="filter-container shadow-sm mb-4 no-print">
+            <div class="filter-container shadow-sm mb-4">
                 <form method="GET" action="laporan.php" class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label fw-semibold small">Tanggal Mulai</label>
