@@ -646,7 +646,7 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                 <h6 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Informasi Mobil</h6>
                 <div class="flex items-center gap-4">
                   <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
-                    <img id="detailCarImage" src="" alt="" class="w-full h-full object-cover hidden">
+                    <img id="detailCarImage" src="" alt="" class="w-full h-full object-cover" style="display:none" onerror="this.style.display='none'; document.getElementById('detailCarIcon').style.display=''">
                     <span id="detailCarIcon" class="material-symbols-outlined text-slate-300" style="font-size:32px">directions_car</span>
                   </div>
                   <div>
@@ -990,11 +990,11 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
           var carIcon = document.getElementById('detailCarIcon');
           if (d.carImage) {
             carImg.src = '../assets/uploads/cars/' + d.carImage;
-            carImg.classList.remove('hidden');
-            carIcon.classList.add('hidden');
+            carImg.style.display = '';
+            carIcon.style.display = 'none';
           } else {
-            carImg.classList.add('hidden');
-            carIcon.classList.remove('hidden');
+            carImg.style.display = 'none';
+            carIcon.style.display = '';
           }
 
           // Dates & Location
