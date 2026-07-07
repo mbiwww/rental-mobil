@@ -462,6 +462,11 @@ $activePage = 'transaksi';
                                                data-cost-pickup="Rp <?= number_format($r['pickup_fee'] ?? 0, 0, ',', '.') ?>"
                                                data-cost-dropoff="Rp <?= number_format($r['dropoff_fee'] ?? 0, 0, ',', '.') ?>"
                                                data-cost-penalty="Rp <?= number_format($r['status'] === 'completed' ? ($r['penalty_fee'] ?? 0) : $penaltyInfo['penalty_fee'], 0, ',', '.') ?>"
+                                               data-cost-base-raw="<?= $baseCost ?>"
+                                               data-cost-driver-raw="<?= (float)$r['driver_cost'] ?>"
+                                               data-cost-pickup-raw="<?= (float)($r['pickup_fee'] ?? 0) ?>"
+                                               data-cost-dropoff-raw="<?= (float)($r['dropoff_fee'] ?? 0) ?>"
+                                               data-cost-penalty-raw="<?= $r['status'] === 'completed' ? (float)($r['penalty_fee'] ?? 0) : (float)$penaltyInfo['penalty_fee'] ?>"
                                                data-cost-total="Rp <?= number_format($r['total_price'], 0, ',', '.') ?>"
                                                data-penalty-hours="<?= $r['status'] === 'completed' ? (((float)($r['penalty_fee'] ?? 0) > 0) ? (int)(($r['penalty_fee'] ?? 0) / $penaltyRate) : 0) : $penaltyInfo['late_hours'] ?>"
                                                data-is-overdue="<?= $penaltyInfo['is_overdue'] ? 'true' : 'false' ?>"
@@ -1078,6 +1083,12 @@ $activePage = 'transaksi';
                     const costDropoff = this.getAttribute('data-cost-dropoff');
                     const costPenalty = this.getAttribute('data-cost-penalty');
                     const costTotal = this.getAttribute('data-cost-total');
+                    // Raw numeric values untuk kalkulasi total pembayaran
+                    const costBaseRaw = parseFloat(this.getAttribute('data-cost-base-raw')) || 0;
+                    const costDriverRaw = parseFloat(this.getAttribute('data-cost-driver-raw')) || 0;
+                    const costPickupRaw = parseFloat(this.getAttribute('data-cost-pickup-raw')) || 0;
+                    const costDropoffRaw = parseFloat(this.getAttribute('data-cost-dropoff-raw')) || 0;
+                    const costPenaltyRaw = parseFloat(this.getAttribute('data-cost-penalty-raw')) || 0;
                     const penaltyHours = parseInt(this.getAttribute('data-penalty-hours')) || 0;
                     const isOverdue = this.getAttribute('data-is-overdue') === 'true';
                     const penaltyStatus = this.getAttribute('data-penalty-status');
@@ -1132,7 +1143,9 @@ $activePage = 'transaksi';
                     document.getElementById('det-cost-driver').textContent = costDriver;
                     document.getElementById('det-cost-pickup').textContent = costPickup;
                     document.getElementById('det-cost-dropoff').textContent = costDropoff;
-                    document.getElementById('det-cost-total').textContent = costTotal;
+                    // Hitung total pembayaran = semua biaya (sewa + supir + pickup + dropoff + denda)
+                    const grandTotal = costBaseRaw + costDriverRaw + costPickupRaw + costDropoffRaw + costPenaltyRaw;
+                    document.getElementById('det-cost-total').textContent = 'Rp ' + formatRupiah(grandTotal);
 
                     // Tampilkan denda jika ada
                     const penaltyRow = document.getElementById('det-penalty-row');
