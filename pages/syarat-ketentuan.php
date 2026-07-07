@@ -313,13 +313,14 @@ $penaltyFee  = isset($settings['penalty_fee_per_hour']) ? (float)$settings['pena
                 <div class="tnc-highlight-content">
                   <h5>Biaya Denda</h5>
                   <p class="tnc-highlight-amount">Rp <?= number_format($penaltyFee, 0, ',', '.') ?> <span>/ jam</span></p>
-                  <p class="tnc-highlight-note">Dihitung per jam keterlambatan dari waktu pengembalian yang dijadwalkan.</p>
+                  <p class="tnc-highlight-note">Dihitung per jam penuh keterlambatan. Toleransi 60 menit pertama tidak dikenakan denda.</p>
                 </div>
               </div>
               <ol class="tnc-list">
                 <li>Keterlambatan pengembalian kendaraan akan dikenakan denda sebesar <strong>Rp <?= number_format($penaltyFee, 0, ',', '.') ?> per jam</strong>.</li>
-                <li>Perhitungan denda dimulai sejak waktu pengembalian yang dijadwalkan berakhir.</li>
-                <li>Denda dihitung secara kumulatif dan akan ditambahkan ke tagihan penyewa.</li>
+                <li>Terdapat <strong>toleransi 60 menit pertama</strong> setelah waktu pengembalian yang dijadwalkan. Keterlambatan di bawah 60 menit <strong>tidak dikenakan denda</strong>.</li>
+                <li>Jika keterlambatan melebihi 60 menit, denda dihitung <strong>per jam penuh</strong> dengan pembulatan ke bawah. Sisa menit di bawah 60 tidak dihitung.</li>
+                <li>Denda akan ditambahkan ke tagihan penyewa secara terpisah dari biaya sewa.</li>
                 <li>Pembayaran denda harus dilakukan sebelum penyewa dapat melakukan pemesanan baru.</li>
                 <li>Penyewa dapat mengunggah bukti pembayaran denda melalui dashboard akun.</li>
               </ol>

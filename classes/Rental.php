@@ -209,14 +209,14 @@ class Rental extends BaseModel
      * Hitung denda keterlambatan berdasarkan started_at dan jumlah hari sewa
      *
      * Deadline = started_at + (jumlah_hari × 24 jam)
-     * Grace period: 30 menit setelah deadline → tidak kena denda.
-     * Jika lewat 30 menit, denda dihitung per jam dengan pembulatan:
-     *   penalty_hours = ceil((late_minutes - 30) / 60)
+     * Grace period: 60 menit setelah deadline → tidak kena denda.
+     * Jika lewat 60 menit, denda dihitung per jam penuh (floor):
+     *   penalty_hours = floor(late_minutes / 60)
      *
      * Contoh (deadline 08:00):
-     *   08:00 – 08:30 → tidak kena denda (grace period)
-     *   08:31 – 09:30 → denda 1 jam
-     *   09:31 – 10:30 → denda 2 jam
+     *   08:00 – 08:59 → tidak kena denda (grace period 60 menit)
+     *   09:00 – 09:59 → denda 1 jam
+     *   10:00 – 10:59 → denda 2 jam
      *
      * @param array $rental Data rental (harus mengandung started_at, start_date, end_date)
      * @return array ['deadline' => string, 'late_hours' => int, 'penalty_fee' => float, 'is_overdue' => bool]
@@ -250,13 +250,13 @@ class Rental extends BaseModel
             // Hitung menit keterlambatan
             $lateMinutes = ($now - $deadlineTime) / 60;
 
-            if ($lateMinutes <= 30) {
-                // Grace period 30 menit — tidak kena denda
+            if ($lateMinutes < 60) {
+                // Grace period 60 menit — tidak kena denda
                 // is_overdue tetap false, late_hours dan penalty_fee tetap 0
             } else {
-                // Lewat grace period — hitung denda per jam, bulatkan ke atas
+                // Lewat grace period — hitung denda per jam penuh, bulatkan ke bawah
                 $result['is_overdue'] = true;
-                $lateHours = (int) ceil(($lateMinutes - 30) / 60);
+                $lateHours = (int) floor($lateMinutes / 60);
 
                 // Ambil biaya denda per jam dari settings database
                 $stmt = $this->db->prepare("SELECT value FROM settings WHERE key_name = 'penalty_fee_per_hour'");
