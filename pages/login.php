@@ -42,8 +42,8 @@ if (!empty($_GET['redirect'])) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RentalKu · Login</title>
-  <meta name="description" content="Login ke akun RentalKu untuk mulai menyewa kendaraan dengan mudah dan cepat.">
+  <title>RentalQu · Login</title>
+  <meta name="description" content="Login ke akun RentalQu untuk mulai menyewa kendaraan dengan mudah dan cepat.">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="../assets/css/login.css">
@@ -60,7 +60,7 @@ if (!empty($_GET['redirect'])) {
             <div class="text-center mb-4">
               <div class="rental-brand justify-content-center">
                 <i class="bi bi-car-front-fill"></i>
-                <span>RentalKu</span>
+                <span>RentalQu</span>
               </div>
               <p class="text-secondary-emphasis mt-2 mb-0" style="font-weight: 400;">Login ke Akun Anda</p>
               <p class="text-body-tertiary small mt-1">Masukkan email dan password untuk melanjutkan</p>

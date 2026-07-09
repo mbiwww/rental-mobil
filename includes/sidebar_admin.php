@@ -11,7 +11,7 @@ $currentPage = isset($activePage) ? $activePage : 'armada';
     <div class="d-flex align-items-center justify-content-between mb-5 ps-2">
         <div class="d-flex align-items-center">
             <i class="bi bi-car-front-fill text-primary fs-3 me-2"></i>
-            <h5 class="fw-bold mb-0">RentalKu Admin</h5>
+            <h5 class="fw-bold mb-0">RentalQu Admin</h5>
         </div>
         <button class="btn d-lg-none p-0 border-0" id="sidebarClose" type="button" style="color: #6c757d;">
             <i class="bi bi-x fs-2"></i>

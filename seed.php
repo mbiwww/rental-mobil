@@ -50,7 +50,7 @@ try {
 
     // Insert 4: Completed Rental + Payment
     $db->exec("INSERT INTO rentals (id, user_id, car_id, start_date, end_date, pickup_location, dropoff_location, total_price, rental_type, driver_cost, status, created_at)
-        VALUES (4, 6, 4, '2026-05-20', '2026-05-22', 'PT RentalKu Office', 'PT RentalKu Office', 1400000.00, 'without_driver', 0.00, 'completed', '2026-05-19 08:00:00')");
+        VALUES (4, 6, 4, '2026-05-20', '2026-05-22', 'PT RentalQu Office', 'PT RentalQu Office', 1400000.00, 'without_driver', 0.00, 'completed', '2026-05-19 08:00:00')");
     $db->exec("INSERT INTO payments (rental_id, method, bank_account_id, proof_image, status, paid_at, created_at)
         VALUES (4, 'bank_transfer', 3, 'mock_proof_4.jpg', 'confirmed', '2026-05-19 08:30:00', '2026-05-19 08:15:00')");
 

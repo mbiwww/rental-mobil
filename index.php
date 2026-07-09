@@ -28,8 +28,8 @@ $totalAvailable = $carModel->countByStatus('available');
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RentalKu &middot; Home</title>
-  <meta name="description" content="RentalKu - Sewa mobil berkualitas dengan harga terjangkau. Proses cepat, aman, dan terpercaya. Tersedia berbagai pilihan mobil SUV, Sedan, MPV, Hatchback, dan City Car.">
+  <title>RentalQu &middot; Home</title>
+  <meta name="description" content="RentalQu - Sewa mobil berkualitas dengan harga terjangkau. Proses cepat, aman, dan terpercaya. Tersedia berbagai pilihan mobil SUV, Sedan, MPV, Hatchback, dan City Car.">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -187,10 +187,10 @@ $totalAvailable = $carModel->countByStatus('available');
     </div>
   </section>
 
-  <!-- MENGAPA PILIH RENTALKU -->
+  <!-- MENGAPA PILIH RENTALQU -->
   <section class="container py-5">
     <div class="text-center mb-5">
-      <h2 class="fw-bold">Mengapa Pilih RentalKu?</h2>
+      <h2 class="fw-bold">Mengapa Pilih RentalQu?</h2>
     </div>
     <div class="row g-4">
       <div class="col-md-4 text-center">

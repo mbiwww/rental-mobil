@@ -41,7 +41,7 @@ if ($isLoggedIn && !empty($_SESSION['name'])) {
     <!-- Brand / Logo -->
     <a href="<?= $baseUrl ?>index.php" class="brand-wrapper">
       <i class="bi bi-car-front-fill brand-icon"></i>
-      <span class="brand-text">RentalKu</span>
+      <span class="brand-text">RentalQu</span>
     </a>
 
     <div class="nav-right">

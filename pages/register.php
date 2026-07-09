@@ -49,8 +49,8 @@ $old = [
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RentalKu · Daftar</title>
-  <meta name="description" content="Daftar akun RentalKu untuk mulai menyewa kendaraan dengan mudah dan terpercaya.">
+  <title>RentalQu · Daftar</title>
+  <meta name="description" content="Daftar akun RentalQu untuk mulai menyewa kendaraan dengan mudah dan terpercaya.">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="../assets/css/register.css">
@@ -67,7 +67,7 @@ $old = [
             <div class="text-center mb-4">
               <div class="rental-brand justify-content-center">
                 <i class="bi bi-car-front-fill"></i>
-                <span>RentalKu</span>
+                <span>RentalQu</span>
               </div>
               <p class="text-secondary-emphasis mt-2 mb-0" style="font-weight: 400;">Buat Akun Baru</p>
               <p class="text-body-tertiary small mt-1">Daftar untuk mulai menyewa kendaraan</p>

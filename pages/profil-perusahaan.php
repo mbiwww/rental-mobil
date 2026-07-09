@@ -1,8 +1,8 @@
 <?php
 /**
- * pages/profil-perusahaan.php — Halaman Profil Perusahaan RentalKu
+ * pages/profil-perusahaan.php — Halaman Profil Perusahaan RentalQu
  *
- * Menampilkan informasi lengkap tentang perusahaan RentalKu:
+ * Menampilkan informasi lengkap tentang perusahaan RentalQu:
  * - Tentang perusahaan
  * - Visi & misi
  * - Keunggulan layanan
@@ -42,8 +42,8 @@ $totalCompleted = (int) $stmtCompleted->fetchColumn();
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RentalKu &middot; Profil Perusahaan</title>
-  <meta name="description" content="Profil perusahaan RentalKu — solusi sewa mobil terpercaya dengan armada terawat dan harga transparan di Indonesia.">
+  <title>RentalQu &middot; Profil Perusahaan</title>
+  <meta name="description" content="Profil perusahaan RentalQu — solusi sewa mobil terpercaya dengan armada terawat dan harga transparan di Indonesia.">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -63,7 +63,7 @@ $totalCompleted = (int) $stmtCompleted->fetchColumn();
     <div class="container">
       <div class="pp-hero-content">
         <span class="pp-hero-badge"><i class="bi bi-building me-1"></i> Profil Perusahaan</span>
-        <h1 class="pp-hero-title">RentalKu</h1>
+        <h1 class="pp-hero-title">RentalQu</h1>
         <p class="pp-hero-tagline">Solusi Sewa Mobil Terpercaya di Indonesia</p>
         <p class="pp-hero-desc">Menghadirkan pengalaman sewa mobil yang mudah, aman, dan transparan bagi setiap perjalanan Anda.</p>
       </div>
@@ -114,10 +114,10 @@ $totalCompleted = (int) $stmtCompleted->fetchColumn();
           <span class="pp-label">Tentang Kami</span>
           <h2 class="pp-heading">Perjalanan Anda, <br>Tanggung Jawab Kami</h2>
           <p class="pp-text">
-            <strong>RentalKu</strong> adalah platform penyewaan mobil berbasis digital yang berkomitmen memberikan layanan terbaik kepada pelanggan. Kami hadir sebagai jawaban atas kebutuhan transportasi yang fleksibel, terjangkau, dan terpercaya.
+            <strong>RentalQu</strong> adalah platform penyewaan mobil berbasis digital yang berkomitmen memberikan layanan terbaik kepada pelanggan. Kami hadir sebagai jawaban atas kebutuhan transportasi yang fleksibel, terjangkau, dan terpercaya.
           </p>
           <p class="pp-text">
-            Didirikan dengan semangat untuk memudahkan masyarakat Indonesia dalam menyewa kendaraan, RentalKu menyediakan berbagai pilihan mobil mulai dari city car, sedan, MPV, hingga SUV. Setiap kendaraan dalam armada kami dirawat secara berkala untuk memastikan keamanan dan kenyamanan selama perjalanan.
+            Didirikan dengan semangat untuk memudahkan masyarakat Indonesia dalam menyewa kendaraan, RentalQu menyediakan berbagai pilihan mobil mulai dari city car, sedan, MPV, hingga SUV. Setiap kendaraan dalam armada kami dirawat secara berkala untuk memastikan keamanan dan kenyamanan selama perjalanan.
           </p>
           <p class="pp-text">
             Melalui platform online kami, proses pemesanan dapat dilakukan dalam hitungan menit. Dari pemilihan kendaraan, penentuan jadwal, hingga pembayaran — semuanya dirancang agar mudah dan efisien.
@@ -170,7 +170,7 @@ $totalCompleted = (int) $stmtCompleted->fetchColumn();
     <div class="container">
       <div class="text-center mb-5">
         <span class="pp-label">Keunggulan Kami</span>
-        <h2 class="pp-heading">Mengapa Memilih RentalKu?</h2>
+        <h2 class="pp-heading">Mengapa Memilih RentalQu?</h2>
       </div>
       <div class="row g-4">
         <div class="col-md-4">
@@ -301,7 +301,7 @@ $totalCompleted = (int) $stmtCompleted->fetchColumn();
                 <div class="pp-contact-icon"><i class="bi bi-envelope-fill"></i></div>
                 <div>
                   <strong>Email</strong>
-                  <a href="mailto:info@rentalku.id">info@rentalku.id</a>
+                  <a href="mailto:info@rentalqu.id">info@rentalqu.id</a>
                 </div>
               </div>
               <div class="pp-contact-item">
@@ -327,7 +327,7 @@ $totalCompleted = (int) $stmtCompleted->fetchColumn();
       <div class="pp-cta-card">
         <div class="pp-cta-content">
           <h2 class="pp-cta-title">Siap Memulai Perjalanan?</h2>
-          <p class="pp-cta-desc">Temukan mobil yang cocok untuk kebutuhan Anda dan nikmati pengalaman sewa yang mudah bersama RentalKu.</p>
+          <p class="pp-cta-desc">Temukan mobil yang cocok untuk kebutuhan Anda dan nikmati pengalaman sewa yang mudah bersama RentalQu.</p>
           <a href="katalog.php" class="pp-cta-btn">
             <i class="bi bi-grid-3x3-gap-fill me-2"></i>Lihat Katalog Mobil
           </a>

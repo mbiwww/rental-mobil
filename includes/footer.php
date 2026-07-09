@@ -13,11 +13,11 @@
         <div class="col-12 col-md-5 col-lg-4">
           <div class="footer-brand">
             <i class="bi bi-car-front-fill"></i>
-            <span>RentalKu</span>
+            <span>RentalQu</span>
           </div>
           <p class="footer-desc mt-3">
             Solusi sewa mobil terpercaya dengan armada terawat dan harga transparan. 
-            Nikmati perjalanan Anda bersama RentalKu.
+            Nikmati perjalanan Anda bersama RentalQu.
           </p>
         </div>
 
@@ -42,7 +42,7 @@
         <div class="col-12 col-md-12 col-lg-3">
           <h5 class="footer-title">Hubungi Kami</h5>
           <ul class="footer-links">
-            <li><a href="mailto:info@rentalku.id"><i class="bi bi-envelope"></i> info@rentalku.id</a></li>
+            <li><a href="mailto:info@rentalqu.id"><i class="bi bi-envelope"></i> info@rentalqu.id</a></li>
             <li><a href="tel:+6281234567890"><i class="bi bi-telephone"></i> +62 812-3456-7890</a></li>
             <li><i class="bi bi-geo-alt"></i> Jl. Sudirman No. 10, Jakarta</li>
           </ul>
@@ -53,7 +53,7 @@
       </div>
 
       <div class="footer-bottom">
-        <i class="bi bi-c-circle"></i> 2026 RentalKu. Semua hak dilindungi. 
+        <i class="bi bi-c-circle"></i> 2026 RentalQu. Semua hak dilindungi. 
       </div>
     </div>
   </footer>

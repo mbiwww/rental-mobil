@@ -74,8 +74,8 @@ $isAvailable = $car['status'] === 'available';
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RentalKu &middot; <?= $namaLengkap ?></title>
-  <meta name="description" content="Detail dan booking <?= $namaLengkap ?> di RentalKu. Sewa mulai Rp <?= $priceFormatted ?>/hari.">
+  <title>RentalQu &middot; <?= $namaLengkap ?></title>
+  <meta name="description" content="Detail dan booking <?= $namaLengkap ?> di RentalQu. Sewa mulai Rp <?= $priceFormatted ?>/hari.">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -413,7 +413,7 @@ $isAvailable = $car['status'] === 'available';
             <input type="text" class="form-control" id="pickupAddress" placeholder="Alamat pengantaran mobil">
           </div>
           <!-- Hidden inputs yang dikirim ke server -->
-          <input type="hidden" name="pickup_location" id="pickupLocationHidden" value="Kantor RentalKu">
+          <input type="hidden" name="pickup_location" id="pickupLocationHidden" value="Kantor RentalQu">
           <input type="hidden" name="pickup_option" id="pickupOptionHidden" value="kantor">
         </div>
         <label class="form-label mt-2">Dropoff</label>
@@ -430,7 +430,7 @@ $isAvailable = $car['status'] === 'available';
             <input type="text" class="form-control" id="dropoffAddress" placeholder="Alamat penjemputan mobil">
           </div>
           <!-- Hidden inputs yang dikirim ke server -->
-          <input type="hidden" name="dropoff_location" id="dropoffLocationHidden" value="Kantor RentalKu">
+          <input type="hidden" name="dropoff_location" id="dropoffLocationHidden" value="Kantor RentalQu">
           <input type="hidden" name="dropoff_option" id="dropoffOptionHidden" value="kantor">
         </div>
       `;
@@ -454,14 +454,14 @@ $isAvailable = $car['status'] === 'available';
             if (pickupAddrInput) pickupAddrInput.required = show;
             pickupHidden.value = show ?
               (pickupAddrInput ? pickupAddrInput.value : '') :
-              'Kantor RentalKu';
+              'Kantor RentalQu';
             if (pickupOptHidden) pickupOptHidden.value = val;
             updateBooking();
           }
 
           if (pickupAddrInput) {
             pickupAddrInput.addEventListener('input', () => {
-              pickupHidden.value = pickupAddrInput.value || 'Kantor RentalKu';
+              pickupHidden.value = pickupAddrInput.value || 'Kantor RentalQu';
             });
           }
 
@@ -483,14 +483,14 @@ $isAvailable = $car['status'] === 'available';
             if (dropoffAddrInput) dropoffAddrInput.required = show;
             dropoffHidden.value = show ?
               (dropoffAddrInput ? dropoffAddrInput.value : '') :
-              'Kantor RentalKu';
+              'Kantor RentalQu';
             if (dropoffOptHidden) dropoffOptHidden.value = val;
             updateBooking();
           }
 
           if (dropoffAddrInput) {
             dropoffAddrInput.addEventListener('input', () => {
-              dropoffHidden.value = dropoffAddrInput.value || 'Kantor RentalKu';
+              dropoffHidden.value = dropoffAddrInput.value || 'Kantor RentalQu';
             });
           }
 
