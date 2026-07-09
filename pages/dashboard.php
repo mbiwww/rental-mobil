@@ -239,7 +239,11 @@ $rataRataDurasi = $durationCount > 0 ? round($totalDuration / $durationCount, 1)
                       // Hitung deadline pengembalian kendaraan dan denda
                       $penaltyInfo = $rentalModel->calculatePenalty($r);
                       $isOverdue = $penaltyInfo['is_overdue'] && ($r['status'] === 'ongoing');
-                      $displayedPenaltyFee = ($r['penalty_fee'] > 0) ? (float)$r['penalty_fee'] : (float)$penaltyInfo['penalty_fee'];
+                      if ($r['status'] === 'completed') {
+                          $displayedPenaltyFee = (float)($r['penalty_fee'] ?? 0);
+                      } else {
+                          $displayedPenaltyFee = ($r['penalty_fee'] > 0) ? (float)$r['penalty_fee'] : (float)$penaltyInfo['penalty_fee'];
+                      }
 
                       // Hitung jam terlambat
                       if ($r['status'] === 'completed') {
